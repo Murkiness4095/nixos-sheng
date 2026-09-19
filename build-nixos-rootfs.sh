@@ -39,9 +39,12 @@ case "${ROOTFS_FLAKE_ATTR}" in
     mobileRootfsImageGnome)
         ROOTFS_VARIANT="gnome"
         ;;
+    mobileRootfsImageNiri)
+        ROOTFS_VARIANT="niri"
+        ;;
     *)
         echo "Unsupported ROOTFS_FLAKE_ATTR=${ROOTFS_FLAKE_ATTR}"
-        echo "Supported values: mobileRootfsImage, mobileRootfsImageGnome"
+        echo "Supported values: mobileRootfsImage, mobileRootfsImageGnome, mobileRootfsImageNiri"
         exit 1
         ;;
 esac

@@ -23,6 +23,7 @@ on:
         options:
           - mobileRootfsImage
           - mobileRootfsImageGnome
+          - mobileRootfsImageNiri
         default: "mobileRootfsImage"
       skip_release:
         description: "Skip GitHub release"
@@ -101,6 +102,9 @@ jobs:
               ;;
             mobileRootfsImage)
               configuration="sheng-minimal"
+              ;;
+            mobileRootfsImageNiri)
+              configuration="sheng-niri"
               ;;
             *)
               echo "Unsupported rootfs output: ${{ github.event.inputs.rootfs_flake_attr }}"
