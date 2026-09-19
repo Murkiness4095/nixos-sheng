@@ -22,6 +22,7 @@ flake 暴露了与可刷 rootfs 镜像相同的 Mobile NixOS 求值：
 | Configuration | 桌面 | 对应 rootfs 输出 |
 | --- | --- | --- |
 | `sheng` | 可选 minimal GNOME | `mobileRootfsImageGnome` |
+| `sheng-niri` | Niri + Noctalia | `mobileRootfsImageNiri` |
 | `sheng-stage2` | minimal GNOME，不构建 boot 内核 | 设备内 `nixos-rebuild` |
 | `sheng-minimal` | 不绑定桌面的 console 平台 | `mobileRootfsImage` |
 

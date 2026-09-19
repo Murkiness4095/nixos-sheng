@@ -20,4 +20,5 @@ sudo nixos-rebuild build --flake .#sheng
 The `nixos-sheng` input owns the Mobile NixOS device platform. This private
 flake owns users, credentials, personal packages, and Home Manager settings.
 `mkShengSystem` does not select a desktop environment. Replace it with
-`mkShengGnomeSystem` only when the repository GNOME profile is desired.
+`mkShengGnomeSystem` when the repository GNOME profile is desired, or with
+`mkShengNiriSystem` for the Niri + Noctalia profile.

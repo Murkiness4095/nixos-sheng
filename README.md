@@ -26,6 +26,7 @@ a little less lonely.
 - Flashable Android `boot_b` image plus dedicated `linux` rootfs image
 - Desktop-neutral public flake constructor for private dotfiles repositories
 - Optional GNOME image with touch keyboard, rotation, and cover handling
+- Optional Niri + Noctalia image with thunar, alacritty and fuzzel
 - Stage-1 NixOS generation menu controlled by volume and power keys
 - Working Wi-Fi, USB-C role/OTG, SSC sensors, RAW camera capture, and MiPPS
   fast-charging authentication
@@ -135,7 +136,7 @@ See [`docs/boot-generation-menu.md`](docs/boot-generation-menu.md) for details.
 |   |   `-- mobile.nix      # Mobile NixOS Stage-1 configurations
 |   |-- modules/            # Custom NixOS modules & services (MiPPS auth etc.)
 |   |-- home/               # User-level Home Manager configurations
-|   |-- profiles/           # High-level desktop profiles (GNOME, etc.)
+|   |-- profiles/           # High-level desktop profiles (GNOME, Niri, etc.)
 |   |-- packages/           # Custom package derivations
 |   |-- patches/            # Boot-flow Ruby patches
 |   `-- scripts/            # Target-side execution scripts
@@ -174,9 +175,10 @@ NixOS module into an ordinary `nixpkgs.lib.nixosSystem` evaluation.
 
 `mkShengSystem` provides the desktop-neutral sheng platform. Use
 `mkShengGnomeSystem` only when the downstream configuration explicitly wants
-the repository's GNOME profile. `mkShengMinimalSystem` remains as a
-compatibility alias for `mkShengSystem`. Public constructors do not create a
-user or install the repository's Home Manager profile.
+the repository's GNOME profile. `mkShengNiriSystem` provides the same sheng
+platform with the Niri compositor and Noctalia shell. `mkShengMinimalSystem`
+remains as a compatibility alias for `mkShengSystem`. Public constructors do not
+create a user or install the repository's Home Manager profile.
 
 A complete private-flake starting point is available in
 [`examples/sheng-dotfiles`](examples/sheng-dotfiles).
@@ -219,6 +221,12 @@ Build the flashable Mobile NixOS rootfs image:
 
 ```bash
 nix build ./nixos#mobileRootfsImage -o out/mobile-rootfs
+```
+
+Build the flashable Niri + Noctalia rootfs image:
+
+```bash
+nix build ./nixos#mobileRootfsImageNiri -o out/mobile-rootfs-niri
 ```
 
 Build the installed GNOME stage-2 system used by `nixos-rebuild`:

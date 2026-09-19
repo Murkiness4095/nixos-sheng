@@ -24,6 +24,7 @@ rootfs images:
 | Configuration | Desktop | Matching rootfs output |
 | --- | --- | --- |
 | `sheng` | Optional minimal GNOME | `mobileRootfsImageGnome` |
+| `sheng-niri` | Niri + Noctalia | `mobileRootfsImageNiri` |
 | `sheng-stage2` | Minimal GNOME without rebuilding the boot kernel | On-device `nixos-rebuild` |
 | `sheng-minimal` | Desktop-neutral console platform | `mobileRootfsImage` |
 

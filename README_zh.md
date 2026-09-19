@@ -21,6 +21,7 @@ Xiaomi Pad 6S Pro 12.4 (`sheng`, Qualcomm SM8550) 的 Mobile NixOS 移植项目�
 - 可刷入 Android `boot_b` 的 boot 镜像，以及专用 `linux` 分区 rootfs 镜像
 - 面向私人 dotfiles 仓库的桌面无关公开 flake 构造器
 - 可选 GNOME 镜像，集成触屏键盘、自动旋转和盖板开合处理
+- 可选 Niri + Noctalia 镜像，默认使用 thunar、alacritty 与 fuzzel
 - 可通过音量键和电源键操作的 stage-1 NixOS 世代菜单
 - Wi-Fi、USB-C role/OTG、SSC 传感器、RAW 相机抓取与 MiPPS 快充认证已可用
 - NT36532E THP 触控/触控笔与 FPC1553 指纹已完成实机接入
@@ -122,7 +123,7 @@ linux 分区
 |   |   `-- mobile.nix      # Mobile NixOS Stage-1 配置
 |   |-- modules/            # 自定义 NixOS 服务与特性 (MiPPS 认证等)
 |   |-- home/               # 用户级 Home Manager 配置
-|   |-- profiles/           # 上层桌面方案 (GNOME 等)
+|   |-- profiles/           # 上层桌面方案 (GNOME、Niri 等)
 |   |-- packages/           # 自定义构建软件包
 |   |-- patches/            # 启动流程 Ruby 补丁
 |   `-- scripts/            # 目标机执行脚本
@@ -158,7 +159,8 @@ linux 分区
 ```
 
 `mkShengSystem` 只提供不绑定桌面环境的 sheng 平台。只有下游明确希望使用本仓库
-GNOME profile 时才调用 `mkShengGnomeSystem`。`mkShengMinimalSystem` 作为
+GNOME profile 时才调用 `mkShengGnomeSystem`；`mkShengNiriSystem` 则提供带有
+Niri 合成器与 Noctalia shell 的同名平台。`mkShengMinimalSystem` 作为
 `mkShengSystem` 的兼容别名保留。公开构造器不会创建用户，也不会注入本仓库的
 Home Manager profile，用户配置必须由下游模块提供。
 
@@ -200,6 +202,12 @@ nix build ./nixos#mobileAndroidBootimg -o out/mobile-bootimg
 
 ```bash
 nix build ./nixos#mobileRootfsImage -o out/mobile-rootfs
+```
+
+构建可刷入的 Niri + Noctalia rootfs 镜像：
+
+```bash
+nix build ./nixos#mobileRootfsImageNiri -o out/mobile-rootfs-niri
 ```
 
 构建设备内 `nixos-rebuild` 使用的 GNOME stage-2 系统：
