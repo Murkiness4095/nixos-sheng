@@ -1,0 +1,63 @@
+# ---
+# Module: Cachix Push Workflow
+# Description: Build the sheng NixOS system closure and push it to the nixos-sheng Cachix cache
+# Scope: CI
+# Notes:
+# - This workflow only configures Cachix in CI; it does NOT modify device-side
+#   NixOS substituter or trusted-public-keys settings.
+# ---
+
+name: Push sheng to Cachix
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - sheng
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Build and push sheng system closure
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            keep-env-derivations = true
+            keep-outputs = true
+
+      - name: Restore and save Nix store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('nixos/flake.lock', 'nixos/**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 10G
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v17
+        with:
+          name: nixos-sheng
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          skipPush: true
+
+      - name: Build sheng system closure
+        run: |
+          nix --extra-experimental-features "nix-command flakes" \
+            build ./nixos#nixosConfigurations.sheng.config.system.build.toplevel
+
+      - name: Push sheng closure to Cachix
+        run: |
+          cachix push nixos-sheng ./result

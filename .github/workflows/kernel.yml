@@ -22,6 +22,7 @@ jobs:
     name: Build Mobile NixOS boot image
     runs-on: ubuntu-24.04-arm
     permissions:
+      actions: write
       contents: write
 
     steps:
@@ -35,9 +36,15 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+            keep-env-derivations = true
+            keep-outputs = true
 
-      - name: Enable Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@v13
+      - name: Restore and save Nix store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('nixos/flake.lock', 'nixos/**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 10G
 
       - name: Validate generation menu renderer
         run: |
