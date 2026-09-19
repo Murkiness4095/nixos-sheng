@@ -102,6 +102,80 @@
     '';
   };
 
+  # NetworkManager can miss the netlink event for wlp1s0 if it finishes its
+  # internal setup before wlan0 finishes renaming to wlp1s0. The kernel
+  # scan (`iw dev wlp1s0 scan`) keeps working, but `nmcli device wifi list`
+  # and nmtui see no SSIDs because NM still has the interface pinned to
+  # `unmanaged`. After NM is up, defensively re-attach wlp1s0 and trigger
+  # a fresh scan so users get a working Wi-Fi list without having to run
+  # `sudo nmcli radio wifi off && sudo nmcli radio wifi on` or reboot.
+  systemd.services.sheng-nm-wifi-sync = {
+    description = "Re-attach sheng Wi-Fi to NetworkManager after boot";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "NetworkManager.service"
+      "sheng-wifi-modules.service"
+    ];
+    wants = [
+      "NetworkManager.service"
+      "sheng-wifi-modules.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      # Wait for the renamed wireless interface to appear in sysfs. NM's
+      # netlink subscriber may have started before udev finished renaming
+      # wlan0 to wlp1s0, which is the failure mode this service guards.
+      for attempt in $(seq 1 30); do
+        if [ -e /sys/class/net/wlp1s0 ]; then
+          break
+        fi
+        sleep 1
+      done
+      if [ ! -e /sys/class/net/wlp1s0 ]; then
+        echo "wlp1s0 did not appear; skipping NetworkManager sync" >&2
+        exit 0
+      fi
+
+      nmcli=${pkgs.networkmanager}/bin/nmcli
+
+      # Wait for NetworkManager itself to be reachable on D-Bus.
+      for attempt in $(seq 1 30); do
+        if "$nmcli" -t -f RUNNING general 2>/dev/null | grep -q "^running"; then
+          break
+        fi
+        sleep 1
+      done
+
+      state="$("$nmcli" -t -f DEVICE,STATE device 2>/dev/null \
+        | awk -F: '$1 == "wlp1s0" { print $2 }')"
+      case "$state" in
+        unmanaged)
+          echo "wlp1s0 reported unmanaged; forcing managed" >&2
+          "$nmcli" device set wlp1s0 managed yes || true
+          sleep 2
+          ;;
+        unavailable)
+          # NM sees the device but does not yet consider it ready. Re-set
+          # the managed flag so NM re-runs its Wi-Fi plugin probe instead
+          # of leaving the device stuck.
+          "$nmcli" device set wlp1s0 managed yes >/dev/null 2>&1 || true
+          sleep 2
+          ;;
+        "")
+          echo "wlp1s0 missing from NetworkManager device list" >&2
+          ;;
+      esac
+
+      # Always trigger a fresh rescan so nmtui shows surrounding networks
+      # after login, even when the first NM scan happened before the
+      # interface was renamed and reported zero results.
+      "$nmcli" device wifi rescan ifname wlp1s0 2>/dev/null || true
+    '';
+  };
+
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;

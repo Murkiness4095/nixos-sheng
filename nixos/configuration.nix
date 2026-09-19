@@ -45,6 +45,15 @@
   # network-online.target. Waiting for carrier delayed graphical.target by
   # roughly 18 seconds in the measured baseline.
   systemd.services.NetworkManager-wait-online.wantedBy = lib.mkForce [ ];
+  # sheng-wifi-modules.service already declares `before = NetworkManager`,
+  # but make the dependency explicit from NM's side too: if the two-pass
+  # WCN7850 init fails to bring wlp1s0 up, NM must still wait for that
+  # verdict instead of silently scanning an absent or partially-initialized
+  # device and reporting an empty SSID list to nmtui.
+  systemd.services.NetworkManager = {
+    wants = [ "sheng-wifi-modules.service" ];
+    after = [ "sheng-wifi-modules.service" ];
+  };
   networking.useDHCP = lib.mkDefault true;
 
   # GNOME enables Avahi for local-network discovery. Keep its NSS side wired
