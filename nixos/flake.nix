@@ -25,9 +25,16 @@
       url = "github:DotRedstone/sheng-firmware-full/719086ce25222dcc54920ae12409eb5d4401bbff";
       # Note: This is now a true flake, so we remove `flake = false;`
     };
+    # Noctalia upstream flake. The `cachix` branch always points to the latest
+    # commit that has already been built and pushed to the Noctalia binary cache,
+    # avoiding local compilation. We deliberately do NOT make it follow nixpkgs
+    # so the upstream cache remains usable.
+    noctalia = {
+      url = "github:noctalia-dev/noctalia/cachix";
+    };
   };
 
-  outputs = { self, mobile-nixos, nixpkgs, home-manager, shengKernelSrc, shengFirmware }:
+  outputs = { self, mobile-nixos, nixpkgs, home-manager, shengKernelSrc, shengFirmware, noctalia }:
     let
       system = "aarch64-linux";
       shengOverlay = final: prev: {
@@ -139,6 +146,10 @@
           ./configuration.nix
         ]
         ++ pkgs.lib.optional (desktop == "gnome") ./profiles/gnome-minimal.nix
+        ++ pkgs.lib.optionals (desktop == "niri") [
+          noctalia.nixosModules.default
+          ./profiles/niri-minimal.nix
+        ]
         ++ pkgs.lib.optional includeDefaultUser ./profiles/default-user.nix
         ++ pkgs.lib.optionals includeHomeManager [
           homeManagerModule
@@ -164,6 +175,13 @@
         includeDefaultUser = true;
         includeHomeManager = true;
       };
+      mobileNiriEval = mobileEvalFor {
+        desktop = "niri";
+        includeDefaultUser = true;
+        # Noctalia is enabled through its NixOS module; Home Manager is not
+        # required for this test image.
+        includeHomeManager = false;
+      };
       mobileStage2Eval = mobileEvalFor {
         desktop = "gnome";
         includeDefaultUser = true;
@@ -186,6 +204,10 @@
           desktop = "gnome";
           inherit extraModules;
         };
+        mkShengNiriSystem = extraModules: mobileEvalFor {
+          desktop = "niri";
+          inherit extraModules;
+        };
         # Compatibility alias. mkShengSystem is the desktop-neutral platform.
         mkShengMinimalSystem = extraModules:
           self.lib.${system}.mkShengSystem extraModules;
@@ -193,6 +215,7 @@
 
       nixosConfigurations = {
         sheng = mobileGnomeEval;
+        sheng-niri = mobileNiriEval;
         sheng-stage2 = mobileStage2Eval;
         sheng-minimal = mobileEval;
       };
@@ -212,6 +235,7 @@
         mobileFastbootImages = mobileEval.outputs.android.android-fastboot-images;
         mobileRootfsImage = mobileEval.outputs.generatedFilesystems.rootfs;
         mobileRootfsImageGnome = mobileGnomeEval.outputs.generatedFilesystems.rootfs;
+        mobileRootfsImageNiri = mobileNiriEval.outputs.generatedFilesystems.rootfs;
         # Compatibility alias for older workflow names. This is the Mobile NixOS
         # generated rootfs, not a separate hand-built filesystem.
         fullRootfsImage = mobileEval.outputs.generatedFilesystems.rootfs;
