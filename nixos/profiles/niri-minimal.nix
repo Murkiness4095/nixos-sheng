@@ -40,7 +40,6 @@ in
 
     # Browsers
     brave
-    librewolf
 
     # Chat
     telegram-desktop
