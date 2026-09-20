@@ -42,7 +42,7 @@ in
     brave
 
     # Chat
-    telegram-desktop
+    # (telegram-desktop removed: depends on tg_owt / qtwebengine which has no aarch64 cache)
 
     # Media
     kazumi
