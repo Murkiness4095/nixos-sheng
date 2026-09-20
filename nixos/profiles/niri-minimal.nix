@@ -44,7 +44,6 @@ in
 
     # Chat
     telegram-desktop
-    qq
     wechat
 
     # Media
