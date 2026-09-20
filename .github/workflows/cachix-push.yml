@@ -17,6 +17,7 @@ on:
   push:
     branches:
       - sheng
+      - feat/niri-noctalia-image
 
 permissions:
   actions: write
@@ -53,10 +54,24 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           skipPush: true
 
+      - name: Select system closure
+        id: target
+        run: |
+          case "$GITHUB_REF_NAME" in
+            feat/niri-noctalia-image)
+              echo "configuration=sheng-niri" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "configuration=sheng" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
       - name: Build sheng system closure
+        env:
+          CONFIGURATION: ${{ steps.target.outputs.configuration }}
         run: |
           nix --extra-experimental-features "nix-command flakes" \
-            build ./nixos#nixosConfigurations.sheng.config.system.build.toplevel
+            build "./nixos#nixosConfigurations.${CONFIGURATION}.config.system.build.toplevel"
 
       - name: Push sheng closure to Cachix
         run: |
