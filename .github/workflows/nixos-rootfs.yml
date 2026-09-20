@@ -74,6 +74,13 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-
           gc-max-store-size-linux: 10G
 
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v17
+        with:
+          name: nixos-sheng
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          skipPush: true
+
       - name: Inject dynamic credentials
         env:
           INPUT_USERNAME: ${{ inputs.username }}
