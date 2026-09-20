@@ -122,7 +122,7 @@ linux 分区
 |   |   |-- hardware.nix    # NixOS 硬件特性模块
 |   |   `-- mobile.nix      # Mobile NixOS Stage-1 配置
 |   |-- modules/            # 自定义 NixOS 服务与特性 (MiPPS 认证等)
-|   |-- home/               # 用户级 Home Manager 配置
+|   |-- home/               # 用户级 Hjem 配置
 |   |-- profiles/           # 上层桌面方案 (GNOME、Niri 等)
 |   |-- packages/           # 自定义构建软件包
 |   |-- patches/            # 启动流程 Ruby 补丁
@@ -138,7 +138,7 @@ linux 分区
 启动流程、硬件服务、rootfs 布局，以及可选的 GNOME profile。
 本仓库也会构建带临时默认用户的公开测试镜像。
 
-个人用户、凭据、应用、Home Manager 配置，以及 hostname、locale、时区等个人设置
+个人用户、凭据、应用、Hjem 配置，以及 hostname、locale、时区等个人设置
 应放在独立的 dotfiles flake 中。下游 flake 应调用
 `nixos-sheng.lib.aarch64-linux.mkShengSystem`，不要尝试将 Mobile NixOS
 设备模块导入普通的 `nixpkgs.lib.nixosSystem` 求值。
@@ -162,7 +162,7 @@ linux 分区
 GNOME profile 时才调用 `mkShengGnomeSystem`；`mkShengNiriSystem` 则提供带有
 Niri 合成器与 Noctalia shell 的同名平台。`mkShengMinimalSystem` 作为
 `mkShengSystem` 的兼容别名保留。公开构造器不会创建用户，也不会注入本仓库的
-Home Manager profile，用户配置必须由下游模块提供。
+Hjem profile，用户配置必须由下游模块提供。
 
 完整的私人 flake 起始模板位于
 [`examples/sheng-dotfiles`](examples/sheng-dotfiles)。

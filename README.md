@@ -135,7 +135,7 @@ See [`docs/boot-generation-menu.md`](docs/boot-generation-menu.md) for details.
 |   |   |-- hardware.nix    # NixOS hardware module configurations
 |   |   `-- mobile.nix      # Mobile NixOS Stage-1 configurations
 |   |-- modules/            # Custom NixOS modules & services (MiPPS auth etc.)
-|   |-- home/               # User-level Home Manager configurations
+|   |-- home/               # User-level Hjem configurations
 |   |-- profiles/           # High-level desktop profiles (GNOME, Niri, etc.)
 |   |-- packages/           # Custom package derivations
 |   |-- patches/            # Boot-flow Ruby patches
@@ -152,7 +152,7 @@ Mobile NixOS boot flow, hardware services, rootfs layout, and an optional
 GNOME profile. It also builds public test images with a disposable default
 user.
 
-Personal users, credentials, applications, Home Manager configuration, and
+Personal users, credentials, applications, Hjem configuration, and
 private settings such as hostname, locale, and time zone belong in a separate
 dotfiles flake. Downstream flakes should use
 `nixos-sheng.lib.aarch64-linux.mkShengSystem` rather than importing a Mobile
@@ -178,7 +178,7 @@ NixOS module into an ordinary `nixpkgs.lib.nixosSystem` evaluation.
 the repository's GNOME profile. `mkShengNiriSystem` provides the same sheng
 platform with the Niri compositor and Noctalia shell. `mkShengMinimalSystem`
 remains as a compatibility alias for `mkShengSystem`. Public constructors do not
-create a user or install the repository's Home Manager profile.
+create a user or install the repository's Hjem profile.
 
 A complete private-flake starting point is available in
 [`examples/sheng-dotfiles`](examples/sheng-dotfiles).

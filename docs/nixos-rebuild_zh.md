@@ -39,7 +39,7 @@ nixosConfigurations.sheng =
 ```
 
 该构造器提供完整、不绑定桌面的 sheng 平台，但不会创建用户、注入凭据、安装
-GNOME，或安装本仓库的 Home Manager 配置。用户、凭据和个人配置应放在下游
+GNOME，或安装本仓库的 Hjem 配置。用户、凭据和个人配置应放在下游
 dotfiles 仓库中。只有明确想使用本仓库 GNOME profile 时才使用
 `mkShengGnomeSystem`。
 
@@ -127,7 +127,7 @@ PAGER=cat nix-env --profile /nix/var/nix/profiles/system --list-generations
 ## 配置归属
 
 本仓库负责硬件集成、启动行为、固件、rootfs 布局和平台服务。私有下游 flake
-负责用户、凭据、个人系统软件包和可选 Home Manager 配置。
+负责用户、凭据、个人系统软件包和可选 Hjem 配置。
 
 仓库构建的测试镜像仍会通过 `nixos/profiles/default-user.nix` 包含一次性默认用户；
 公开构造器不会创建用户。

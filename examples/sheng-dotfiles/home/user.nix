@@ -1,16 +1,18 @@
 # ---
 # Module: Personal User Home
-# Description: Provides an example Home Manager profile for the private sheng user
-# Scope: Home Manager
+# Description: Provides an example Hjem profile for the private sheng user
+# Scope: Hjem User
 # ---
 
 { ... }:
 
 {
-  home.username = "user";
-  home.homeDirectory = "/home/user";
-  home.stateVersion = "25.05";
+  files.".bashrc".text = ''
+    # Source the NixOS system-wide bashrc before adding user aliases.
+    if [ -f /etc/bashrc ]; then
+      . /etc/bashrc
+    fi
 
-  programs.home-manager.enable = true;
-  programs.bash.enable = true;
+    alias ll="ls -la"
+  '';
 }

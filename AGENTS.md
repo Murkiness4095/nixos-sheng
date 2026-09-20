@@ -100,7 +100,7 @@ All `.nix` modules should start with:
 # ---
 # Module: <Human-readable module name>
 # Description: <one sentence responsibility>
-# Scope: <System | Home Manager | Host | Theme | Script | Flake>
+# Scope: <System | Hjem User | Host | Theme | Script | Flake>
 # ---
 ```
 

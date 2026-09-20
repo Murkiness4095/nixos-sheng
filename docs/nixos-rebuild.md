@@ -42,7 +42,7 @@ nixosConfigurations.sheng =
 
 The constructor provides the complete desktop-neutral sheng platform, but does
 not create users, inject credentials, install GNOME, or install this
-repository's Home Manager configuration. Keep those personal concerns in the
+repository's Hjem configuration. Keep those personal concerns in the
 downstream dotfiles repository. Use `mkShengGnomeSystem` only when the
 repository GNOME profile is explicitly wanted.
 
@@ -138,7 +138,7 @@ Do not flash `userdata`.
 
 This repository owns hardware integration, boot behavior, firmware, rootfs
 layout, and platform services. A private downstream flake owns users,
-credentials, personal system packages, and optional Home Manager configuration.
+credentials, personal system packages, and optional Hjem configuration.
 
 Repository-built test images still include a disposable default user through
 `nixos/profiles/default-user.nix`; public constructors do not.
