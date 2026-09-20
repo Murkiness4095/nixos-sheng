@@ -54,8 +54,7 @@ in
     libgsf
 
     # Editor / KDE integration
-    kdePackages.kate
-    kdePackages.plasma-integration
+    # (kate and plasma-integration removed: depend on qtspeech which has no aarch64 cache)
 
     # Tools
     localsend
@@ -63,7 +62,7 @@ in
     # Clipboard
     wl-clipboard
     cliphist
-    copyq
+    # (copyq removed: depends on qtspeech which has no aarch64 cache)
 
     # Screenshot
     grim
