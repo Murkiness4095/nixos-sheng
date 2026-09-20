@@ -4,7 +4,7 @@
 # Scope: System
 # Notes:
 # - Noctalia is enabled through the upstream NixOS module imported by the flake.
-# - This profile deliberately disables Home Manager integration so Noctalia runs
+# - This profile deliberately disables Hjem integration so Noctalia runs
 #   purely via its NixOS module and systemd user service.
 # - Greetd is configured for auto-login only when the default-user profile is used.
 # ---

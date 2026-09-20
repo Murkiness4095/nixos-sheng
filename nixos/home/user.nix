@@ -1,30 +1,13 @@
 # ---
 # Module: User Profile
-# Description: Home Manager configuration for the dynamic user
-# Scope: Home Manager
+# Description: Hjem-managed files and packages for the dynamic user
+# Scope: Hjem User
 # ---
 
-{ pkgs, lib, vars, ... }:
+{ pkgs, vars, ... }:
 
 {
-  home.username = vars.username;
-  home.homeDirectory = "/home/${vars.username}";
-  home.stateVersion = "25.05";
-
-  # Workaround for Home Manager unstable zipAttrsWith conflict on fontconfig
-  fonts.fontconfig.enable = lib.mkForce false;
-
-  programs.home-manager.enable = true;
-
-  programs.bash = {
-    enable = true;
-    shellAliases = {
-      nrs = "sudo sheng-nixos-rebuild /home/${vars.username}/nixos-sheng/nixos#sheng-stage2";
-      hms = "home-manager switch --flake /home/${vars.username}/nixos-sheng/nixos#${vars.username}@sheng";
-    };
-  };
-
-  home.packages = with pkgs; [
+  packages = with pkgs; [
     gjs-osk
     gnome-console
     nautilus
@@ -40,4 +23,13 @@
     vim
     wget
   ];
+
+  files.".bashrc".text = ''
+    # Source the NixOS system-wide bashrc before adding user aliases.
+    if [ -f /etc/bashrc ]; then
+      . /etc/bashrc
+    fi
+
+    alias nrs="sudo sheng-nixos-rebuild /home/${vars.username}/nixos-sheng/nixos#sheng-stage2"
+  '';
 }

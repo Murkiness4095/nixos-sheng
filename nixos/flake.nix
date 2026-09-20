@@ -1,6 +1,6 @@
 # ---
 # Module: Flake Entry
-# Description: Main entry point for NixOS system and Home Manager
+# Description: Main entry point for NixOS system and Hjem
 # Scope: Flake
 # ---
 
@@ -13,8 +13,8 @@
       flake = false;
     };
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    home-manager = {
-      url = "github:nix-community/home-manager";
+    hjem = {
+      url = "github:feel-co/hjem";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     shengKernelSrc = {
@@ -34,7 +34,7 @@
     };
   };
 
-  outputs = { self, mobile-nixos, nixpkgs, home-manager, shengKernelSrc, shengFirmware, noctalia }:
+  outputs = { self, mobile-nixos, nixpkgs, hjem, shengKernelSrc, shengFirmware, noctalia }:
     let
       system = "aarch64-linux";
       shengOverlay = final: prev: {
@@ -118,16 +118,16 @@
         inherit system;
         overlays = [ shengOverlay ];
       };
-      homeManagerModule = {
+      hjemModule = {
         environment.systemPackages = [
-          home-manager.packages.${system}.default
+          hjem.packages.${system}.hjem
         ];
       };
       mobileEvalFor = {
         extraModules ? [ ],
         desktop ? null,
         includeDefaultUser ? false,
-        includeHomeManager ? false,
+        includeHjem ? false,
         stage2Only ? false,
       }:
         let vars = import ./vars.nix; in
@@ -151,14 +151,12 @@
           ./profiles/niri-minimal.nix
         ]
         ++ pkgs.lib.optional includeDefaultUser ./profiles/default-user.nix
-        ++ pkgs.lib.optionals includeHomeManager [
-          homeManagerModule
-          home-manager.nixosModules.home-manager
+        ++ pkgs.lib.optionals includeHjem [
+          hjemModule
+          hjem.nixosModules.default
           ({ ... }: {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = { inherit vars; };
-            home-manager.users.${vars.username} = import ./home/user.nix;
+            hjem.specialArgs = { inherit vars; };
+            hjem.users.${vars.username}.imports = [ ./home/user.nix ];
           })
         ]
         ++ extraModules
@@ -168,24 +166,24 @@
       };
       mobileEval = mobileEvalFor {
         includeDefaultUser = true;
-        includeHomeManager = true;
+        includeHjem = true;
       };
       mobileGnomeEval = mobileEvalFor {
         desktop = "gnome";
         includeDefaultUser = true;
-        includeHomeManager = true;
+        includeHjem = true;
       };
       mobileNiriEval = mobileEvalFor {
         desktop = "niri";
         includeDefaultUser = true;
-        # Noctalia is enabled through its NixOS module; Home Manager is not
-        # required for this test image.
-        includeHomeManager = false;
+        # Noctalia is enabled through its NixOS module; Hjem is not required
+        # for this test image.
+        includeHjem = false;
       };
       mobileStage2Eval = mobileEvalFor {
         desktop = "gnome";
         includeDefaultUser = true;
-        includeHomeManager = true;
+        includeHjem = true;
         stage2Only = true;
       };
     in
@@ -194,7 +192,7 @@
       # This keeps nixos-rebuild generations aligned with the fixed boot image,
       # sheng kernel modules, firmware, hardware services, and desktop profile.
       # Public downstream interface. It evaluates the complete Mobile NixOS
-      # platform while leaving users, credentials, Home Manager, and personal
+      # platform while leaving users, credentials, Hjem, and personal
       # packages to the caller's modules.
       lib.${system} = {
         mkShengSystem = extraModules: mobileEvalFor {
@@ -218,14 +216,6 @@
         sheng-niri = mobileNiriEval;
         sheng-stage2 = mobileStage2Eval;
         sheng-minimal = mobileEval;
-      };
-
-      homeConfigurations = let vars = import ./vars.nix; in {
-        "${vars.username}@sheng" = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-          extraSpecialArgs = { inherit vars; };
-          modules = [ ./home/user.nix ];
-        };
       };
 
       packages.${system} = {
