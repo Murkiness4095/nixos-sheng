@@ -37,6 +37,54 @@ in
     alacritty
     fuzzel
     thunar
+
+    # Browsers
+    brave
+    librewolf
+
+    # Chat
+    telegram-desktop
+    qq
+    wechat
+
+    # Media
+    kazumi
+    celluloid # video
+    imv # image
+    ffmpegthumbnailer
+    poppler
+    libopenraw
+    libgsf
+
+    # Editor / KDE integration
+    kdePackages.kate
+    kdePackages.plasma-integration
+
+    # Tools
+    localsend
+
+    # Clipboard
+    wl-clipboard
+    cliphist
+    copyq
+
+    # Screenshot
+    grim
+    slurp
+    satty # annotation
+
+    # Archive
+    file-roller
+
+    # Flatpak management
+    bazaar
+    warehouse
+
+    # Theming
+    nwg-look
+
+    # Vibe Coding
+    mcp-nixos
   ];
 
   # Greetd-based display manager. Tuigreet is the fallback greeter; auto-login
