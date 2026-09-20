@@ -18,7 +18,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     shengKernelSrc = {
-      url = "github:DotRedstone/linux-sheng/upgrade/sheng-7.1.8";
+      url = "github:map220v/sm8550-mainline/sheng-7.2";
       flake = false;
     };
     shengFirmware = {
