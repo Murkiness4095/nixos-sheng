@@ -11,7 +11,7 @@ It does not relicense third-party material.
 | --- | --- | --- |
 | Mobile NixOS | https://github.com/mobile-nixos/mobile-nixos | MIT |
 | Nixpkgs | https://github.com/NixOS/nixpkgs | Mixed; see upstream package metadata |
-| Home Manager | https://github.com/nix-community/home-manager | MIT |
+| Hjem | https://github.com/feel-co/hjem | MPL-2.0 |
 | Sheng Linux kernel | https://github.com/DotRedstone/linux-sheng | GPL-2.0-only Linux kernel terms; forked from `map220v/sm8550-mainline` |
 | MiPPS authentication script | https://github.com/ianchb/xiaomi-mipps-auth | GPL-2.0-only, as declared by its source SPDX header |
 | GJS OSK | https://github.com/Vishram1123/gjs-osk | GPL-3.0 |
