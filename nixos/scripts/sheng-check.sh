@@ -134,8 +134,13 @@ section "Network"
 run_cmd ip addr
 try_cmd rfkill list
 try_cmd nmcli device
+try_cmd nmcli -t -f DEVICE,STATE device
+try_cmd iw dev
 echo "$ dmesg network excerpts"
 dmesg 2>/dev/null | grep -Ei 'ath|wlan|wifi|bluetooth|bt|firmware|qcom' | tail -200 || true
+echo ""
+echo "$ journalctl -b -u NetworkManager -u sheng-wifi-modules -u sheng-nm-wifi-sync"
+journalctl -b --no-pager -u NetworkManager -u sheng-wifi-modules -u sheng-nm-wifi-sync 2>/dev/null | tail -200 || true
 echo ""
 
 # ── Storage / Partitions ──
@@ -149,6 +154,12 @@ run_cmd findmnt
 
 # ── Firmware / Remoteproc ──
 section "Firmware / Remoteproc"
+echo "$ find /lib/firmware /usr/lib/firmware -maxdepth 4 -type f | head -80"
+find /lib/firmware /usr/lib/firmware -maxdepth 4 -type f 2>/dev/null | head -80 || true
+echo ""
+echo "$ find /lib/firmware -path '*novatek*' -o -path '*ath12k*' -o -path '*qcom*' | head -80"
+find /lib/firmware \( -path '*novatek*' -o -path '*ath12k*' -o -path '*qcom*' \) -type f 2>/dev/null | head -80 || true
+echo ""
 echo "$ find /sys/class/remoteproc"
 find /sys/class/remoteproc -maxdepth 2 -print 2>/dev/null || true
 echo ""
