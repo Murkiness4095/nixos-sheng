@@ -212,6 +212,7 @@
     e2fsprogs
     bluez
     iio-sensor-proxy
+    iw # Wireless debugging and scan helper for ath12k/WCN7850 bring-up
     kmod
     libssc
     libinput
