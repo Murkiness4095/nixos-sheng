@@ -53,6 +53,7 @@ in
 
     # Browsers
     brave
+    firefox
 
     # Chat
     # (telegram-desktop removed: depends on tg_owt / qtwebengine which has no aarch64 cache)
@@ -72,6 +73,8 @@ in
     # Tools
     localsend
     brightnessctl # Backlight control for Noctalia OSD and hardware keys
+    fastfetch
+    microfetch
 
     # Clipboard
     wl-clipboard
