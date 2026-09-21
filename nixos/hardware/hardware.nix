@@ -139,6 +139,16 @@
         exit 0
       fi
 
+      # The ath12k two-pass init can leave wlp1s0 administratively down or
+      # soft-blocked by rfkill. NetworkManager will then keep the device as
+      # unavailable/unmanaged and nmtui shows an empty network list, while
+      # `iw dev wlp1s0 scan` works fine once the interface is brought up.
+      ${pkgs.iproute2}/bin/ip link set wlp1s0 up || true
+      sleep 1
+      if [ -d /sys/class/rfkill ]; then
+        ${pkgs.util-linux}/bin/rfkill unblock wifi || true
+      fi
+
       nmcli=${pkgs.networkmanager}/bin/nmcli
 
       # Wait for NetworkManager itself to be reachable on D-Bus.
