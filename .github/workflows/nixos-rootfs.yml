@@ -57,7 +57,7 @@ jobs:
       - name: Install host tools
         run: |
           sudo apt update
-          sudo apt install -y e2fsprogs android-tools-fsutils gh xz-utils zstd
+          sudo apt install -y e2fsprogs android-sdk-libsparse-utils gh xz-utils zstd
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27

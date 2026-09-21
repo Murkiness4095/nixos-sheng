@@ -47,7 +47,7 @@ jobs:
       - name: Install release packaging tools
         run: |
           sudo apt update
-          sudo apt install -y e2fsprogs android-tools-fsutils zip
+          sudo apt install -y e2fsprogs android-sdk-libsparse-utils zip
 
       - name: Determine Release Info
         id: release_info
