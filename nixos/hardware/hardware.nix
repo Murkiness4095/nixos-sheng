@@ -125,25 +125,29 @@
       RemainAfterExit = true;
     };
     script = ''
-      # Wait for the renamed wireless interface to appear in sysfs. NM's
-      # netlink subscriber may have started before udev finished renaming
-      # wlan0 to wlp1s0, which is the failure mode this service guards.
+      # Wait for any ath12k wireless interface to appear. udev may rename
+      # wlan0 -> wlp1s0 asynchronously, so discover the actual name instead
+      # of hard-coding one.
+      iface=""
       for attempt in $(seq 1 30); do
-        if [ -e /sys/class/net/wlp1s0 ]; then
+        iface="$(${pkgs.coreutils}/bin/ls /sys/class/net 2>/dev/null \
+          | ${pkgs.gawk}/bin/awk '/^wlan[0-9]+$/ || /^wlp[0-9]+s[0-9]+$/ { print; exit }')"
+        if [ -n "$iface" ]; then
           break
         fi
         sleep 1
       done
-      if [ ! -e /sys/class/net/wlp1s0 ]; then
-        echo "wlp1s0 did not appear; skipping NetworkManager sync" >&2
+      if [ -z "$iface" ]; then
+        echo "No wireless interface appeared; skipping NetworkManager sync" >&2
         exit 0
       fi
+      echo "Discovered wireless interface: $iface"
 
-      # The ath12k two-pass init can leave wlp1s0 administratively down or
-      # soft-blocked by rfkill. NetworkManager will then keep the device as
+      # The ath12k two-pass init can leave the interface administratively down
+      # or soft-blocked by rfkill. NetworkManager then keeps the device as
       # unavailable/unmanaged and nmtui shows an empty network list, while
-      # `iw dev wlp1s0 scan` works fine once the interface is brought up.
-      ${pkgs.iproute2}/bin/ip link set wlp1s0 up || true
+      # `iw dev <iface> scan` works fine once the interface is brought up.
+      ${pkgs.iproute2}/bin/ip link set "$iface" up || true
       sleep 1
       if [ -d /sys/class/rfkill ]; then
         ${pkgs.util-linux}/bin/rfkill unblock wifi || true
@@ -160,29 +164,29 @@
       done
 
       state="$("$nmcli" -t -f DEVICE,STATE device 2>/dev/null \
-        | awk -F: '$1 == "wlp1s0" { print $2 }')"
+        | ${pkgs.gawk}/bin/awk -F: -v dev="$iface" '$1 == dev { print $2 }')"
       case "$state" in
         unmanaged)
-          echo "wlp1s0 reported unmanaged; forcing managed" >&2
-          "$nmcli" device set wlp1s0 managed yes || true
+          echo "$iface reported unmanaged; forcing managed" >&2
+          "$nmcli" device set "$iface" managed yes || true
           sleep 2
           ;;
         unavailable)
           # NM sees the device but does not yet consider it ready. Re-set
           # the managed flag so NM re-runs its Wi-Fi plugin probe instead
           # of leaving the device stuck.
-          "$nmcli" device set wlp1s0 managed yes >/dev/null 2>&1 || true
+          "$nmcli" device set "$iface" managed yes >/dev/null 2>&1 || true
           sleep 2
           ;;
         "")
-          echo "wlp1s0 missing from NetworkManager device list" >&2
+          echo "$iface missing from NetworkManager device list" >&2
           ;;
       esac
 
       # Always trigger a fresh rescan so nmtui shows surrounding networks
       # after login, even when the first NM scan happened before the
       # interface was renamed and reported zero results.
-      "$nmcli" device wifi rescan ifname wlp1s0 2>/dev/null || true
+      "$nmcli" device wifi rescan ifname "$iface" 2>/dev/null || true
     '';
   };
 
