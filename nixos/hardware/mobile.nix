@@ -115,6 +115,10 @@ in
       mkdir -p ./lib/firmware
       cp -r ${pkgs.sheng-firmware}/lib/firmware/* ./lib/firmware/
       cp -r ${pkgs.wireless-regdb}/lib/firmware/* ./lib/firmware/
+      # The NT36532E touchscreen driver needs its Novatek firmware to probe.
+      # hardware.firmware references it, but Mobile NixOS' rootfs builder does
+      # not automatically copy every hardware.firmware entry, so add it here.
+      cp -r ${pkgs.sheng-touch-firmware}/lib/firmware/* ./lib/firmware/
 
       echo "Injecting kernel modules into /lib/modules..."
       if [ -d ${kernelModulesTree}/lib/modules ]; then
