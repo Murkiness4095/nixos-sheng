@@ -264,11 +264,18 @@ fastboot reboot
 ```
 
 If you built the rootfs directly with `nix build ./nixos#mobileRootfsImage`, the
-file to flash is the generated `rootfs.img`:
+file to flash is the generated `rootfs.img`. Note that this is a raw ext4 image;
+for large images fastboot may fail to resparsify it automatically, so convert it
+first:
 
 ```bash
-fastboot flash linux out/mobile-rootfs/rootfs.img
+img2simg out/mobile-rootfs/rootfs.img out/mobile-rootfs/rootfs.sparse.img
+fastboot flash linux out/mobile-rootfs/rootfs.sparse.img
 ```
+
+The recommended path is `./build-nixos-rootfs.sh`, which produces
+`out/nixos-sheng-*.img` already in Android sparse format and ready for
+`fastboot flash linux`.
 
 If stage-1 code or the Android boot configuration changed, rebuild and flash
 `boot_b`. If only the NixOS userspace/rootfs changed, rebuild and flash

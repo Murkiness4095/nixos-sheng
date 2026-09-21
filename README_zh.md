@@ -242,11 +242,14 @@ fastboot --set-active=b
 fastboot reboot
 ```
 
-如果您直接使用 `nix build ./nixos#mobileRootfsImage` 构建了 rootfs，需要刷入的文件是生成的 `rootfs.img`：
+如果您直接使用 `nix build ./nixos#mobileRootfsImage` 构建了 rootfs，需要刷入的文件是生成的 `rootfs.img`。注意该文件是原始 ext4 格式；当镜像较大时 fastboot 可能无法直接重新稀疏化，需要先转换：
 
 ```bash
-fastboot flash linux out/mobile-rootfs/rootfs.img
+img2simg out/mobile-rootfs/rootfs.img out/mobile-rootfs/rootfs.sparse.img
+fastboot flash linux out/mobile-rootfs/rootfs.sparse.img
 ```
+
+推荐使用 `./build-nixos-rootfs.sh`，它输出的 `out/nixos-sheng-*.img` 已经是 Android sparse 格式，可直接 `fastboot flash linux`。
 
 如果 stage-1 代码或 Android 启动配置发生了变化，请重新构建并刷入 `boot_b`。如果只有 NixOS userspace/rootfs 发生了变化，请重新构建并刷入 `linux`。
 
