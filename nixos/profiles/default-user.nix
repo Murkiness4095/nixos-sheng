@@ -46,6 +46,9 @@ in
   security.sudo.wheelNeedsPassword = userHasPassword && !localTestAccess;
   services.openssh.settings = {
     PermitRootLogin = "no";
-    PasswordAuthentication = userHasPassword && !localTestAccess;
+    # If the builder explicitly supplied a password hash, allow SSH password
+    # authentication so they can log in remotely for debugging. Local test
+    # images without a password still keep password auth disabled.
+    PasswordAuthentication = userHasPassword;
   };
 }
