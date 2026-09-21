@@ -289,9 +289,26 @@
       RemainAfterExit = true;
     };
     script = ''
-      for module in spi_geni_qcom nt36532e_ts; do
-        ${pkgs.kmod}/bin/modprobe "$module" || true
+      # The QCOM GENI SPI controller may be exported under either module
+      # name depending on the kernel revision. Try both before loading the
+      # touch driver so the SPI device is actually present on the bus.
+      for module in spi_geni_qcom spi_qcom_geni; do
+        if ${pkgs.kmod}/bin/modinfo "$module" >/dev/null 2>&1; then
+          ${pkgs.kmod}/bin/modprobe "$module" || true
+        fi
       done
+      sleep 1
+
+      ${pkgs.kmod}/bin/modprobe nt36532e_ts || true
+      sleep 1
+
+      # Verify the driver really probed and exposed its proc interface.
+      # If it did not, dump the last relevant dmesg lines for diagnosis.
+      if [ ! -e /proc/nvt_thp_stream ]; then
+        echo "nt36532e_ts proc interface missing after modprobe" >&2
+        ${pkgs.util-linux}/bin/dmesg | grep -Ei 'nt36532|nvt|novatek|spi_geni|spi_qcom' | tail -50 >&2 || true
+        exit 1
+      fi
     '';
   };
 
