@@ -58,6 +58,7 @@ in
 
     # Tools
     localsend
+    brightnessctl # Backlight control for Noctalia OSD and hardware keys
 
     # Clipboard
     wl-clipboard

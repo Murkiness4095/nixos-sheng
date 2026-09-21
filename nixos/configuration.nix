@@ -246,6 +246,11 @@
     # attached or detached, so the keyboard cover gets re-authenticated after
     # being re-docked.
     SUBSYSTEM=="hid", ACTION=="add|remove", ENV{ID_INPUT_KEYBOARD}=="1", RUN+="${pkgs.systemd}/bin/systemctl try-restart sheng-devauth.service"
+
+    # Noctalia / brightnessctl need write access to the panel backlight sysfs
+    # node. Ensure the video group can write it even when systemd-backlight or
+    # upower do not claim the device.
+    SUBSYSTEM=="backlight", ACTION=="add", RUN+="${pkgs.coreutils}/bin/chgrp video /sys/class/backlight/%k/brightness", RUN+="${pkgs.coreutils}/bin/chmod g+w /sys/class/backlight/%k/brightness"
   '';
 
   security.rtkit.enable = true;
