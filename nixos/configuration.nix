@@ -237,6 +237,15 @@
     ENV{ID_INPUT_TOUCHSCREEN}=="1", ENV{LIBINPUT_CALIBRATION_MATRIX}="1 0 0 0 1 0 0 0 1", ENV{ID_INPUT_TOUCHSCREEN_INTEGRATION}="internal"
     SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_PATH}=="platform-1d84000.ufshc-scsi-*", ENV{UDISKS_IGNORE}="1"
     SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
+
+    # The Xiaomi factory keyboard cover can lag or repeat if USB autosuspend
+    # puts the HID endpoint to sleep. Keep HID input endpoints powered on.
+    SUBSYSTEM=="usb", ATTR{bInterfaceClass}=="03", ATTR{bInterfaceSubClass}=="01", ATTR{power/control}="on"
+
+    # Re-run the accessory authentication daemon when a HID keyboard is
+    # attached or detached, so the keyboard cover gets re-authenticated after
+    # being re-docked.
+    SUBSYSTEM=="hid", ACTION=="add|remove", ENV{ID_INPUT_KEYBOARD}=="1", RUN+="${pkgs.systemd}/bin/systemctl try-restart sheng-devauth.service"
   '';
 
   security.rtkit.enable = true;

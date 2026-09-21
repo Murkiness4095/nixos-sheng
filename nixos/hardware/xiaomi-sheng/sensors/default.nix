@@ -202,6 +202,9 @@ in
       ExecStart = "${sheng-devauth}/bin/xiaomi_devauth";
       Restart = "on-failure";
       RestartSec = "5s";
+      # Match adsprpcd's view of the Android compatibility path; devauth may
+      # read sensor/registry data through the same legacy paths.
+      BindReadOnlyPaths = [ "/etc/sensors/config:/odm/etc/sensors/config" ];
     };
   };
 
