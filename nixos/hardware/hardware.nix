@@ -127,11 +127,14 @@
     script = ''
       # Wait for any ath12k wireless interface to appear. udev may rename
       # wlan0 -> wlp1s0 asynchronously, so discover the actual name instead
-      # of hard-coding one.
+      # of hard-coding one. Prefer the renamed wlp* name over the transient
+      # wlan* name, and give udev a moment to finish renaming.
       iface=""
       for attempt in $(seq 1 30); do
         iface="$(${pkgs.coreutils}/bin/ls /sys/class/net 2>/dev/null \
-          | ${pkgs.gawk}/bin/awk '/^wlan[0-9]+$/ || /^wlp[0-9]+s[0-9]+$/ { print; exit }')"
+          | ${pkgs.gawk}/bin/awk '/^wlp[0-9]+s[0-9]+$/ { print; exit }
+              /^wlan[0-9]+$/ { if (!w) w=$0 }
+              END { if (w) print w }')"
         if [ -n "$iface" ]; then
           break
         fi
@@ -142,6 +145,8 @@
         exit 0
       fi
       echo "Discovered wireless interface: $iface"
+      # Let udev finish any in-flight rename before we touch the interface.
+      sleep 2
 
       # The ath12k two-pass init can leave the interface administratively down
       # or soft-blocked by rfkill. NetworkManager then keeps the device as
@@ -189,6 +194,32 @@
       "$nmcli" device wifi rescan ifname "$iface" 2>/dev/null || true
     '';
   };
+
+  # NetworkManager dispatcher hook: if a Wi-Fi device appears after the boot
+  # sync service has already run (or if the sync service missed the rename),
+  # force it managed and trigger a rescan so nmtui shows networks.
+  networking.networkmanager.dispatcherScripts = [
+    {
+      source = pkgs.writeScript "sheng-nm-wifi-dispatcher" ''
+        #!/usr/bin/env bash
+        iface="$1"
+        event="$2"
+        echo "sheng-nm-wifi-dispatcher: event=$event iface=$iface" >&2
+        case "$event" in
+          device-added|up)
+            case "$iface" in
+              wlan*|wlp*)
+                echo "sheng-nm-wifi-dispatcher: ensuring $iface is managed and rescanning" >&2
+                ${pkgs.networkmanager}/bin/nmcli device set "$iface" managed yes || true
+                ${pkgs.networkmanager}/bin/nmcli device wifi rescan ifname "$iface" || true
+                ;;
+            esac
+            ;;
+        esac
+      '';
+      type = "basic";
+    }
+  ];
 
   hardware.bluetooth = {
     enable = true;
