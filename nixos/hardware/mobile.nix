@@ -114,7 +114,12 @@ in
       echo "Injecting sheng-firmware into /lib/firmware..."
       mkdir -p ./lib/firmware
       cp -r ${pkgs.sheng-firmware}/lib/firmware/* ./lib/firmware/
+      # Nix store entries are read-only; cp -r preserves directory modes, so
+      # subsequent copies into existing subdirectories (e.g. novatek/) fail.
+      # Make the tree writable before adding more firmware.
+      chmod -R u+w ./lib/firmware || true
       cp -r ${pkgs.wireless-regdb}/lib/firmware/* ./lib/firmware/
+      chmod -R u+w ./lib/firmware || true
       # The NT36532E touchscreen driver needs its Novatek firmware to probe.
       # hardware.firmware references it, but Mobile NixOS' rootfs builder does
       # not automatically copy every hardware.firmware entry, so add it here.
