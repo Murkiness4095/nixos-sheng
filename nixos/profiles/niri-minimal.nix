@@ -14,12 +14,25 @@
 let
   autoLoginEnabled = config.services.displayManager.autoLogin.enable or false;
   autoLoginUser = config.services.displayManager.autoLogin.user or null;
-  niriCommand = "${lib.getExe pkgs.niri}";
+  # --session imports environment into systemd/D-Bus and is required for
+  # Noctalia and other systemd user services to integrate properly.
+  niriCommand = "${lib.getExe pkgs.niri} --session";
   tuigreetCommand = "${lib.getExe pkgs.tuigreet}";
 in
 {
   # Niri compositor from nixpkgs.
   programs.niri.enable = true;
+
+  # Minimal Niri configuration: start Noctalia on login and bind brightness keys
+  # to brightnessctl as a fallback for the Noctalia OSD backend.
+  environment.etc."niri/config.kdl".text = ''
+    spawn-at-startup "noctalia"
+
+    binds {
+        XF86MonBrightnessUp { spawn "brightnessctl" "set" "+10%"; }
+        XF86MonBrightnessDown { spawn "brightnessctl" "set" "10%-"; }
+    }
+  '';
 
   # Graphics stack.
   hardware.graphics.enable = true;
@@ -82,6 +95,9 @@ in
 
     # Vibe Coding
     mcp-nixos
+
+    # XWayland support for legacy X11 apps under Niri
+    xwayland-satellite
   ];
 
   # Greetd-based display manager. Tuigreet is the fallback greeter; auto-login
@@ -108,10 +124,13 @@ in
   };
 
   # Noctalia is enabled system-wide through the upstream NixOS module.
+  # We start it via Niri's spawn-at-startup instead of the systemd user service,
+  # because the greetd-based session does not reliably reach graphical-session.target
+  # before Niri has created the Wayland socket.
   programs.noctalia = {
     enable = true;
     recommendedServices.enable = true;
-    systemd.enable = true;
+    systemd.enable = false;
   };
 
   # xdg-desktop-portal for Wayland file opening and screen sharing.
