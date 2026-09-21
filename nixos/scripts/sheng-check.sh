@@ -114,6 +114,18 @@ echo ""
 
 # ── Touch / Keyboard ──
 section "Touch / Keyboard"
+run_cmd systemctl status sheng-touchscreen-modules.service --no-pager
+run_cmd systemctl status xiaomi-sheng-thp.service --no-pager
+run_cmd lsmod | grep -Ei 'nvt|nt36532|spi_geni|spi_qcom'
+echo "$ ls -la /proc/nvt_thp_*"
+ls -la /proc/nvt_thp_* 2>/dev/null || echo "(no THP proc files)"
+echo ""
+echo "$ ls -la /dev/input"
+ls -la /dev/input 2>/dev/null || true
+echo ""
+echo "$ cat /proc/bus/input/devices (touch/stylus excerpt)"
+cat /proc/bus/input/devices 2>/dev/null | grep -Ei 'nvt|novatek|touch|stylus|pen|xiaomi' | head -50 || true
+echo ""
 try_cmd libinput list-devices
 try_cmd evtest --version
 

@@ -211,6 +211,7 @@
     alsa-utils
     e2fsprogs
     bluez
+    evtest # Input device debugging for touch / stylus bring-up
     iio-sensor-proxy
     iw # Wireless debugging and scan helper for ath12k/WCN7850 bring-up
     kmod
