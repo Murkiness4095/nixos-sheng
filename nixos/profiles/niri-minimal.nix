@@ -63,6 +63,8 @@ in
     celluloid # video
     imv # image
     ffmpegthumbnailer
+    ffmpeg ffmpeg-full ffmpeg-headless
+    ffmpeg_4 ffmpeg_6 ffmpeg_7 ffmpeg_8
     poppler
     libopenraw
     libgsf
