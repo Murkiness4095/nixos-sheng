@@ -93,5 +93,30 @@ fi
 echo "==> Setting rootfs UUID ${FILESYSTEM_UUID}"
 tune2fs -U "${FILESYSTEM_UUID}" "${OUT_DIR}/${ROOTFS_IMG}" >/dev/null
 
+echo "==> Verifying rootfs integrity"
+e2fsck -fn "${OUT_DIR}/${ROOTFS_IMG}"
+
+features="$(dumpe2fs -h "${OUT_DIR}/${ROOTFS_IMG}" 2>/dev/null | awk -F: '/Filesystem features/ { print $2 }')"
+echo "Filesystem features:${features}"
+for feature in metadata_csum 64bit dir_index; do
+    grep -qw "$feature" <<<"$features" || {
+        echo "ERROR: rootfs is missing required ext4 feature: $feature" >&2
+        exit 1
+    }
+done
+
+if ! command -v img2simg >/dev/null 2>&1; then
+    echo "ERROR: img2simg is required to produce a fastboot-flashable sparse image" >&2
+    echo "Install android-tools-fsutils (or android-tools) and retry." >&2
+    exit 1
+fi
+
+echo "==> Converting raw ext4 image to Android sparse image for fastboot"
+RAW_IMG="${OUT_DIR}/${ROOTFS_IMG}.raw"
+mv "${OUT_DIR}/${ROOTFS_IMG}" "${RAW_IMG}"
+img2simg "${RAW_IMG}" "${OUT_DIR}/${ROOTFS_IMG}"
+rm -f "${RAW_IMG}"
+
 echo "Done: ${OUT_DIR}/${ROOTFS_IMG}"
 echo "Note: a Mobile NixOS rootfs is expected to contain nix/store and nix-path-registration."
+echo "The output .img is in Android sparse format and can be flashed directly with fastboot."

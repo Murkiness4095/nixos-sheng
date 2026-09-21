@@ -47,7 +47,7 @@ jobs:
       - name: Install release packaging tools
         run: |
           sudo apt update
-          sudo apt install -y e2fsprogs zip
+          sudo apt install -y e2fsprogs android-tools-fsutils zip
 
       - name: Determine Release Info
         id: release_info
@@ -219,18 +219,30 @@ jobs:
             output="release-upload/${prefix}-rootfs-${flavor}.img"
             mv "$rootfs_img" "$output"
             rm -rf "$rootfs_dir"
+
+            # The artifact from Build NixOS RootFS is already an Android sparse
+            # image. Convert it back to raw ext4 so e2fsck/resize2fs can work.
+            raw_output="${output}.raw"
+            simg2img "$output" "$raw_output"
+            rm -f "$output"
+
             set +e
-            e2fsck -fy "$output"
+            e2fsck -fy "$raw_output"
             fsck_status=$?
             set -e
             if [ "$fsck_status" -gt 1 ]; then
               echo "e2fsck failed for $flavor rootfs with status $fsck_status"
               exit "$fsck_status"
             fi
-            resize2fs -M "$output"
-            block_count="$(dumpe2fs -h "$output" 2>/dev/null | awk -F: '/Block count:/ { gsub(/ /, "", $2); print $2 }')"
-            block_size="$(dumpe2fs -h "$output" 2>/dev/null | awk -F: '/Block size:/ { gsub(/ /, "", $2); print $2 }')"
-            truncate -s "$((block_count * block_size))" "$output"
+            resize2fs -M "$raw_output"
+            block_count="$(dumpe2fs -h "$raw_output" 2>/dev/null | awk -F: '/Block count:/ { gsub(/ /, "", $2); print $2 }')"
+            block_size="$(dumpe2fs -h "$raw_output" 2>/dev/null | awk -F: '/Block size:/ { gsub(/ /, "", $2); print $2 }')"
+            truncate -s "$((block_count * block_size))" "$raw_output"
+
+            # Release artifacts must be sparse so fastboot can flash them
+            # directly without requiring the user to run img2simg manually.
+            img2simg "$raw_output" "$output"
+            rm -f "$raw_output"
 
             (
               cd release-upload
