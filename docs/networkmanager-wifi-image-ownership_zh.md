@@ -72,16 +72,25 @@ stat -c '%u:%g %n' /mnt/sheng-rootfs/nix/store/*networkmanager*/lib/NetworkManag
 sudo umount /mnt/sheng-rootfs
 ```
 
-设备上：
+注意：`build-nixos-rootfs.sh` 产出的 `.img` 是 Android sparse 镜像，必须先
+`simg2img` 转 raw 才能 loop mount。
 
-```sh
-journalctl -b -u NetworkManager --no-pager | grep -c 'invalid owner'   # 期望 0
-journalctl -b --no-pager | grep -c 'exited with status 127'            # 期望 0
-nmcli radio
-nmcli device                                                          # wlp1s0 应为 disconnected/connected（不是 externally）
-nmcli device wifi rescan
-nmcli -f SSID,SIGNAL,CHAN device wifi list | head
+### 2026-09-22 设备结果（已刷入带本修复的 rootfs）
+
+```text
+journalctl -b -u NetworkManager | grep -c 'invalid owner'   → 0
+journalctl -b | grep -c 'exited with status 127'            → 0
+nmcli radio                                                 → WIFI-HW enabled / WIFI enabled
+nmcli device                                                → wlp1s0 wifi connected bak
+nmcli device wifi rescan                                    → 无报错
+nmcli -f SSID,SIGNAL,CHAN device wifi list                  → 列出 ImmortalWrt / bak / ZTE-6CdHGt
 ```
+
+即 NM 的 Wi-Fi 能力恢复、nmtui 可用、dispatcher 不再以 127 退出。
+
+遗留观察：此时列表里只有 2.4 GHz 的 AP（信道 1/6），5 GHz 未出现。这属于另一层
+（regdomain 或 ath12k 首次固件周期），与本次属主修复无关，见 README/TODO 中的
+Wi-Fi 节目。
 
 ## 影响面与回滚
 
