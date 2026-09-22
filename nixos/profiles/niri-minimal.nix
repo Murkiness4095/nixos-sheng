@@ -44,10 +44,36 @@ in
   services.power-profiles-daemon.enable = lib.mkDefault true;
 
   # Default applications requested for the image.
-  programs.thunar.enable = true;
+  programs.thunar = {
+    enable = true;
+    plugins = with pkgs; [
+      thunar-volman
+      thunar-archive-plugin
+    ];
+  };
+
+  # Thumbnail service and GVFS for Thunar file previews and removable media.
+  services.tumbler.enable = true;
+  services.gvfs.enable = true;
+
+  # Graphical polkit agent (used by Thunar "open as administrator" etc.)
+  security.soteria.enable = true;
+
+  # Fonts used by the downstream sheng dotfiles configuration.
+  fonts.packages = with pkgs; [
+    cantarell-fonts
+    inter
+    maple-mono.NF
+    nerd-fonts.symbols-only
+    noto-fonts
+    noto-fonts-cjk-sans
+    noto-fonts-cjk-serif
+    noto-fonts-color-emoji
+  ];
 
   environment.systemPackages = with pkgs; [
     alacritty
+    kitty
     fuzzel
     thunar
 
@@ -56,7 +82,9 @@ in
     firefox
 
     # Chat
-    # (telegram-desktop removed: depends on tg_owt / qtwebengine which has no aarch64 cache)
+    telegram-desktop
+    qq
+    wechat
 
     # Media
     kazumi
@@ -66,8 +94,11 @@ in
     ffmpeg ffmpeg-full ffmpeg-headless
     ffmpeg_4 ffmpeg_6 ffmpeg_7 ffmpeg_8
     poppler
+    poppler-utils
     libopenraw
     libgsf
+    imagemagick
+    go-musicfox
 
     # Editor / KDE integration
     # (kate and plasma-integration removed: depend on qtspeech which has no aarch64 cache)
@@ -77,6 +108,31 @@ in
     brightnessctl # Backlight control for Noctalia OSD and hardware keys
     fastfetch
     microfetch
+    just
+    gh
+    btop
+    wlr-randr
+    tree
+    nh
+    nix-output-monitor
+    nvd
+    nix-tree
+    nil
+    nixfmt
+    nixpkgs-fmt
+    file
+    fd
+    ripgrep
+    fzf
+    tmux
+    yazi
+
+    # Input method packages (fcitx5 configuration is left to the user)
+    fcitx5-fluent
+    fcitx5-material-color
+    fcitx5-rime
+    libsForQt5.fcitx5-qt
+    fcitx5-gtk
 
     # Clipboard
     wl-clipboard
@@ -97,9 +153,30 @@ in
 
     # Theming
     nwg-look
+    adw-gtk3
+    adwaita-icon-theme
+    hicolor-icon-theme
+    papirus-icon-theme
+    kdePackages.breeze-icons
+    gnome-themes-extra
+
+    # Niri ecosystem
+    kanshi
+    wpaperd
+    swaylock-effects
+    swayidle
+    wlogout
+    uwsm
 
     # Vibe Coding
     mcp-nixos
+
+    # Basic utilities from the downstream system config
+    git
+    vim
+    wget
+    curl
+    htop
 
     # XWayland support for legacy X11 apps under Niri
     xwayland-satellite
