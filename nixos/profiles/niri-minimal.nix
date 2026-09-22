@@ -43,6 +43,22 @@ in
   # bindings) with Noctalia started at login instead of waybar.
   environment.etc."niri/config.kdl".text = niriConfig;
 
+  # System language for this desktop image. configuration.nix keeps
+  # en_US.UTF-8 as its default, so override it here; the CJK fonts needed for
+  # Chinese rendering are installed further below.
+  i18n.defaultLocale = "zh_CN.UTF-8";
+  i18n.extraLocaleSettings = {
+    LC_ADDRESS = "zh_CN.UTF-8";
+    LC_IDENTIFICATION = "zh_CN.UTF-8";
+    LC_MEASUREMENT = "zh_CN.UTF-8";
+    LC_MONETARY = "zh_CN.UTF-8";
+    LC_NAME = "zh_CN.UTF-8";
+    LC_NUMERIC = "zh_CN.UTF-8";
+    LC_PAPER = "zh_CN.UTF-8";
+    LC_TELEPHONE = "zh_CN.UTF-8";
+    LC_TIME = "zh_CN.UTF-8";
+  };
+
   # Graphics stack.
   hardware.graphics.enable = true;
 
