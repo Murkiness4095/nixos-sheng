@@ -18,21 +18,30 @@ let
   # Noctalia and other systemd user services to integrate properly.
   niriCommand = "${lib.getExe pkgs.niri} --session";
   tuigreetCommand = "${lib.getExe pkgs.tuigreet}";
+
+  # niri resolves its configuration as $XDG_CONFIG_HOME/niri/config.kdl,
+  # falling back to /etc/niri/config.kdl, and only uses the default config
+  # embedded in the binary when neither exists. Almost every section is filled
+  # in from defaults when omitted, but the key bindings are explicitly not, so
+  # shipping a minimal file here silently disabled every default binding.
+  # Include niri's own default config and only add Noctalia as the shell.
+  #
+  # Note: the included default config also starts waybar (upstream default).
+  # waybar is not installed in this image, so that one spawn fails harmlessly.
+  niriConfig = ''
+    include "${pkgs.niri.doc}/share/doc/niri/default-config.kdl"
+
+    // sheng: Noctalia is the shell for this image.
+    spawn-at-startup "noctalia"
+  '';
 in
 {
   # Niri compositor from nixpkgs.
   programs.niri.enable = true;
 
-  # Minimal Niri configuration: start Noctalia on login and bind brightness keys
-  # to brightnessctl as a fallback for the Noctalia OSD backend.
-  environment.etc."niri/config.kdl".text = ''
-    spawn-at-startup "noctalia"
-
-    binds {
-        XF86MonBrightnessUp { spawn "brightnessctl" "set" "+10%"; }
-        XF86MonBrightnessDown { spawn "brightnessctl" "set" "10%-"; }
-    }
-  '';
+  # Niri configuration: upstream default config (including all default key
+  # bindings) with Noctalia started at login instead of waybar.
+  environment.etc."niri/config.kdl".text = niriConfig;
 
   # Graphics stack.
   hardware.graphics.enable = true;
