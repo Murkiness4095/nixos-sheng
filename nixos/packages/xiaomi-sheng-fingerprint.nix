@@ -16,6 +16,63 @@
   openssl,
 }:
 
+let
+  # The QTEE RPMB listener service (service ID 0x2000) is a single-owner TEE
+  # service. Three programs carry a copy of Qualcomm's RPMB service
+  # implementation and all want that slot:
+  #
+  #   * this package's qteesupplicant, via lib/qtee-listeners/librpmbservice.so
+  #     (registers at boot and never releases it),
+  #   * libfpc1553-qtee.so, which statically links
+  #     prebuilt/aarch64/build-libs/librpmbservice.a,
+  #   * xiaomi_devauth (Xiaomi accessory/keyboard authentication), which
+  #     registers the service per authentication request and then deinits.
+  #
+  # The first registration wins; every later one fails with
+  # `IRegisterListenerCBO_register(8192) failed: 0xffffff9d`. xiaomi_devauth
+  # treats that failure as fatal (exit 255), so with qteesupplicant holding the
+  # slot the keyboard cover is never authenticated and the nanosic WN8030
+  # driver stalls input for 5s per attempt waiting for the auth token.
+  #
+  # Replacing the plugin with a stub keeps qteesupplicant's dlopen()/dlsym()
+  # contract intact (it resolves `init` and `deinit`) without claiming the
+  # service, so the transient providers can register when they need RPMB.
+  # Revert by installing the packaged plugin again if fingerprint
+  # enrolment/verification regresses.
+  qteeRpmbStub = stdenv.mkDerivation {
+    pname = "qtee-rpmb-listener-stub";
+    version = "1.0.0";
+
+    dontUnpack = true;
+
+    buildPhase = ''
+      runHook preBuild
+      cat > librpmbservice-stub.c <<'EOF'
+      /* Stub replacement for librpmbservice.so. qteesupplicant dlopen()s this
+         library and resolves init/deinit, but it must not register QTEE
+         listener service 0x2000: xiaomi_devauth owns that slot. */
+      int init(void) { return 0; }
+      int deinit(void) { return 0; }
+      EOF
+      $CC -O2 -fPIC -shared -Wl,-soname,librpmbservice.so.1 \
+        -o librpmbservice.so.1.0.0 librpmbservice-stub.c
+      runHook postBuild
+    '';
+
+    installPhase = ''
+      runHook preInstall
+      install -Dm0644 librpmbservice.so.1.0.0 \
+        "$out/lib/librpmbservice.so.1.0.0"
+      ln -s librpmbservice.so.1.0.0 "$out/lib/librpmbservice.so.1"
+      runHook postInstall
+    '';
+
+    meta = {
+      description = "No-op QTEE RPMB listener plugin for qteesupplicant";
+      platforms = lib.platforms.linux;
+    };
+  };
+in
 stdenv.mkDerivation (finalAttrs: {
   pname = "xiaomi-sheng-fingerprint";
   version = "0-unstable-2026-08-25";
@@ -125,7 +182,17 @@ stdenv.mkDerivation (finalAttrs: {
 
     for listener in prebuilt/aarch64/qtee-listeners/*.so.1.0.0; do
       name="$(basename "$listener")"
-      install -m0644 "$listener" "$out/lib/qtee-listeners/$name"
+      case "$name" in
+        # Keep the single QTEE RPMB listener slot (service ID 0x2000) free for
+        # xiaomi_devauth; see the qteeRpmbStub comment above.
+        librpmbservice.so.1.0.0)
+          install -m0644 "${qteeRpmbStub}/lib/librpmbservice.so.1.0.0" \
+            "$out/lib/qtee-listeners/$name"
+          ;;
+        *)
+          install -m0644 "$listener" "$out/lib/qtee-listeners/$name"
+          ;;
+      esac
       ln -s "$name" "$out/lib/qtee-listeners/''${name%.0.0}"
     done
 
