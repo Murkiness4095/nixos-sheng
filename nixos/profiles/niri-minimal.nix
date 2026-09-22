@@ -83,7 +83,7 @@ in
 
     # Chat
     telegram-desktop
-    qq
+    # qq temporarily disabled: upstream deb 404 in nixpkgs
     wechat
 
     # Media
