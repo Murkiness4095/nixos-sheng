@@ -67,19 +67,37 @@ in
     # Mobile NixOS defaults to Android's legacy make_ext4fs. Use current
     # e2fsprogs so new images carry checksums for directories, inodes, block
     # bitmaps, and the journal instead of discovering damage only on access.
+    #
+    # The image is populated by an unprivileged build user, so `cp -prf`
+    # cannot preserve root ownership and every file copied into the rootfs
+    # would end up owned by the build uid. NetworkManager refuses to load
+    # device plugins that are not owned by root ("file has invalid owner
+    # (should be root)"), which silently disables Wi-Fi inside NM: `nmcli
+    # device wifi` reports "No Wi-Fi device found" and nmtui lists no
+    # networks, while `iw scan` keeps working. nixpkgs' own ext4 image
+    # builder wraps its populate and mkfs steps in fakeroot for the same
+    # reason. Record root ownership in a single fakeroot session so
+    # `mkfs.ext4 -d` reads uid/gid 0.
+    # `nativeBuildInputs` cannot be extended from here without dropping the
+    # `e2fsprogs`/`make_ext4fs` entries that ext4.nix adds, so reference
+    # fakeroot by absolute store path; that still records the build dependency.
     buildPhases.copyPhase = lib.mkForce ''
       faketime -f "1970-01-01 00:00:01" \
-        mkfs.ext4 \
-          -F \
-          -b "$blockSize" \
-          -e remount-ro \
-          -m 0 \
-          -O metadata_csum,64bit,dir_index,extent,flex_bg,huge_file,extra_isize,dir_nlink \
-          -E lazy_itable_init=0,lazy_journal_init=0 \
-          -L linux \
-          -U ee8d3593-59b1-480e-a3b6-4fefb17ee7d8 \
-          -d . \
-          "$img"
+        ${pkgs.buildPackages.fakeroot}/bin/fakeroot -- bash -c "
+          set -eu
+          chown -R 0:0 .
+          mkfs.ext4 \
+            -F \
+            -b $blockSize \
+            -e remount-ro \
+            -m 0 \
+            -O metadata_csum,64bit,dir_index,extent,flex_bg,huge_file,extra_isize,dir_nlink \
+            -E lazy_itable_init=0,lazy_journal_init=0 \
+            -L linux \
+            -U ee8d3593-59b1-480e-a3b6-4fefb17ee7d8 \
+            -d . \
+            $img
+        "
     '';
 
     # Keep this aligned with Mobile NixOS' default rootfs.nix populate logic.
