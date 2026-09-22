@@ -82,7 +82,9 @@ in
     firefox
 
     # Chat
-    telegram-desktop
+    # (telegram-desktop removed: it pulls kdePackages.kcoreaddons, whose Python
+    #  bindings drag in pyside6 and the entire Qt6 module tree, including
+    #  qt3d/qtspeech which have no aarch64 binary cache)
     # qq temporarily disabled: upstream deb 404 in nixpkgs
     wechat
 
