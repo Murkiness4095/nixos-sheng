@@ -200,8 +200,10 @@
   # force it managed and trigger a rescan so nmtui shows networks.
   networking.networkmanager.dispatcherScripts = [
     {
-      source = pkgs.writeScript "sheng-nm-wifi-dispatcher" ''
-        #!/usr/bin/env bash
+      # `writeScript` does not rewrite the interpreter line, so the previous
+      # `#!/usr/bin/env bash` never resolved on NixOS and every dispatcher
+      # event exited with status 127 (journal: 03userscript0001 failed).
+      source = pkgs.writeShellScript "sheng-nm-wifi-dispatcher" ''
         iface="$1"
         event="$2"
         echo "sheng-nm-wifi-dispatcher: event=$event iface=$iface" >&2
