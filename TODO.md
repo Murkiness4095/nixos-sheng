@@ -39,6 +39,9 @@ enabled in a kernel configuration.
 
 - [~] Bluetooth controller startup and Focus Pen HID reconnect work; general
   discovery, pairing, Bluetooth audio, and suspend/resume need wider testing.
+- [~] 2.4 GHz Wi-Fi is stable; 5 GHz is unusable with the field AP running at
+  160 MHz (the CN regulatory database allows only 80 MHz). Re-test after moving
+  the AP to 80 MHz, see `docs/wifi-5ghz-160mhz.md`.
 - [~] ALSA playback and capture devices enumerate and the audio userspace is
   integrated; repeat playback/recording and subjective tuning need controlled
   tests on the release image.

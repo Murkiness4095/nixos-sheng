@@ -34,6 +34,9 @@
 
 - [~] 蓝牙控制器启动和 Focus Pen HID 重连可用；普通扫描、配对、蓝牙音频和
   suspend/resume 仍需更多设备验证。
+- [~] 2.4GHz Wi-Fi 稳定可用；5GHz 在现场 AP 使用 160MHz 时完全不可用（CN
+  regdb 只允许 80MHz），待把 AP 改成 80MHz 后复测，见
+  `docs/wifi-5ghz-160mhz_zh.md`。
 - [~] ALSA 播放/录音设备已枚举，音频用户态已接入；发布镜像仍需重复播放、录音
   和受控音质对比。
 - [ ] 在下一个含 `c0bcbac` 的镜像上确认扬声器 EQ filter-chain 正常加载
