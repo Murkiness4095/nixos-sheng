@@ -277,6 +277,11 @@ The recommended path is `./build-nixos-rootfs.sh`, which produces
 `out/nixos-sheng-*.img` already in Android sparse format and ready for
 `fastboot flash linux`.
 
+If `fastboot flash` hangs without printing anything at all, an interrupted flash
+usually left the bootloader in a dirty state; reboot the device and enter Fastboot
+again to recover. See
+[Flash troubleshooting](docs/install-dualboot.md#flash-troubleshooting).
+
 If stage-1 code or the Android boot configuration changed, rebuild and flash
 `boot_b`. If only the NixOS userspace/rootfs changed, rebuild and flash
 `linux`.

@@ -251,6 +251,8 @@ fastboot flash linux out/mobile-rootfs/rootfs.sparse.img
 
 推荐使用 `./build-nixos-rootfs.sh`，它输出的 `out/nixos-sheng-*.img` 已经是 Android sparse 格式，可直接 `fastboot flash linux`。
 
+如果 `fastboot flash` 完全没有输出地卡住，通常是上一次刷写被中断后 bootloader 停在了脏状态，重启设备重新进入 Fastboot 即可恢复；详见 [`docs/install-dualboot_zh.md`](docs/install-dualboot_zh.md#刷写故障排查)。
+
 如果 stage-1 代码或 Android 启动配置发生了变化，请重新构建并刷入 `boot_b`。如果只有 NixOS userspace/rootfs 发生了变化，请重新构建并刷入 `linux`。
 
 全新刷入后的首次启动曾低概率出现 5GHz 网络未暴露，普通软重启可恢复。由于该问题
