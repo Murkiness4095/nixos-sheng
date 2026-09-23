@@ -186,7 +186,14 @@ in
     # clang. Neither livekit-libwebrtc nor zed-editor-*-vendor-staging has an
     # aarch64 binary cache entry, so adding zed makes the rootfs build compile
     # WebRTC locally. There is no nixpkgs switch to drop only that dependency.
-    zed-editor
+    # Disabled: the local WebRTC compile made the rootfs build unacceptably slow.
+    # zed-editor
+    #
+    # vscode instead: on aarch64-linux nixpkgs fetches Microsoft's prebuilt
+    # linux-arm64 tarball from update.code.visualstudio.com, so nothing is
+    # compiled locally. The package is unfree, which the platform already
+    # allows via nixpkgs.config.allowUnfree in the sensors module.
+    vscode
 
     # Tools
     localsend
