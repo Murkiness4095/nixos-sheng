@@ -18,7 +18,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     shengKernelSrc = {
-      url = "github:DotRedstone/linux-sheng/upgrade/sheng-7.1.8";
+      # 本分支专用：内核源指向 fork 的 nixos-sheng 维护分支。
+      # 该分支由 ianchb/sm8550-mainline 的 sheng-7.2.6 拉出（再上游是
+      # map220v/sm8550-mainline），只放 nixos-sheng 需要的改动；上游更新用普通
+      # merge 合并，sheng-7.2.6 本身保持与上游一致，互不影响。
+      url = "github:Murkiness4095/sm8550-mainline/nixos-sheng";
       flake = false;
     };
     shengFirmware = {

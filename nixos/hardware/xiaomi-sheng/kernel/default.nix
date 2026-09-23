@@ -15,8 +15,8 @@ let
   llvmPkgs = pkgs.llvmPackages;
 in
 mobile-nixos.kernel-builder-clang {
-  version = "7.1.8";
-  modDirVersion = "7.1.8";
+  version = "7.2.6";
+  modDirVersion = "7.2.6";
   src = shengKernelSrc;
   configfile = ./config.aarch64;
   patches = [ ];
@@ -69,7 +69,7 @@ mobile-nixos.kernel-builder-clang {
     require_config "CONFIG_VFAT_FS=m"
     require_config "CONFIG_BTRFS_FS=m"
     require_config "CONFIG_EROFS_FS=m"
-    require_config "CONFIG_INPUT_FPC1552=y"
+    require_config "CONFIG_FPC1553=y"
 
     # These groups can disappear without making the image unbootable. Check
     # the effective Kconfig so dependency changes fail in CI instead of later

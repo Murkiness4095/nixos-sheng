@@ -133,17 +133,17 @@
     "shengKernelSrc": {
       "flake": false,
       "locked": {
-        "lastModified": 1788061761,
-        "narHash": "sha256-U96RPTPuctbtzUxmqcyjW/Av+UO+s/XfyA4cGT/zaoU=",
-        "owner": "DotRedstone",
-        "repo": "linux-sheng",
-        "rev": "3ca17976c6b4165559b8e25922bbecf31ac84db7",
+        "lastModified": 1789562726,
+        "narHash": "sha256-cll0sZv3fheM9PeleaK8lmdJQhj/rumMsVDwQ0842gM=",
+        "owner": "Murkiness4095",
+        "repo": "sm8550-mainline",
+        "rev": "42f3b40c702abbc37c3a04c95af008cd283aeaf3",
         "type": "github"
       },
       "original": {
-        "owner": "DotRedstone",
-        "ref": "upgrade/sheng-7.1.8",
-        "repo": "linux-sheng",
+        "owner": "Murkiness4095",
+        "ref": "nixos-sheng",
+        "repo": "sm8550-mainline",
         "type": "github"
       }
     }
