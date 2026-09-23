@@ -142,48 +142,6 @@ Replace `rootfs-minimal` with `rootfs-gnome` when using the GNOME image.
 
 Do not flash `boot_a`; it is kept for Android. Do not flash `userdata`.
 
-## Flash troubleshooting
-
-### `fastboot flash` hangs
-
-`fastboot` writes its progress to **stderr**; check where it stops:
-
-| Symptom | Meaning | Action |
-|---|---|---|
-| No `Sending '<partition>' (N KB)...` line at all | The bootloader did not accept the flash command | See "Recovering from an interrupted flash" |
-| Stops at `Sending '<partition>' (N KB)...` | Transport: cable, USB port, hub | Use a port on the host itself, try another cable |
-| Stops at `Writing '<partition>'...` | Write stage: expanded image larger than the target partition, or UFS trouble | Compare `fastboot getvar partition-size:linux` with the expanded size |
-
-### Recovering from an interrupted flash
-
-After a `fastboot flash` is interrupted (Ctrl-C, unplugged cable, power loss) the
-bootloader is left in a dirty flashing state: it neither times out nor accepts a
-new flash command — the next `fastboot flash` prints nothing at all. To recover:
-
-1. Interrupt the current command (Ctrl-C).
-2. **Reboot the device**: hold the power button, then enter Fastboot again.
-   `fastboot reboot bootloader` usually hangs in this state too, so the power
-   button is the reliable fallback.
-3. Confirm the device is back with `fastboot devices`.
-4. Validate the flashing path with a small partition:
-   `fastboot flash boot_b nixos-sheng-*-boot.img`.
-5. Flash `linux`.
-
-If even the small `boot_b` image hangs, the problem is the device state, cable or
-battery level, not the image. Xiaomi bootloaders refuse or stall flashing at low
-battery; charge to 50% or more first.
-
-### Image format and size
-
-- Prefer flashing `out/nixos-sheng-*.img` produced by `build-nixos-rootfs.sh`; it is
-  already in Android sparse format (`xxd -l 4 <img>` shows `3aff 26ed`).
-- `nix build ./nixos#mobileRootfsImage` produces a raw ext4 `rootfs.img`; fastboot
-  can hang while resparsifying large raw images, so convert it with `img2simg`
-  first — see the Flashing section of the [README](../README.md).
-- `simg2img <img> /tmp/raw.img` gives the expanded size; if it exceeds
-  `fastboot getvar partition-size:linux` (hexadecimal bytes), enlarge the `linux`
-  partition first, see [`linux-partition-resize.md`](linux-partition-resize.md).
-
 ## Expand the rootfs filesystem
 
 The ext4 filesystem inside the rootfs image can be smaller than the dedicated

@@ -133,44 +133,6 @@ Get-FileHash .\nixos-sheng-*-rootfs-minimal.zip -Algorithm SHA256
 
 不要刷 `boot_a`，它用于保留 Android。不要刷 `userdata`。
 
-## 刷写故障排查
-
-### `fastboot flash` 卡住不动
-
-`fastboot` 的进度输出在 **stderr**，先看它停在哪一步：
-
-| 现象 | 含义 | 处理 |
-|---|---|---|
-| 连 `Sending '<分区>' (N KB)...` 都没有 | bootloader 没有接受刷写命令 | 见下面「中断后的恢复」 |
-| 停在 `Sending '<分区>' (N KB)...` | 传输层：线材、USB 口、集线器 | 换主机直出的 USB 口、换线 |
-| 停在 `Writing '<分区>'...` | 写入层：镜像展开后大于目标分区，或 UFS 侧异常 | 对比 `fastboot getvar partition-size:linux` 与展开后大小 |
-
-### 中断后的恢复（实测）
-
-`fastboot flash` 被 Ctrl-C、拔线或掉电中断后，bootloader 会停留在脏的刷写状态：
-既不超时退出，也不接受新的刷写命令（下一条 `fastboot flash` 完全没有输出）。恢复方式：
-
-1. 中断当前命令（Ctrl-C）；
-2. **重启设备**：长按电源键关机后重新进入 Fastboot。此时 `fastboot reboot bootloader`
-   往往也会挂住，长按电源是可靠兜底；
-3. `fastboot devices` 确认设备回来；
-4. 先用小分区验证刷写通道：`fastboot flash boot_b nixos-sheng-*-boot.img`；
-5. 再刷 `linux`。
-
-如果连 `boot_b` 这种小镜像也卡住，问题在设备状态、线材或电量，而不是镜像本身。
-Xiaomi bootloader 在电量偏低时会拒绝或挂起刷写，先充到 50% 以上再刷。
-
-### 镜像格式与尺寸
-
-- 推荐只刷 `build-nixos-rootfs.sh` 产出的 `out/nixos-sheng-*.img`，它已经是 Android
-  sparse 格式；可用 `xxd -l 4 <img>` 确认开头是 `3aff 26ed`。
-- 直接 `nix build ./nixos#mobileRootfsImage` 得到的是 raw ext4（`rootfs.img`），大镜像
-  会让 fastboot 自己重稀疏化时卡住，需要先 `img2simg`，见
-  [README](../README.md) 的 Flashing 一节。
-- `simg2img <img> /tmp/raw.img` 可得到展开后的真实大小；若大于
-  `fastboot getvar partition-size:linux`（十六进制字节），需要先按
-  [`linux-partition-resize.md`](linux-partition-resize.md) 扩容 `linux` 分区。
-
 ## 扩展 rootfs 文件系统
 
 rootfs 镜像中的 ext4 文件系统小于 `linux` 分区。匹配的 boot 镜像会在首次挂载
