@@ -320,7 +320,17 @@
       "wireplumber.components" = [
         {
           name = "libpipewire-module-filter-chain";
-          type = "pw-module";
+          # Must be pw-module-client, not pw-module. WirePlumber's own
+          # configuration only loads libpipewire-module-rt/-protocol-native/
+          # -metadata into its main pw_context, so that context has no
+          # "adapter" factory. module-filter-chain builds its two nodes with
+          # pw_stream, which calls pw_context_find_factory(ctx, "adapter") and
+          # fails with -ENOENT ("no adapter factory found") in the main
+          # context. pw-module-client loads the module in a secondary context
+          # created from PipeWire's client.conf, which does load
+          # libpipewire-module-adapter. Upstream's smart-equalizer example uses
+          # pw-module-client for the same reason.
+          type = "pw-module-client";
           arguments = {
             "node.name" = "filter.sink.sheng-speaker-eq";
             "node.description" = "Sheng Speaker Enhanced";
