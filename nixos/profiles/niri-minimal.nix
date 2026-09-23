@@ -19,6 +19,23 @@ let
   niriCommand = "${lib.getExe pkgs.niri} --session";
   tuigreetCommand = "${lib.getExe pkgs.tuigreet}";
 
+  # Noctalia in this image reads a platform-provided config through
+  # NOCTALIA_CONFIG_HOME (FileUtils::configDir honors it before XDG_CONFIG_HOME)
+  # instead of a file in the user's home. On real devices ~/.config/noctalia is
+  # typically a symlink into the user's own nix-config; seeding files there would
+  # fight that layout, and this profile is not in the picture once the user
+  # builds their own configuration. The mapping itself comes from the platform
+  # module (sheng.noctalia.brightness), so there is a single source of truth.
+  noctaliaConfigHome = "/var/lib/noctalia-config";
+  noctaliaConfigFile = pkgs.writeText "noctalia-config.toml" config.sheng.noctalia.brightness.config;
+  noctaliaConfigOwner =
+    let
+      normalUsers = lib.attrNames (
+        lib.filterAttrs (_: user: user.isNormalUser && user.home != null) config.users.users
+      );
+    in
+    if normalUsers == [ ] then "root" else builtins.head normalUsers;
+
   # niri resolves its configuration as $XDG_CONFIG_HOME/niri/config.kdl,
   # falling back to /etc/niri/config.kdl, and only uses the default config
   # embedded in the binary when neither exists. Almost every section is filled
@@ -31,8 +48,9 @@ let
   niriConfig = ''
     include "${pkgs.niri.doc}/share/doc/niri/default-config.kdl"
 
-    // sheng: Noctalia is the shell for this image.
-    spawn-at-startup "noctalia"
+    // sheng: Noctalia is the shell for this image. It is started with the
+    // platform-provided config home so display brightness works out of the box.
+    spawn-at-startup "${lib.getExe' pkgs.coreutils "env"}" "NOCTALIA_CONFIG_HOME=${noctaliaConfigHome}" "noctalia"
   '';
 in
 {
@@ -255,6 +273,15 @@ in
     recommendedServices.enable = true;
     systemd.enable = false;
   };
+
+  # Platform-owned Noctalia config home (see noctaliaConfigHome above). `C` only
+  # copies when the file is missing, so values changed in the Noctalia settings
+  # UI inside this image are not overwritten by later activations.
+  systemd.tmpfiles.rules = [
+    "d ${noctaliaConfigHome} 0755 ${noctaliaConfigOwner} users -"
+    "d ${noctaliaConfigHome}/noctalia 0755 ${noctaliaConfigOwner} users -"
+    "C ${noctaliaConfigHome}/noctalia/config.toml 0644 ${noctaliaConfigOwner} users - ${noctaliaConfigFile}"
+  ];
 
   # xdg-desktop-portal for Wayland file opening and screen sharing.
   xdg.portal = {
