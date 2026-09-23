@@ -42,7 +42,7 @@ Xiaomi Pad 6S Pro 12.4 (`sheng`, Qualcomm SM8550) 的 Mobile NixOS 移植项目�
 | 调试访问 | Bring-up | Stage-1/stage-2 的 ADB 已通过 Mobile NixOS 启用 |
 | Wi-Fi | 可用 | 2.4GHz 与 5GHz 扫描、连接和联网已验证；全新刷入后的首次启动曾低概率缺失 5GHz，软重启可恢复，仍在收集不可复现现场 |
 | 蓝牙 | 部分可用 | hci0、bluetooth.service 与 Focus Pen HID 重连已验证；普通配对、蓝牙音频和休眠恢复仍需扩大测试 |
-| 音频 | 部分可用 | ALSA 播放/录音 PCM 与用户态链路已接入；发布镜像仍需重复播放、录音和受控音质对比 |
+| 音频 | 部分可用 | ALSA 播放/录音 PCM 与用户态链路已接入；发布镜像仍需重复播放、录音和受控音质对比。曾导致整机无声的 WirePlumber filter-chain 故障见 `docs/audio-speaker-eq-wireplumber_zh.md` |
 | 相机 | 部分可用 | 前后摄 RAW10 实际画面已抓取；libcamera、自动曝光与桌面相机应用待完善 |
 | 传感器 | 用户态可用 | 加速度计、距离传感器、光感、指南针已通过 SSC + iio-sensor-proxy D-Bus 路径验证 |
 | 触控与触控笔 | 可用 | NT36532E THP 多点触控、压感、倾斜、悬停和 Focus Pen 按键事件已验证；应用兼容性仍需扩大测试 |
@@ -283,6 +283,7 @@ sheng 上的 USB-C 主机模式和各类传感器均强依赖于完整的 Qualco
 - [docs/boot-generation-menu_zh.md](docs/boot-generation-menu_zh.md)
 - [docs/camera-raw-capture_zh.md](docs/camera-raw-capture_zh.md)
 - [docs/mipps-120w_zh.md](docs/mipps-120w_zh.md)
+- [docs/audio-speaker-eq-wireplumber_zh.md](docs/audio-speaker-eq-wireplumber_zh.md)
 - [docs/release-readiness_zh.md](docs/release-readiness_zh.md)
 - [docs/sheng-optimization-post-draft_zh.md](docs/sheng-optimization-post-draft_zh.md)
 

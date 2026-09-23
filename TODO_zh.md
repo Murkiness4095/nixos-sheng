@@ -36,6 +36,9 @@
   suspend/resume 仍需更多设备验证。
 - [~] ALSA 播放/录音设备已枚举，音频用户态已接入；发布镜像仍需重复播放、录音
   和受控音质对比。
+- [ ] 在下一个含 `c0bcbac` 的镜像上确认扬声器 EQ filter-chain 正常加载
+  （`wpctl status` 的 Filters 里出现 `filter.sink.sheng-speaker-eq`），见
+  `docs/audio-speaker-eq-wireplumber_zh.md`。
 - [~] 小米 120W MiPPS 已能解锁，但持续功率受电量、温度、充电器和线材影响；
   宣传时只给实测曲线，不承诺固定瓦数。
 - [~] 电脑 C-to-C 充电遵循 USB 数据口电流限制；没有主机和 charger firmware

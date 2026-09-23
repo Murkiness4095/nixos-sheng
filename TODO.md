@@ -42,6 +42,9 @@ enabled in a kernel configuration.
 - [~] ALSA playback and capture devices enumerate and the audio userspace is
   integrated; repeat playback/recording and subjective tuning need controlled
   tests on the release image.
+- [ ] Confirm the speaker EQ filter-chain loads on the next image that carries
+  `c0bcbac` (`filter.sink.sheng-speaker-eq` appears under Filters in
+  `wpctl status`); see `docs/audio-speaker-eq-wireplumber.md`.
 - [~] Xiaomi 120 W MiPPS unlock works, but sustained power depends on battery
   state, temperature, charger, and cable. Publish measured traces rather than a
   guaranteed wattage.

@@ -49,7 +49,7 @@ issues before flashing.
 | Debug access | Bring-up | Stage-1/stage-2 ADB is enabled through Mobile NixOS |
 | Wi-Fi | Working | 2.4 GHz and 5 GHz scanning, connection, and networking verified; a rare missing-5-GHz state was seen after a fresh flash and recovered after a soft reboot, but is not reproducible yet |
 | Bluetooth | Partially working | hci0, bluetooth.service, and Focus Pen HID reconnect work; general pairing, Bluetooth audio, and suspend/resume need wider validation |
-| Audio | Partially working | ALSA playback/capture PCM and the userspace path are integrated; repeat playback, recording, and controlled tuning tests are still needed on the release image |
+| Audio | Partially working | ALSA playback/capture PCM and the userspace path are integrated; repeat playback, recording, and controlled tuning tests are still needed on the release image. See `docs/audio-speaker-eq-wireplumber.md` for the WirePlumber filter-chain failure that muted the whole system |
 | Cameras | Partially working | front/rear RAW10 frames captured; libcamera, auto exposure, and desktop camera app need integration |
 | Sensors | User-space working | accelerometer, proximity, ambient light, and compass work through SSC + iio-sensor-proxy D-Bus |
 | Touch and stylus | Working | NT36532E THP multitouch plus Xiaomi Focus Pen pressure, tilt, hover, and button events are verified; wider application compatibility still needs testing |
@@ -322,6 +322,7 @@ For the full dependency chain, offline rootfs checks, runtime verification comma
 - [docs/boot-generation-menu.md](docs/boot-generation-menu.md)
 - [docs/camera-raw-capture.md](docs/camera-raw-capture.md)
 - [docs/mipps-120w.md](docs/mipps-120w.md)
+- [docs/audio-speaker-eq-wireplumber.md](docs/audio-speaker-eq-wireplumber.md)
 - [docs/release-readiness.md](docs/release-readiness.md)
 - [docs/kernel-optimization-log_zh.md](docs/kernel-optimization-log_zh.md)
 - [docs/sheng-optimization-post-draft_zh.md](docs/sheng-optimization-post-draft_zh.md)
