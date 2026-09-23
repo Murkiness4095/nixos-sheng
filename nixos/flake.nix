@@ -96,6 +96,19 @@
         };
         xiaomi-pen-status = final.callPackage ./packages/xiaomi-pen-status.nix { };
         xiaomi-sheng-fingerprint = final.callPackage ./packages/xiaomi-sheng-fingerprint.nix { };
+        # telegram-desktop depends on kdePackages.kcoreaddons, which opts into
+        # nixpkgs' per-framework Python bindings (hasPythonBindings = true).
+        # Those bindings pull pyside6 -> the whole Qt6 module tree, including
+        # qt3d/qtspeech, which have no aarch64 binary cache and therefore stall
+        # the rootfs build. Nothing in these images uses the framework Python
+        # bindings, so strip the opt-in at the scope level; each framework's
+        # C++ output is unchanged.
+        kdePackages = prev.kdePackages.overrideScope (
+          kfinal: kprev: {
+            mkKdeDerivation =
+              args: kprev.mkKdeDerivation (builtins.removeAttrs args [ "hasPythonBindings" ]);
+          }
+        );
         xdg-desktop-portal = prev.xdg-desktop-portal.overrideAttrs (old: {
           # Fallback source builds on GitHub's aarch64 runner can hit a flaky
           # notification sound-fd integration test. Release artifacts still use
