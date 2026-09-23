@@ -78,10 +78,11 @@
 
   # Keep enough persistent history for cross-boot hardware diagnosis without
   # letting verbose bring-up logs grow with the full root partition.
-  services.journald.extraConfig = ''
-    SystemMaxUse=512M
-    MaxRetentionSec=14day
-  '';
+  # journald 的 extraConfig 在新 nixpkgs 里被 settings 取代（旧的会触发断言）。
+  services.journald.settings.Journal = {
+    SystemMaxUse = "512M";
+    MaxRetentionSec = "14day";
+  };
 
   services.getty = {
     helpLine = ''

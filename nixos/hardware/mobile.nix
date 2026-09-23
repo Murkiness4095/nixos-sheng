@@ -236,7 +236,8 @@ in
   mobile.beautification.silentBoot = lib.mkForce false;
 
   boot.kernel.enable = lib.mkIf stage2Only (lib.mkForce false);
-  boot.bootspec.enable = lib.mkIf stage2Only (lib.mkForce false);
+  # 新 nixpkgs 里 bootspec 总是生成、无法再关闭（旧写法会触发断言），
+  # 这里不再覆盖 boot.bootspec.enable。
   hardware.deviceTree.enable = lib.mkIf stage2Only (lib.mkForce false);
   system.modulesTree = lib.mkForce (
     lib.optional (!stage2Only) kernelModulesTree
