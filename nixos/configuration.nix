@@ -108,6 +108,34 @@
     };
   };
 
+  # 刷入后启动即可见的标准 XDG 用户目录：Desktop、Documents、Downloads、Music、
+  # Pictures、Public、Templates、Videos、Projects。
+  # NixOS 默认不创建它们 —— GNOME 是靠 gnome.nix 把 xdg-user-dirs 放进
+  # systemPackages、再由 XDG autostart 在首次登录时执行；niri 这类不处理
+  # autostart 的会话则永远不会创建，家目录会一直是空的。
+  # 这里在启动阶段（不依赖图形会话）对每个普通用户执行一次
+  # xdg-user-dirs-update：幂等、只补缺失项、同时写出 ~/.config/user-dirs.dirs。
+  # LANG 固定为 C.UTF-8，避免 zh_CN 环境下生成中文目录名。
+  systemd.services.xdg-user-dirs = {
+    description = "Create XDG user directories for normal users";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "local-fs.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      for home in /home/*; do
+        [ -d "$home" ] || continue
+        owner="$(${pkgs.coreutils}/bin/stat -c %U "$home")" || continue
+        [ "$owner" = root ] && continue
+        ${lib.getExe' pkgs.util-linux "runuser"} -u "$owner" -- \
+          ${pkgs.coreutils}/bin/env HOME="$home" LANG=C.UTF-8 \
+          ${pkgs.xdg-user-dirs}/bin/xdg-user-dirs-update || true
+      done
+    '';
+  };
+
   services.xiaomi-mipps-auth.enable = true;
   services.xiaomi-pen-status.enable = true;
   services.xiaomi-sheng-thp.enable = true;
