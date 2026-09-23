@@ -9,7 +9,7 @@
 # - Greetd is configured for auto-login only when the default-user profile is used.
 # ---
 
-{ config, lib, pkgs, vars, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   autoLoginEnabled = config.services.displayManager.autoLogin.enable or false;
@@ -18,22 +18,6 @@ let
   # Noctalia and other systemd user services to integrate properly.
   niriCommand = "${lib.getExe pkgs.niri} --session";
   tuigreetCommand = "${lib.getExe pkgs.tuigreet}";
-
-  # Noctalia only reads a user-level config (no XDG_CONFIG_DIRS fallback), and it
-  # binds a backlight to an output automatically only when the backlight's sysfs
-  # parent device sits under the DRM connector, or when the output name starts
-  # with "eDP". sheng's backlight is an I2C ktz8866 chip next to a DSI panel, so
-  # neither holds: Noctalia logs
-  #   skipping backlight 'ktz8866-backlight' because it could not be matched to
-  #   an active output
-  # and the shell exposes no adjustable display brightness. Map the backlight to
-  # the DSI output explicitly instead.
-  noctaliaConfig = pkgs.writeText "noctalia-brightness-config.toml" ''
-    [brightness.monitor.DSI-1]
-    backend = "backlight"
-    backlight_device = "ktz8866-backlight"
-  '';
-  userHome = config.users.users.${vars.username}.home;
 
   # niri resolves its configuration as $XDG_CONFIG_HOME/niri/config.kdl,
   # falling back to /etc/niri/config.kdl, and only uses the default config
@@ -271,15 +255,6 @@ in
     recommendedServices.enable = true;
     systemd.enable = false;
   };
-
-  # Seed the user-level Noctalia config (see noctaliaConfig above). tmpfiles `C`
-  # only copies when the destination is missing, so anything the user changes in
-  # the Noctalia settings UI is preserved. Skipped when the caller supplies no
-  # user module (e.g. lib.mkShengNiriSystem without the default-user profile).
-  systemd.tmpfiles.rules = lib.optionals (builtins.hasAttr vars.username config.users.users) [
-    "d ${userHome}/.config/noctalia 0755 ${vars.username} users -"
-    "C ${userHome}/.config/noctalia/config.toml 0644 ${vars.username} users - ${noctaliaConfig}"
-  ];
 
   # xdg-desktop-portal for Wayland file opening and screen sharing.
   xdg.portal = {
