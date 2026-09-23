@@ -10,19 +10,25 @@ let
   # pd-mapper（Qualcomm PD Mapper）只在 firmware 目录里枚举 *.jsn / *.jsn.xz
   # 服务映射。NixOS 会把 /sys/module/firmware_class/parameters/path 设为
   # ${config.hardware.firmware}/lib/firmware（= /run/current-system/firmware），
-  # 而 pd-mapper 优先使用这个 sysfs 覆盖路径；但 sheng-firmware 放在那里的映射是
-  # 压缩态 *.jsn.zst，后缀匹配不上 → "no pd maps available" → exit 1 →
+  # pd-mapper 优先使用这个 sysfs 覆盖路径；而 nixpkgs 会把 hardware.firmware 里的
+  # 固件统一压缩（hardware.firmwareCompression 默认 "zstd"，见
+  # nixos/modules/services/hardware/udev.nix），厂商固件的明文 adspr.jsn 等在那里
+  # 变成 adspr.jsn.zst，后缀匹配不上 → "no pd maps available" → exit 1 →
   # Restart=on-failure 每 5 秒重启一次，并通过 Requires= 连带重启
   # sheng-devauth，导致键盘认证被反复打断。
+  # （固件里的 pd-mapper-prep 会把映射解压到 /run/pd-mapper-firmware/，pd-mapper
+  # 因上面的 sysfs 覆盖不会去读那个目录。）
   #
-  # 这里把 .jsn 解压成明文一并放进 firmware，让 pd-mapper 在它实际扫描的目录里
-  # 就能看到映射；纯声明式，不修改 pd-mapper 二进制，也不需要运行时脚本。
-  pdMapsPlain = pkgs.runCommand "sheng-pd-maps-plain" { } ''
+  # 这里把厂商固件里原本就是明文的 .jsn 再放一份进 firmware，并用
+  # compressFirmware = false（nixpkgs 官方的压缩豁免开关）让它保持明文，
+  # 这样 pd-mapper 在它实际扫描的目录里就能匹配到。纯声明式，不修改
+  # pd-mapper 二进制，也不需要运行时脚本。
+  pdMapsPlain = pkgs.runCommand "sheng-pd-maps-plain" {
+    compressFirmware = false;
+  } ''
     mkdir -p "$out/lib/firmware/qcom/sm8550/sheng"
-    for f in ${pkgs.sheng-firmware}/lib/firmware/qcom/sm8550/sheng/*.jsn.zst; do
-      ${pkgs.zstd}/bin/zstd -dc "$f" \
-        > "$out/lib/firmware/qcom/sm8550/sheng/$(basename "''${f%.zst}")"
-    done
+    cp ${pkgs.sheng-firmware}/lib/firmware/qcom/sm8550/sheng/*.jsn \
+      "$out/lib/firmware/qcom/sm8550/sheng/"
   '';
 in
 {
