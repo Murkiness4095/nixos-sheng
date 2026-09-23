@@ -103,10 +103,25 @@
         # the rootfs build. Nothing in these images uses the framework Python
         # bindings, so strip the opt-in at the scope level; each framework's
         # C++ output is unchanged.
+        #
+        # Dropping hasPythonBindings alone only removes the shiboken6/pyside6
+        # build inputs. The matching CMake option still defaults to ON
+        # (option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)), so CMake
+        # keeps running find_package(Shiboken6 REQUIRED) and the build dies with
+        # "By not providing FindShiboken6.cmake ... Could not find a package
+        # configuration file provided by Shiboken6". Disable the option in the
+        # same wrapper; the flag is only added for frameworks that opted in, so
+        # packages without the option are not touched.
         kdePackages = prev.kdePackages.overrideScope (
           kfinal: kprev: {
             mkKdeDerivation =
-              args: kprev.mkKdeDerivation (builtins.removeAttrs args [ "hasPythonBindings" ]);
+              args:
+              kprev.mkKdeDerivation (
+                (builtins.removeAttrs args [ "hasPythonBindings" ])
+                // prev.lib.optionalAttrs (args.hasPythonBindings or false) {
+                  extraCmakeFlags = (args.extraCmakeFlags or [ ]) ++ [ "-DBUILD_PYTHON_BINDINGS=OFF" ];
+                }
+              );
           }
         );
         xdg-desktop-portal = prev.xdg-desktop-portal.overrideAttrs (old: {
