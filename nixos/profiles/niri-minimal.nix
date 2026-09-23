@@ -51,6 +51,9 @@ let
     // sheng: Noctalia is the shell for this image. It is started with the
     // platform-provided config home so display brightness works out of the box.
     spawn-at-startup "${lib.getExe' pkgs.coreutils "env"}" "NOCTALIA_CONFIG_HOME=${noctaliaConfigHome}" "noctalia"
+
+    // sheng: input method daemon (fcitx5 with the Wayland input-method frontend).
+    spawn-at-startup "${config.i18n.inputMethod.package}/bin/fcitx5" "-d"
   '';
 in
 {
@@ -98,6 +101,29 @@ in
   # Thumbnail service and GVFS for Thunar file previews and removable media.
   services.tumbler.enable = true;
   services.gvfs.enable = true;
+
+  # Input method: fcitx5 with the Wayland frontend. i18n.inputMethod installs the
+  # wrapped fcitx5-with-addons package (the addons below are folded into it),
+  # exports XMODIFIERS and QT_PLUGIN_PATH, and — because the Wayland frontend is
+  # used — deliberately leaves GTK_IM_MODULE/QT_IM_MODULE unset so clients go
+  # through the compositor's input-method protocol. niri implements
+  # zwp_input_method_v2 (smithay InputMethodHandler), so that path works here.
+  # The daemon itself is started from the niri session (see niriConfig below).
+  i18n.inputMethod = {
+    enable = true;
+    type = "fcitx5";
+    fcitx5 = {
+      waylandFrontend = true;
+      addons = with pkgs; [
+        fcitx5-fluent # 主题皮肤
+        fcitx5-material-color
+        fcitx5-rime
+
+        libsForQt5.fcitx5-qt
+        fcitx5-gtk
+      ];
+    };
+  };
 
   # Graphical polkit agent (used by Thunar "open as administrator" etc.)
   security.soteria.enable = true;
@@ -186,12 +212,8 @@ in
     tmux
     yazi
 
-    # Input method packages (fcitx5 configuration is left to the user)
-    fcitx5-fluent
-    fcitx5-material-color
-    fcitx5-rime
-    libsForQt5.fcitx5-qt
-    fcitx5-gtk
+    # Input method packages are configured through i18n.inputMethod below, which
+    # installs the wrapped fcitx5-with-addons package and the session variables.
 
     # Clipboard
     wl-clipboard
