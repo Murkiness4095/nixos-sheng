@@ -107,9 +107,12 @@ in
     firefox
 
     # Chat
-    # (telegram-desktop removed: it pulls kdePackages.kcoreaddons, whose Python
-    #  bindings drag in pyside6 and the entire Qt6 module tree, including
-    #  qt3d/qtspeech which have no aarch64 binary cache)
+    # telegram-desktop depends on kdePackages.kcoreaddons. In this nixpkgs
+    # revision the framework Python bindings would pull pyside6 and the whole
+    # Qt6 module tree, including qt3d/qtspeech, which have no aarch64 binary
+    # cache. shengOverlay strips that per-framework opt-in, so only the C++
+    # framework output is used and nothing here needs the Python bindings.
+    telegram-desktop
     #
     # qq was temporarily disabled because nixpkgs pointed at an upstream deb
     # that returned 404. The current nixpkgs ships
