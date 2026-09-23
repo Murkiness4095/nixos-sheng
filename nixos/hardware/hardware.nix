@@ -6,6 +6,25 @@
 
 { config, lib, pkgs, ... }:
 
+let
+  # pd-mapper（Qualcomm PD Mapper）只在 firmware 目录里枚举 *.jsn / *.jsn.xz
+  # 服务映射。NixOS 会把 /sys/module/firmware_class/parameters/path 设为
+  # ${config.hardware.firmware}/lib/firmware（= /run/current-system/firmware），
+  # 而 pd-mapper 优先使用这个 sysfs 覆盖路径；但 sheng-firmware 放在那里的映射是
+  # 压缩态 *.jsn.zst，后缀匹配不上 → "no pd maps available" → exit 1 →
+  # Restart=on-failure 每 5 秒重启一次，并通过 Requires= 连带重启
+  # sheng-devauth，导致键盘认证被反复打断。
+  #
+  # 这里把 .jsn 解压成明文一并放进 firmware，让 pd-mapper 在它实际扫描的目录里
+  # 就能看到映射；纯声明式，不修改 pd-mapper 二进制，也不需要运行时脚本。
+  pdMapsPlain = pkgs.runCommand "sheng-pd-maps-plain" { } ''
+    mkdir -p "$out/lib/firmware/qcom/sm8550/sheng"
+    for f in ${pkgs.sheng-firmware}/lib/firmware/qcom/sm8550/sheng/*.jsn.zst; do
+      ${pkgs.zstd}/bin/zstd -dc "$f" \
+        > "$out/lib/firmware/qcom/sm8550/sheng/$(basename "''${f%.zst}")"
+    done
+  '';
+in
 {
   fileSystems."/" = {
     device = "PARTLABEL=linux";
@@ -30,6 +49,8 @@
   hardware.firmware = [
     pkgs.sheng-firmware
     pkgs.sheng-touch-firmware
+    # 明文 PD 映射，供 pd-mapper 在 firmware_class.path 指向的目录里枚举。
+    pdMapsPlain
   ];
   hardware.wirelessRegulatoryDatabase = true;
 
