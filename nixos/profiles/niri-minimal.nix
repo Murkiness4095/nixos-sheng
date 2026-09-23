@@ -169,8 +169,14 @@ in
     celluloid # video
     imv # image
     ffmpegthumbnailer
-    ffmpeg ffmpeg-full ffmpeg-headless
-    ffmpeg_4 ffmpeg_6 ffmpeg_7 ffmpeg_8
+    # 只保留 ffmpeg CLI。ffmpeg-full / ffmpeg-headless 以及 ffmpeg_4/6/7/8 只是
+    # PATH 上多出来的副本：镜像里没有任何消费者直接依赖它们（PipeWire、celluloid/
+    # mpv、kazumi、ffmpegthumbnailer 各自带自己的 ffmpeg），但每一个都要在 aarch64
+    # 上各自完整编译一遍，且这批版本在 cache.nixos.org 上常常还没有 aarch64 产物。
+    # 需要特定版本时按需在终端用 `nix shell nixpkgs#ffmpeg_4` 取。
+    ffmpeg
+    # ffmpeg-full ffmpeg-headless
+    # ffmpeg_4 ffmpeg_6 ffmpeg_7 ffmpeg_8
     poppler
     poppler-utils
     libopenraw
