@@ -110,7 +110,11 @@ in
     # (telegram-desktop removed: it pulls kdePackages.kcoreaddons, whose Python
     #  bindings drag in pyside6 and the entire Qt6 module tree, including
     #  qt3d/qtspeech which have no aarch64 binary cache)
-    # qq temporarily disabled: upstream deb 404 in nixpkgs
+    #
+    # qq was temporarily disabled because nixpkgs pointed at an upstream deb
+    # that returned 404. The current nixpkgs ships
+    # QQ_3.2.32_260812_arm64_01.deb (verified reachable), so it is back.
+    qq
     wechat
 
     # Media
