@@ -129,6 +129,13 @@ in
 
     # Editor / KDE integration
     # (kate and plasma-integration removed: depend on qtspeech which has no aarch64 cache)
+    #
+    # zed-editor pulls livekit-libwebrtc (zed's collaboration/calls feature),
+    # which nixpkgs builds from the Chromium WebRTC sources with gn + ninja +
+    # clang. Neither livekit-libwebrtc nor zed-editor-*-vendor-staging has an
+    # aarch64 binary cache entry, so adding zed makes the rootfs build compile
+    # WebRTC locally. There is no nixpkgs switch to drop only that dependency.
+    zed-editor
 
     # Tools
     localsend
