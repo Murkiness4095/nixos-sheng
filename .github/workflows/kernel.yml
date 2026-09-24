@@ -65,15 +65,25 @@ jobs:
 
           build_log="$(mktemp)"
 
+          echo "===== disk usage before build ====="
+          df -h || true
+
           set +e
           nix --extra-experimental-features "nix-command flakes" \
             build ./nixos#mobileAndroidBootimg \
-            --out-link out/mobile-bootimg 2>&1 | tee "$build_log"
+            --out-link out/mobile-bootimg -L 2>&1 | tee "$build_log"
           status=${PIPESTATUS[0]}
           set -e
 
           if [ "$status" -ne 0 ]; then
             echo "===== nix build failed; collecting diagnostics ====="
+
+            echo "===== first error-like lines from the streamed log ====="
+            grep -nE 'error:|Error [0-9]+|No space left on device|fatal error|undefined reference|cannot find|No rule to make target|Killed|Segmentation fault' "$build_log" | head -40 || true
+
+            echo "===== disk usage ====="
+            df -h || true
+            du -sh /nix/store 2>/dev/null || true
 
             linux_drv="$(grep -oE '/nix/store/[^ ]+-linux-[^ ]+\.drv' "$build_log" | tail -1 || true)"
             echo "linux drv: ${linux_drv:-not found}"
@@ -87,6 +97,10 @@ jobs:
               echo "===== linux drv last 500 lines ====="
               nix log "$linux_drv" 2>&1 | tail -500 || true
             fi
+
+            mkdir -p out
+            cp "$build_log" out/kernel-build.log || true
+            echo "full build log saved to out/kernel-build.log ($(wc -l < out/kernel-build.log 2>/dev/null || echo 0) lines)"
 
             exit "$status"
           fi
@@ -102,6 +116,15 @@ jobs:
             echo "ERROR: boot image exceeds sheng boot_b partition"
             exit 1
           fi
+
+      - name: Upload kernel build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sheng-kernel-build-log
+          path: out/kernel-build.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Package matching kernel modules
         run: |
