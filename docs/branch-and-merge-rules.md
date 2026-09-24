@@ -135,3 +135,10 @@ Device-level: boot animation, offline charging, touch, keyboard-cover authentica
 On-device updates without flashing images are documented in `docs/nixos-rebuild.md`: the
 flake's `sheng-niri` / `sheng-stage2` configurations exist for that path, and they require
 the flake's kernel pin to match the kernel already flashed into `boot_b`.
+
+CI note: `build-nixos-rootfs.sh` converts the image to **Android sparse format**
+(`img2simg`, so it can be flashed with fastboot directly). Any CI step that mounts or reads
+the image contents must run `simg2img` first and mount the raw copy, otherwise it fails
+with `wrong fs type, bad option, bad superblock`. Upstream's verification steps assume a
+raw image, so re-check this after every upstream merge (see the "Verify hardware payloads
+in rootfs" step in `nixos-rootfs.yml`).
