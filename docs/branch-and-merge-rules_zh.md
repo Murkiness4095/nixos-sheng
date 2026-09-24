@@ -13,8 +13,15 @@
 | `niri` | **日用线**：上游 sheng + 本地平台补丁 + Niri/Hjem 桌面层 | 只在这里加功能 | `mobileAndroidBootimg`、`mobileRootfsImageNiri`（CI 从这里出镜像） |
 | `exp/kernel-sm8550-7.2.6` | 内核实验线：`niri` + 最新内核 pin | 只在换内核时动 | boot + modules 归档 |
 
-已冻结（保留作历史，不再提交）：`exp/niri-merge-upstream-sheng`（被 `niri` 取代）、
-`feat/niri-noctalia-image`（`niri` 的旧 tip）、`fix/*`、`exp/*` 其余分支。
+已删除的旧分支（内容都已并入 `niri`，SHA 留档以便回滚/对比）：
+
+| 旧分支 | SHA | 说明 |
+|---|---|---|
+| `exp/niri-merge-upstream-sheng` | `a8ecd40` | 重构前的 niri+sheng 集成线内容 |
+| `feat/niri-noctalia-image` | `24c36da` | 重构前刷入用的 niri tip（7.1.8） |
+
+需要临时看回来时：`git branch <name> <sha>` 或
+`git push origin <sha>:refs/heads/<name>`。
 
 ## 2. 内容分三层，落点不要放错
 
