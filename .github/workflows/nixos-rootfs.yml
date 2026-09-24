@@ -161,13 +161,27 @@ jobs:
 
           image="$(find out -maxdepth 1 -type f -name 'nixos-sheng-*.img' -print -quit)"
           test -n "$image"
+
+          # build-nixos-rootfs.sh 产出 Android sparse 镜像（fastboot 可直接刷）。
+          # sparse 头不是 ext4 超级块，直接 mount 会报 "wrong fs type, bad
+          # superblock"；先转回 raw 再挂载。
+          mount_source="$image"
+          raw_image="$(mktemp)"
+          if simg2img "$image" "$raw_image" 2>/dev/null; then
+            mount_source="$raw_image"
+            echo "Detected Android sparse image; inspecting the un-sparsed copy"
+          else
+            rm -f "$raw_image"
+          fi
+
           mount_dir="$(mktemp -d)"
           cleanup() {
             mountpoint -q "$mount_dir" && sudo umount "$mount_dir"
             rmdir "$mount_dir"
+            rm -f "$raw_image"
           }
           trap cleanup EXIT
-          sudo mount -o loop,ro "$image" "$mount_dir"
+          sudo mount -o loop,ro "$mount_source" "$mount_dir"
 
           for firmware in \
             lib/firmware/novatek/novatek_nt36532_n81a_fw_csot.bin \

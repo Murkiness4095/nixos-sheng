@@ -126,3 +126,9 @@ sheng-touchscreen-modules,xiaomi-sheng-thp,sheng-devauth}`、`services.journald.
 
 设备内更新（不刷镜像）见 `docs/nixos-rebuild_zh.md`：flake 里的 `sheng-niri` /
 `sheng-stage2` 就是为这条路准备的；前提是 flake 的内核 pin 与已刷 `boot_b` 的内核一致。
+
+CI 注意：`build-nixos-rootfs.sh` 会把镜像转成 **Android sparse 格式**
+（`img2simg`，便于 fastboot 直接刷）。任何需要挂载或读取镜像内容的 CI 步骤都必须先
+`simg2img` 转回 raw 再 `mount`，否则会报 `wrong fs type, bad option, bad superblock`。
+上游新增的校验步骤默认按 raw 镜像写，合并上游后要检查这一点
+（`nixos-rootfs.yml` 的 "Verify hardware payloads in rootfs"）。
