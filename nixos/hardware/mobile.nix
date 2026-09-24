@@ -85,6 +85,7 @@ in
     # e2fsprogs so new images carry checksums for directories, inodes, block
     # bitmaps, and the journal instead of discovering damage only on access.
     #
+    # LOCAL PATCH（见 docs/branch-and-merge-rules_zh.md，合并上游时保留本段）：
     # The image is populated by an unprivileged build user, so `cp -prf`
     # cannot preserve root ownership and every file copied into the rootfs
     # would end up owned by the build uid. NetworkManager refuses to load
@@ -252,6 +253,7 @@ in
   mobile.beautification.silentBoot = lib.mkForce false;
 
   boot.kernel.enable = lib.mkIf stage2Only (lib.mkForce false);
+  # LOCAL PATCH（见 docs/branch-and-merge-rules_zh.md，合并上游时保留本删除）：
   # 新 nixpkgs 里 bootspec 总是生成、无法再关闭（旧写法会触发断言），
   # 这里不再覆盖 boot.bootspec.enable。
   hardware.deviceTree.enable = lib.mkIf stage2Only (lib.mkForce false);

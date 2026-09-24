@@ -57,6 +57,9 @@ let
   '';
 in
 {
+  # Noctalia 背光映射选项由本分支的模块提供（上游 configuration.nix 不再 import 它，
+  # 只有 niri 会话消费这些值）。
+  imports = [ ../modules/sheng-noctalia-brightness.nix ];
   # Niri compositor from nixpkgs.
   programs.niri.enable = true;
 

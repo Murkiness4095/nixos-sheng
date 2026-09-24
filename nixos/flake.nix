@@ -100,7 +100,18 @@
           libssc = final.sheng-libssc;
         };
         xiaomi-pen-status = final.callPackage ./packages/xiaomi-pen-status.nix { };
-        xiaomi-sheng-fingerprint = final.callPackage ./packages/xiaomi-sheng-fingerprint.nix { };
+        # 本地覆盖：用 no-op stub 顶掉 qteesupplicant 的 QTEE RPMB listener，
+        # 让 xiaomi_devauth（键盘盖认证）能拿到 service 0x2000。
+        # 上游包文件保持原样，见 packages/local/qtee-rpmb-stub.nix。
+        xiaomi-sheng-fingerprint =
+          (final.callPackage ./packages/xiaomi-sheng-fingerprint.nix { }).overrideAttrs
+            (old: {
+              postInstall = (old.postInstall or "") + ''
+                install -m0644 \
+                  ${final.callPackage ./packages/local/qtee-rpmb-stub.nix { }}/lib/librpmbservice.so.1.0.0 \
+                  $out/lib/qtee-listeners/librpmbservice.so.1.0.0
+              '';
+            });
         # telegram-desktop depends on kdePackages.kcoreaddons, which opts into
         # nixpkgs' per-framework Python bindings (hasPythonBindings = true).
         # Those bindings pull pyside6 -> the whole Qt6 module tree, including
@@ -177,13 +188,17 @@
             nixpkgs.overlays = lib.mkAfter [ shengOverlay ];
           })
           ./configuration.nix
+          # 本分支的本地平台补丁（见 docs/branch-and-merge-rules_zh.md）。
+          # 上游文件保持原样，所有"上游没有但我们需要"的平台改动都放这里，
+          # 这样合并上游时不会冲突。
+          ./modules/sheng-local
         ]
         ++ pkgs.lib.optional (desktop == "gnome") ./profiles/gnome-minimal.nix
         ++ pkgs.lib.optionals (desktop == "niri") [
           noctalia.nixosModules.default
           ./profiles/niri-minimal.nix
         ]
-        ++ pkgs.lib.optional includeDefaultUser ./profiles/default-user.nix
+        ++ pkgs.lib.optional includeDefaultUser ./profiles/local/default-user.nix
         ++ pkgs.lib.optionals includeHjem [
           hjemModule
           hjem.nixosModules.default
@@ -255,6 +270,9 @@
         xiaomiShengThp = pkgs.xiaomi-sheng-thp;
         xiaomiPenStatus = pkgs.xiaomi-pen-status;
         mobileAndroidBootimg = mobileEval.outputs.android.android-bootimg;
+        # rootfs 镜像的 fakeroot 属主修复在 hardware/mobile.nix 里（本分支登记的
+        # 上游文件内联补丁之一），所以这里仍指向 mobile.generatedFilesystems.rootfs；
+        # android-fastboot-images 也会因此拿到修好的镜像。
         mobileFastbootImages = mobileEval.outputs.android.android-fastboot-images;
         mobileRootfsImage = mobileEval.outputs.generatedFilesystems.rootfs;
         mobileRootfsImageGnome = mobileGnomeEval.outputs.generatedFilesystems.rootfs;

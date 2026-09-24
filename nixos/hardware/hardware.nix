@@ -6,31 +6,6 @@
 
 { config, lib, pkgs, ... }:
 
-let
-  # pd-mapper（Qualcomm PD Mapper）只在 firmware 目录里枚举 *.jsn / *.jsn.xz
-  # 服务映射。NixOS 会把 /sys/module/firmware_class/parameters/path 设为
-  # ${config.hardware.firmware}/lib/firmware（= /run/current-system/firmware），
-  # pd-mapper 优先使用这个 sysfs 覆盖路径；而 nixpkgs 会把 hardware.firmware 里的
-  # 固件统一压缩（hardware.firmwareCompression 默认 "zstd"，见
-  # nixos/modules/services/hardware/udev.nix），厂商固件的明文 adspr.jsn 等在那里
-  # 变成 adspr.jsn.zst，后缀匹配不上 → "no pd maps available" → exit 1 →
-  # Restart=on-failure 每 5 秒重启一次，并通过 Requires= 连带重启
-  # sheng-devauth，导致键盘认证被反复打断。
-  # （固件里的 pd-mapper-prep 会把映射解压到 /run/pd-mapper-firmware/，pd-mapper
-  # 因上面的 sysfs 覆盖不会去读那个目录。）
-  #
-  # 这里把厂商固件里原本就是明文的 .jsn 再放一份进 firmware，并用
-  # compressFirmware = false（nixpkgs 官方的压缩豁免开关）让它保持明文，
-  # 这样 pd-mapper 在它实际扫描的目录里就能匹配到。纯声明式，不修改
-  # pd-mapper 二进制，也不需要运行时脚本。
-  pdMapsPlain = pkgs.runCommand "sheng-pd-maps-plain" {
-    compressFirmware = false;
-  } ''
-    mkdir -p "$out/lib/firmware/qcom/sm8550/sheng"
-    cp ${pkgs.sheng-firmware}/lib/firmware/qcom/sm8550/sheng/*.jsn \
-      "$out/lib/firmware/qcom/sm8550/sheng/"
-  '';
-in
 {
   fileSystems."/" = {
     device = "PARTLABEL=linux";
@@ -48,8 +23,6 @@ in
   hardware.firmware = [
     pkgs.sheng-firmware
     pkgs.sheng-touch-firmware
-    # 明文 PD 映射，供 pd-mapper 在 firmware_class.path 指向的目录里枚举。
-    pdMapsPlain
   ];
   hardware.wirelessRegulatoryDatabase = true;
 
@@ -121,127 +94,6 @@ in
       exit 1
     '';
   };
-
-  # NetworkManager can miss the netlink event for wlp1s0 if it finishes its
-  # internal setup before wlan0 finishes renaming to wlp1s0. The kernel
-  # scan (`iw dev wlp1s0 scan`) keeps working, but `nmcli device wifi list`
-  # and nmtui see no SSIDs because NM still has the interface pinned to
-  # `unmanaged`. After NM is up, defensively re-attach wlp1s0 and trigger
-  # a fresh scan so users get a working Wi-Fi list without having to run
-  # `sudo nmcli radio wifi off && sudo nmcli radio wifi on` or reboot.
-  systemd.services.sheng-nm-wifi-sync = {
-    description = "Re-attach sheng Wi-Fi to NetworkManager after boot";
-    wantedBy = [ "multi-user.target" ];
-    after = [
-      "NetworkManager.service"
-      "sheng-wifi-modules.service"
-    ];
-    wants = [
-      "NetworkManager.service"
-      "sheng-wifi-modules.service"
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      # Wait for any ath12k wireless interface to appear. udev may rename
-      # wlan0 -> wlp1s0 asynchronously, so discover the actual name instead
-      # of hard-coding one. Prefer the renamed wlp* name over the transient
-      # wlan* name, and give udev a moment to finish renaming.
-      iface=""
-      for attempt in $(seq 1 30); do
-        iface="$(${pkgs.coreutils}/bin/ls /sys/class/net 2>/dev/null \
-          | ${pkgs.gawk}/bin/awk '/^wlp[0-9]+s[0-9]+$/ { print; exit }
-              /^wlan[0-9]+$/ { if (!w) w=$0 }
-              END { if (w) print w }')"
-        if [ -n "$iface" ]; then
-          break
-        fi
-        sleep 1
-      done
-      if [ -z "$iface" ]; then
-        echo "No wireless interface appeared; skipping NetworkManager sync" >&2
-        exit 0
-      fi
-      echo "Discovered wireless interface: $iface"
-      # Let udev finish any in-flight rename before we touch the interface.
-      sleep 2
-
-      # The ath12k two-pass init can leave the interface administratively down
-      # or soft-blocked by rfkill. NetworkManager then keeps the device as
-      # unavailable/unmanaged and nmtui shows an empty network list, while
-      # `iw dev <iface> scan` works fine once the interface is brought up.
-      ${pkgs.iproute2}/bin/ip link set "$iface" up || true
-      sleep 1
-      if [ -d /sys/class/rfkill ]; then
-        ${pkgs.util-linux}/bin/rfkill unblock wifi || true
-      fi
-
-      nmcli=${pkgs.networkmanager}/bin/nmcli
-
-      # Wait for NetworkManager itself to be reachable on D-Bus.
-      for attempt in $(seq 1 30); do
-        if "$nmcli" -t -f RUNNING general 2>/dev/null | grep -q "^running"; then
-          break
-        fi
-        sleep 1
-      done
-
-      state="$("$nmcli" -t -f DEVICE,STATE device 2>/dev/null \
-        | ${pkgs.gawk}/bin/awk -F: -v dev="$iface" '$1 == dev { print $2 }')"
-      case "$state" in
-        unmanaged)
-          echo "$iface reported unmanaged; forcing managed" >&2
-          "$nmcli" device set "$iface" managed yes || true
-          sleep 2
-          ;;
-        unavailable)
-          # NM sees the device but does not yet consider it ready. Re-set
-          # the managed flag so NM re-runs its Wi-Fi plugin probe instead
-          # of leaving the device stuck.
-          "$nmcli" device set "$iface" managed yes >/dev/null 2>&1 || true
-          sleep 2
-          ;;
-        "")
-          echo "$iface missing from NetworkManager device list" >&2
-          ;;
-      esac
-
-      # Always trigger a fresh rescan so nmtui shows surrounding networks
-      # after login, even when the first NM scan happened before the
-      # interface was renamed and reported zero results.
-      "$nmcli" device wifi rescan ifname "$iface" 2>/dev/null || true
-    '';
-  };
-
-  # NetworkManager dispatcher hook: if a Wi-Fi device appears after the boot
-  # sync service has already run (or if the sync service missed the rename),
-  # force it managed and trigger a rescan so nmtui shows networks.
-  networking.networkmanager.dispatcherScripts = [
-    {
-      # `writeScript` does not rewrite the interpreter line, so the previous
-      # `#!/usr/bin/env bash` never resolved on NixOS and every dispatcher
-      # event exited with status 127 (journal: 03userscript0001 failed).
-      source = pkgs.writeShellScript "sheng-nm-wifi-dispatcher" ''
-        iface="$1"
-        event="$2"
-        echo "sheng-nm-wifi-dispatcher: event=$event iface=$iface" >&2
-        case "$event" in
-          device-added|up)
-            case "$iface" in
-              wlan*|wlp*)
-                echo "sheng-nm-wifi-dispatcher: ensuring $iface is managed and rescanning" >&2
-                ${pkgs.networkmanager}/bin/nmcli device set "$iface" managed yes || true
-                ${pkgs.networkmanager}/bin/nmcli device wifi rescan ifname "$iface" || true
-                ;;
-            esac
-            ;;
-        esac
-      '';
-      type = "basic";
-    }
-  ];
 
   hardware.bluetooth = {
     enable = true;
@@ -346,26 +198,9 @@ in
       RemainAfterExit = true;
     };
     script = ''
-      # The QCOM GENI SPI controller may be exported under either module
-      # name depending on the kernel revision. Try both before loading the
-      # touch driver so the SPI device is actually present on the bus.
-      for module in spi_geni_qcom spi_qcom_geni; do
-        if ${pkgs.kmod}/bin/modinfo "$module" >/dev/null 2>&1; then
-          ${pkgs.kmod}/bin/modprobe "$module" || true
-        fi
+      for module in spi_geni_qcom nt36532e_ts; do
+        ${pkgs.kmod}/bin/modprobe "$module" || true
       done
-      sleep 1
-
-      ${pkgs.kmod}/bin/modprobe nt36532e_ts || true
-      sleep 1
-
-      # Verify the driver really probed and exposed its proc interface.
-      # If it did not, dump the last relevant dmesg lines for diagnosis.
-      if [ ! -e /proc/nvt_thp_stream ]; then
-        echo "nt36532e_ts proc interface missing after modprobe" >&2
-        ${pkgs.util-linux}/bin/dmesg | grep -Ei 'nt36532|nvt|novatek|spi_geni|spi_qcom' | tail -50 >&2 || true
-        exit 1
-      fi
     '';
   };
 
