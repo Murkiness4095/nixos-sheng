@@ -124,6 +124,21 @@ wireplumber components, and the Noctalia brightness config.
 Device-level: boot animation, offline charging, touch, keyboard-cover authentication,
 `nmtui` list, and fingerprint can only be confirmed on hardware after flashing.
 
+Divergence check after merging upstream (any output other than `✓` means an upstream file
+was modified outside the allowlist):
+
+```bash
+git diff --name-only upstream/sheng...HEAD | grep -vE \
+  '^(nixos/(configuration\.nix|hardware/mobile\.nix|flake\.(nix|lock)|scripts/sheng-check\.sh|modules/sheng-local/.*|profiles/local/.*|packages/local/.*|profiles/niri-minimal\.nix|modules/sheng-noctalia-brightness\.nix|home/user\.nix)|AGENTS\.md|README(_zh)?\.md|TODO(_zh)?\.md|THIRD_PARTY_NOTICES\.md|build-nixos-rootfs\.sh|\.github/workflows/.*|docs/.*|examples/.*|scripts/.*)$' \
+  || echo "only allowlisted divergence ✓"
+```
+
+The four registered in-place patches are still present:
+
+```bash
+grep -n 'LOCAL PATCH' nixos/configuration.nix nixos/hardware/mobile.nix
+```
+
 ## 7. Flash boundaries
 
 | Change | Build | Flash |

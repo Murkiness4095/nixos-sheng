@@ -113,6 +113,20 @@ nix build --dry-run --offline --system aarch64-linux ./nixos#checks.aarch64-linu
 sheng-touchscreen-modules,xiaomi-sheng-thp,sheng-devauth}`、`services.journald.settings`、
 `services.openssh.settings.PasswordAuthentication`、wireplumber 组件、Noctalia 亮度配置。
 
+合并上游后的分歧核对（除白名单外，上游文件都不该有本地改动；输出 `✓` 即通过）：
+
+```bash
+git diff --name-only upstream/sheng...HEAD | grep -vE \
+  '^(nixos/(configuration\.nix|hardware/mobile\.nix|flake\.(nix|lock)|scripts/sheng-check\.sh|modules/sheng-local/.*|profiles/local/.*|packages/local/.*|profiles/niri-minimal\.nix|modules/sheng-noctalia-brightness\.nix|home/user\.nix)|AGENTS\.md|README(_zh)?\.md|TODO(_zh)?\.md|THIRD_PARTY_NOTICES\.md|build-nixos-rootfs\.sh|\.github/workflows/.*|docs/.*|examples/.*|scripts/.*)$' \
+  || echo "只有白名单内的分歧 ✓"
+```
+
+4 处登记补丁是否还在：
+
+```bash
+grep -n 'LOCAL PATCH' nixos/configuration.nix nixos/hardware/mobile.nix
+```
+
 设备级：只有实机能验的项（启动画面、离线充电、触摸、键盘盖认证、nmtui 列表、
 指纹）在刷机后按 `docs/` 里的检查命令逐条确认。
 
