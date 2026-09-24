@@ -13,6 +13,7 @@ on:
   push:
     branches:
       - sheng
+      - niri
   pull_request:
   workflow_dispatch:
 
