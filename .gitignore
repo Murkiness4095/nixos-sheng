@@ -6,3 +6,6 @@ rootdir/
 *.img
 *.img.7z
 *.tar.zst
+.artifacts/
+__pycache__/
+*.py[cod]

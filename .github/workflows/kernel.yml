@@ -53,10 +53,13 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           skipPush: true
 
-      - name: Validate generation menu renderer
+      - name: Validate stage-1 and offline charging UI
         run: |
           nix --extra-experimental-features "nix-command flakes" \
-            build './nixos#checks.aarch64-linux.generationMenuRenderer' \
+            build \
+            './nixos#checks.aarch64-linux.generationMenuRenderer' \
+            './nixos#checks.aarch64-linux.offlineCharging' \
+            './nixos#checks.aarch64-linux.bootAnimation' \
             --no-link
 
       - name: Build boot image
