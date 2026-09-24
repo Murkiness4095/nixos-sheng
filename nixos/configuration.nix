@@ -14,7 +14,6 @@
     ./modules/sheng-devauth.nix
     ./modules/sheng-offline-charging.nix
     ./modules/sheng-fingerprint.nix
-    ./modules/sheng-noctalia-brightness.nix
     ./modules/sheng-performance.nix
     ./modules/sheng-rootfs-health.nix
     ./modules/xiaomi-mipps-auth.nix
@@ -48,15 +47,6 @@
   # network-online.target. Waiting for carrier delayed graphical.target by
   # roughly 18 seconds in the measured baseline.
   systemd.services.NetworkManager-wait-online.wantedBy = lib.mkForce [ ];
-  # sheng-wifi-modules.service already declares `before = NetworkManager`,
-  # but make the dependency explicit from NM's side too: if the two-pass
-  # WCN7850 init fails to bring wlp1s0 up, NM must still wait for that
-  # verdict instead of silently scanning an absent or partially-initialized
-  # device and reporting an empty SSID list to nmtui.
-  systemd.services.NetworkManager = {
-    wants = [ "sheng-wifi-modules.service" ];
-    after = [ "sheng-wifi-modules.service" ];
-  };
   networking.useDHCP = lib.mkDefault true;
 
   # GNOME enables Avahi for local-network discovery. Keep its NSS side wired
@@ -81,7 +71,9 @@
 
   # Keep enough persistent history for cross-boot hardware diagnosis without
   # letting verbose bring-up logs grow with the full root partition.
-  # journald 的 extraConfig 在新 nixpkgs 里被 settings 取代（旧的会触发断言）。
+  # LOCAL PATCH（见 docs/branch-and-merge-rules_zh.md）：当前 nixpkgs 已移除
+  # services.journald.extraConfig，只要被定义就会断言失败；改用 settings.Journal。
+  # 合并上游时保留本改法。
   services.journald.settings.Journal = {
     SystemMaxUse = "512M";
     MaxRetentionSec = "14day";
@@ -110,34 +102,6 @@
       AllowHybridSleep = "no";
       AllowSuspendThenHibernate = "no";
     };
-  };
-
-  # 刷入后启动即可见的标准 XDG 用户目录：Desktop、Documents、Downloads、Music、
-  # Pictures、Public、Templates、Videos、Projects。
-  # NixOS 默认不创建它们 —— GNOME 是靠 gnome.nix 把 xdg-user-dirs 放进
-  # systemPackages、再由 XDG autostart 在首次登录时执行；niri 这类不处理
-  # autostart 的会话则永远不会创建，家目录会一直是空的。
-  # 这里在启动阶段（不依赖图形会话）对每个普通用户执行一次
-  # xdg-user-dirs-update：幂等、只补缺失项、同时写出 ~/.config/user-dirs.dirs。
-  # LANG 固定为 C.UTF-8，避免 zh_CN 环境下生成中文目录名。
-  systemd.services.xdg-user-dirs = {
-    description = "Create XDG user directories for normal users";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "local-fs.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      for home in /home/*; do
-        [ -d "$home" ] || continue
-        owner="$(${pkgs.coreutils}/bin/stat -c %U "$home")" || continue
-        [ "$owner" = root ] && continue
-        ${lib.getExe' pkgs.util-linux "runuser"} -u "$owner" -- \
-          ${pkgs.coreutils}/bin/env HOME="$home" LANG=C.UTF-8 \
-          ${pkgs.xdg-user-dirs}/bin/xdg-user-dirs-update || true
-      done
-    '';
   };
 
   services.xiaomi-mipps-auth.enable = true;
@@ -243,9 +207,7 @@
     alsa-utils
     e2fsprogs
     bluez
-    evtest # Input device debugging for touch / stylus bring-up
     iio-sensor-proxy
-    iw # Wireless debugging and scan helper for ath12k/WCN7850 bring-up
     kmod
     libssc
     libinput
@@ -269,20 +231,6 @@
     ENV{ID_INPUT_TOUCHSCREEN}=="1", ENV{LIBINPUT_CALIBRATION_MATRIX}="1 0 0 0 1 0 0 0 1", ENV{ID_INPUT_TOUCHSCREEN_INTEGRATION}="internal"
     SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_PATH}=="platform-1d84000.ufshc-scsi-*", ENV{UDISKS_IGNORE}="1"
     SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
-
-    # The Xiaomi factory keyboard cover can lag or repeat if USB autosuspend
-    # puts the HID endpoint to sleep. Keep HID input endpoints powered on.
-    SUBSYSTEM=="usb", ATTR{bInterfaceClass}=="03", ATTR{bInterfaceSubClass}=="01", ATTR{power/control}="on"
-
-    # Re-run the accessory authentication daemon when a HID keyboard is
-    # attached or detached, so the keyboard cover gets re-authenticated after
-    # being re-docked.
-    SUBSYSTEM=="hid", ACTION=="add|remove", ENV{ID_INPUT_KEYBOARD}=="1", RUN+="${pkgs.systemd}/bin/systemctl try-restart sheng-devauth.service"
-
-    # Noctalia / brightnessctl need write access to the panel backlight sysfs
-    # node. Ensure the video group can write it even when systemd-backlight or
-    # upower do not claim the device.
-    SUBSYSTEM=="backlight", ACTION=="add", RUN+="${pkgs.coreutils}/bin/chgrp video /sys/class/backlight/%k/brightness", RUN+="${pkgs.coreutils}/bin/chmod g+w /sys/class/backlight/%k/brightness"
   '';
 
   security.rtkit.enable = true;
@@ -322,16 +270,13 @@
       "wireplumber.components" = [
         {
           name = "libpipewire-module-filter-chain";
-          # Must be pw-module-client, not pw-module. WirePlumber's own
-          # configuration only loads libpipewire-module-rt/-protocol-native/
-          # -metadata into its main pw_context, so that context has no
-          # "adapter" factory. module-filter-chain builds its two nodes with
-          # pw_stream, which calls pw_context_find_factory(ctx, "adapter") and
-          # fails with -ENOENT ("no adapter factory found") in the main
-          # context. pw-module-client loads the module in a secondary context
-          # created from PipeWire's client.conf, which does load
-          # libpipewire-module-adapter. Upstream's smart-equalizer example uses
-          # pw-module-client for the same reason.
+          # LOCAL PATCH（本分支唯一的上游文件内联修改，见
+          # docs/branch-and-merge-rules_zh.md）：必须是 pw-module-client，不能是
+          # pw-module。WirePlumber 只在主 pw_context 里加载 rt/protocol-native/
+          # metadata，那个 context 没有 adapter factory；module-filter-chain 用
+          # pw_stream 建节点时会 pw_context_find_factory(ctx, "adapter") 失败
+          # （no adapter factory found），整机无声。pw-module-client 在从
+          # client.conf 创建的次级 context 里加载模块，那里有 adapter。
           type = "pw-module-client";
           arguments = {
             "node.name" = "filter.sink.sheng-speaker-eq";
