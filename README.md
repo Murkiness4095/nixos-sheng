@@ -184,9 +184,21 @@ create a user or install the repository's Hjem profile.
 A complete private-flake starting point is available in
 [`examples/sheng-dotfiles`](examples/sheng-dotfiles).
 
+## Branch structure
+
+| Branch | Responsibility |
+|---|---|
+| `sheng` | read-only mirror of the upstream platform line |
+| `niri` | **daily driver**: upstream sheng + local platform patches (`nixos/modules/sheng-local/`) + the Niri/Hjem desktop layer; CI builds boot and rootfs images from here |
+| `exp/kernel-sm8550-7.2.6` | kernel experiment line: `niri` + newest kernel pin |
+
+Rules (where new work goes, how to resolve upstream merges, the four registered
+in-place patches on upstream files, verification and flash boundaries) are in
+[`docs/branch-and-merge-rules.md`](docs/branch-and-merge-rules.md).
+
 ## Build With GitHub Actions
 
-Open the Actions tab and run these workflows on the `sheng` branch:
+Open the Actions tab and run these workflows on the `niri` branch:
 
 - `Build Sheng Kernel`: builds `boot_sheng_nixos.img`.
 - `Build NixOS RootFS`: builds the flashable `nixos-sheng-*.img`.
@@ -327,6 +339,7 @@ For the full dependency chain, offline rootfs checks, runtime verification comma
 - [docs/audio-speaker-eq-wireplumber.md](docs/audio-speaker-eq-wireplumber.md)
 - [docs/offline-charging.md](docs/offline-charging.md)
 - [docs/release-readiness.md](docs/release-readiness.md)
+- [docs/branch-and-merge-rules.md](docs/branch-and-merge-rules.md)
 - [docs/performance-tuning.md](docs/performance-tuning.md)
 - [docs/kernel-optimization-log_zh.md](docs/kernel-optimization-log_zh.md)
 - [docs/sheng-optimization-post-draft_zh.md](docs/sheng-optimization-post-draft_zh.md)

@@ -167,9 +167,21 @@ Hjem profile，用户配置必须由下游模块提供。
 完整的私人 flake 起始模板位于
 [`examples/sheng-dotfiles`](examples/sheng-dotfiles)。
 
+## 分支结构
+
+| 分支 | 职责 |
+|---|---|
+| `sheng` | 上游平台线镜像，只读跟随 |
+| `niri` | **日用线**：上游 sheng + 本地平台补丁（`nixos/modules/sheng-local/`）+ Niri/Hjem 桌面层；CI 从这里出 boot 与 rootfs 镜像 |
+| `exp/kernel-sm8550-7.2.6` | 内核实验线：`niri` + 最新内核 pin |
+
+规则（新增功能的落点、合并上游的冲突处理、4 处登记的上游文件内联补丁、
+验证与刷写边界）见
+[`docs/branch-and-merge-rules_zh.md`](docs/branch-and-merge-rules_zh.md)。
+
 ## 使用 GitHub Actions 构建
 
-打开 Actions 标签页并在 `sheng` 分支上运行以下工作流：
+打开 Actions 标签页并在 `niri` 分支上运行以下工作流：
 
 - `Build Sheng Kernel`：构建 `boot_sheng_nixos.img`。
 - `Build NixOS RootFS`：构建可刷入的 `nixos-sheng-*.img`。
@@ -286,6 +298,7 @@ sheng 上的 USB-C 主机模式和各类传感器均强依赖于完整的 Qualco
 - [docs/wifi-5ghz-160mhz_zh.md](docs/wifi-5ghz-160mhz_zh.md)
 - [docs/audio-speaker-eq-wireplumber_zh.md](docs/audio-speaker-eq-wireplumber_zh.md)
 - [docs/release-readiness_zh.md](docs/release-readiness_zh.md)
+- [docs/branch-and-merge-rules_zh.md](docs/branch-and-merge-rules_zh.md)
 - [docs/sheng-optimization-post-draft_zh.md](docs/sheng-optimization-post-draft_zh.md)
 
 ## 许可证与第三方材料

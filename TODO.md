@@ -95,3 +95,8 @@ enabled in a kernel configuration.
   release-candidate health bundle.
 - [-] A kernel IIO bridge is not required while the SSC + D-Bus path satisfies
   the desktop; revisit only for software that strictly requires IIO sysfs.
+- [x] Branch layout collapsed to `sheng` (read-only upstream) / `niri` (daily driver) /
+  `exp/kernel-sm8550-7.2.6` (kernel experiment). Platform patches moved into
+  `nixos/modules/sheng-local/`, upstream files now carry only four registered in-place
+  patches; see `docs/branch-and-merge-rules.md`. Frozen branches:
+  `exp/niri-merge-upstream-sheng`, `feat/niri-noctalia-image`, `fix/*`.

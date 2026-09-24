@@ -79,3 +79,7 @@
 - [ ] 完善恢复文档，并自动生成脱敏的候选版健康检查包。
 - [-] 当前 SSC + D-Bus 已满足桌面，不为“看起来更原生”单独编写 kernel IIO
   bridge；只有软件严格依赖 IIO sysfs 时再评估。
+- [x] 分支结构收敛为 `sheng`（上游只读）/ `niri`（日用线）/ `exp/kernel-sm8550-7.2.6`
+  （内核实验线）；平台补丁移入 `nixos/modules/sheng-local/`，上游文件只保留 4 处
+  登记的内联补丁，规则见 `docs/branch-and-merge-rules_zh.md`。
+  冻结分支：`exp/niri-merge-upstream-sheng`、`feat/niri-noctalia-image`、`fix/*`。
