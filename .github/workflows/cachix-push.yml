@@ -17,7 +17,7 @@ on:
   push:
     branches:
       - sheng
-      - feat/niri-noctalia-image
+      - niri
 
 permissions:
   actions: write
@@ -58,7 +58,7 @@ jobs:
         id: target
         run: |
           case "$GITHUB_REF_NAME" in
-            feat/niri-noctalia-image)
+            niri)
               echo "configuration=sheng-niri" >> "$GITHUB_OUTPUT"
               ;;
             *)
