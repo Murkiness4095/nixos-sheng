@@ -14,9 +14,16 @@ collaboration and flashing boundaries.
 | `niri` | **Daily driver**: upstream sheng + local platform patches + Niri/Hjem desktop layer | all feature work happens here | `mobileAndroidBootimg`, `mobileRootfsImageNiri` (CI builds images from here) |
 | `exp/kernel-sm8550-7.2.6` | Kernel experiment line: `niri` + newest kernel pin | only when changing kernels | boot image + module archive |
 
-Frozen (kept as history, no further commits): `exp/niri-merge-upstream-sheng` (superseded
-by `niri`), `feat/niri-noctalia-image` (old `niri` tip), the remaining `fix/*` and `exp/*`
-branches.
+Removed legacy branches (content is merged into `niri`; SHAs kept for rollback or
+comparison):
+
+| Old branch | SHA | Notes |
+|---|---|---|
+| `exp/niri-merge-upstream-sheng` | `a8ecd40` | pre-refactor niri+sheng integration content |
+| `feat/niri-noctalia-image` | `24c36da` | pre-refactor niri tip used for flashing (7.1.8) |
+
+To bring one back temporarily: `git branch <name> <sha>` or
+`git push origin <sha>:refs/heads/<name>`.
 
 ## 2. Three content layers — put things in the right one
 
