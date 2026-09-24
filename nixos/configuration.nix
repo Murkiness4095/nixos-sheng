@@ -10,10 +10,12 @@
   imports = [
     ./hardware/hardware.nix
     ./modules/sheng-boot-slot.nix
+    ./modules/sheng-boot-animation.nix
     ./modules/sheng-devauth.nix
     ./modules/sheng-offline-charging.nix
     ./modules/sheng-fingerprint.nix
     ./modules/sheng-noctalia-brightness.nix
+    ./modules/sheng-performance.nix
     ./modules/sheng-rootfs-health.nix
     ./modules/xiaomi-mipps-auth.nix
     ./modules/xiaomi-pen-status.nix
@@ -425,17 +427,15 @@
   boot.blacklistedKernelModules = [ "fastrpc" ];
 
   boot.kernelParams = [
-    "console=tty0"
     "console=ttyMSM0,115200n8"
     "root=PARTLABEL=linux"
     "rootwait"
     "logo.nologo"
     "loglevel=4"
-    "systemd.show_status=true"
-    "udev.log_level=info"
-    "rd.udev.log_level=info"
-    "vt.global_cursor_default=1"
-    "androidboot.force_normal_boot=1"
+    "systemd.show_status=false"
+    "udev.log_level=warning"
+    "rd.udev.log_level=warning"
+    "vt.global_cursor_default=0"
   ];
 
   boot.consoleLogLevel = 4;

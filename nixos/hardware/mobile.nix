@@ -7,13 +7,20 @@
 { config, lib, pkgs, stage2Only ? false, ... }:
 
 let
-  headlessStage1Task = pkgs.writeTextDir "zz-sheng-headless-stage1.rb" (
+  headlessStage1Source = pkgs.writeText "sheng-headless-stage1.rb" (
     (builtins.readFile ../patches/stage-1-headless-no-gui.rb)
     + "\n"
     + (builtins.readFile ../patches/stage-1-early-charge-guard.rb)
     + "\n"
     + (builtins.readFile ../patches/stage-1-headless-generation-menu.rb)
+    + "\n"
+    + (builtins.readFile ../patches/stage-1-boot-animation.rb)
   );
+  headlessStage1Task = pkgs.runCommand "sheng-headless-stage1-task" { } ''
+    mkdir -p $out
+    cat ${pkgs.sheng-fb-painter}/share/sheng/menu-font.rb \
+      ${headlessStage1Source} > $out/zz-sheng-headless-stage1.rb
+  '';
   udevTolerantTask = pkgs.writeTextDir "zz-sheng-udev-tolerant.rb" (
     builtins.readFile ../patches/stage-1-udev-trigger-tolerant.rb
   );
@@ -24,6 +31,16 @@ let
     mkdir -p $out/lib/firmware
     cp -r ${pkgs.sheng-firmware}/lib/firmware/qcom $out/lib/firmware/
   '';
+  rootfsFirmware = pkgs.buildEnv {
+    name = "sheng-rootfs-firmware";
+    paths = [
+      pkgs.sheng-firmware
+      pkgs.sheng-touch-firmware
+      pkgs.wireless-regdb
+    ];
+    pathsToLink = [ "/lib/firmware" ];
+    ignoreCollisions = false;
+  };
   closureInfo = pkgs.buildPackages.closureInfo {
     rootPaths = config.system.build.toplevel;
   };
@@ -129,19 +146,13 @@ in
       ln -s ${config.system.build.toplevel} ./nix/var/nix/profiles/system-1-link
       ln -s system-1-link ./nix/var/nix/profiles/system
 
-      echo "Injecting sheng-firmware into /lib/firmware..."
+      echo "Injecting sheng rootfs firmware into /lib/firmware..."
       mkdir -p ./lib/firmware
-      cp -r ${pkgs.sheng-firmware}/lib/firmware/* ./lib/firmware/
-      # Nix store entries are read-only; cp -r preserves directory modes, so
-      # subsequent copies into existing subdirectories (e.g. novatek/) fail.
-      # Make the tree writable before adding more firmware.
-      chmod -R u+w ./lib/firmware || true
-      cp -r ${pkgs.wireless-regdb}/lib/firmware/* ./lib/firmware/
-      chmod -R u+w ./lib/firmware || true
-      # The NT36532E touchscreen driver needs its Novatek firmware to probe.
-      # hardware.firmware references it, but Mobile NixOS' rootfs builder does
-      # not automatically copy every hardware.firmware entry, so add it here.
-      cp -r ${pkgs.sheng-touch-firmware}/lib/firmware/* ./lib/firmware/
+      # Mobile NixOS' custom rootfs population does not copy the NixOS
+      # firmware aggregate automatically. Merge the device-specific packages
+      # first, then materialize them once so read-only store directories cannot
+      # block a later package from adding files to the same subtree.
+      cp -rL ${rootfsFirmware}/lib/firmware/. ./lib/firmware/
 
       echo "Injecting kernel modules into /lib/modules..."
       if [ -d ${kernelModulesTree}/lib/modules ]; then
@@ -193,6 +204,7 @@ in
       boot.fail.shell = true;
       gui.enable = false;
       splash.disabled = true;
+      sheng_boot_animation.enable = true;
       sheng_generation_menu = {
         enable = true;
         timeout = 3;
@@ -201,8 +213,8 @@ in
         enable = true;
         critical_capacity = 2;
         boot_capacity = 5;
-        # A normal boot may continue after this timeout. Charger-mode boots
-        # stay in low-power stage-1 until the battery reaches boot_capacity.
+        # Charger-mode boots hand off to the low-power userspace target. This
+        # timeout only guards an explicitly requested normal boot.
         max_wait_seconds = 30;
       };
     };
@@ -213,6 +225,10 @@ in
       headlessStage1Task
       rootFsckTask
       udevTolerantTask
+    ];
+
+    contents = [
+      { object = pkgs.sheng-boot-animation; symlink = "/etc/sheng-boot-animation"; }
     ];
 
     extraUtils = [
