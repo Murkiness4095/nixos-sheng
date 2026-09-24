@@ -34,6 +34,15 @@ mobile-nixos.kernel-builder-clang {
   ];
   makeFlags = [
     "LLVM=1"
+    # certs/extract-cert 是编译期运行的 host 工具，链接时依赖 libcrypto。
+    # mobile-nixos 的 kernel builder 里 host 工具链不会给它写 rpath，运行时
+    # 动态加载器找不到 libcrypto.so.3：
+    #   certs/extract-cert: error while loading shared libraries: libcrypto.so.3: ...
+    #   make[3]: *** [../certs/Makefile:32: certs/x509_certificate_list] Error 127
+    # （7.1.8 之前的镜像没事，是因为那份闭包早就在 cachix 里、CI 直接替换下载，
+    #  从未真正重新编译过 certs。）这里给所有 host 工具显式写上 openssl 的 lib
+    # 目录，工具即可自洽运行。
+    "HOSTLDFLAGS=-Wl,-rpath,${buildPackages.openssl.out}/lib"
     "CC=${llvmPkgs.clang-unwrapped}/bin/clang"
     "LD=${pkgs.lld}/bin/ld.lld"
     "AR=${llvmPkgs.llvm}/bin/llvm-ar"
