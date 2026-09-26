@@ -14,6 +14,7 @@
   imports = [
     ./wifi.nix
     ./pd-maps.nix
+    ./display-manager-vt.nix
     ./user-session.nix
     ./touch.nix
     ./sensors.nix
