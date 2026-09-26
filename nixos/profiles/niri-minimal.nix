@@ -325,13 +325,35 @@ in
   ];
 
   # xdg-desktop-portal for Wayland file opening and screen sharing.
+  # 与下游 nixconf-sheng 的 niri 模块保持一致：gnome 门户负责屏幕共享与截图，
+  # gtk 负责文件选择（wlr 门户在这块平板上的 ScreenCast 不如 gnome 稳）。
   xdg.portal = {
     enable = true;
     extraPortals = with pkgs; [
+      xdg-desktop-portal-gnome
       xdg-desktop-portal-gtk
-      xdg-desktop-portal-wlr
     ];
+    config.niri = {
+      default = [
+        "gnome"
+        "gtk"
+      ];
+      "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+      "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
+      "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+
+      # nixpkgs 的 programs.niri 默认把 Secret 接口指向 gnome-keyring（见
+      # nixos/modules/programs/wayland/niri.nix），这个镜像不要密钥环，
+      # 压成空实现：该接口在 portals.conf 里不再有后端。
+      "org.freedesktop.impl.portal.Secret" = lib.mkForce "";
+    };
   };
+
+  # niri 的 nixpkgs 模块默认 services.gnome.gnome-keyring.enable = lib.mkDefault true，
+  # 它会往 login 的 PAM 栈挂 pam_gnome_keyring，而 greetd 的 PAM 正是从 login
+  # substack/include 拼出来的：greeter 阶段还没有会话 D-Bus，解锁会话密钥环会
+  # 卡住/拖慢登录。这台设备不需要密钥环认证，直接关。
+  services.gnome.gnome-keyring.enable = false;
 
   # Ensure greetd owns the VT.
   services.kmscon.enable = lib.mkForce false;
