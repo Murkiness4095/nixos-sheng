@@ -16,6 +16,7 @@
     ./pd-maps.nix
     ./display-manager-vt.nix
     ./greeter-boot-ui-handoff.nix
+    ./boot-ui-session-guard.nix
     ./user-session.nix
     ./touch.nix
     ./sensors.nix
