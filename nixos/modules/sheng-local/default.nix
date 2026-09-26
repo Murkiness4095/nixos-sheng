@@ -17,6 +17,7 @@
     ./display-manager-vt.nix
     ./greeter-boot-ui-handoff.nix
     ./boot-ui-session-guard.nix
+    ./sshd-lan-exempt.nix
     ./user-session.nix
     ./touch.nix
     ./sensors.nix
