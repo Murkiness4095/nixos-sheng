@@ -15,6 +15,7 @@
     ./wifi.nix
     ./pd-maps.nix
     ./display-manager-vt.nix
+    ./greeter-boot-ui-handoff.nix
     ./user-session.nix
     ./touch.nix
     ./sensors.nix
