@@ -32,7 +32,7 @@
 - 动画期间按外接键盘 **Esc** 可切到 VT3，本次开机不再显示动画；
 - 在系统或 ADB shell 中执行 `sudo sheng-boot-details` 也可进入诊断控制台；
 - stage-1 的故障处理、救援/紧急目标、显示管理器失败会尝试切到 VT3；
-- 动画进程最长运行 120 秒，超时退出并显示诊断控制台；
+- 动画进程最长运行 60 秒，超时退出并显示诊断控制台；
 - 一次性启动参数 `sheng.boot-ui=0` 禁用动画并使用文本菜单；
 - 无显示管理器的 minimal 系统在 stage-2 完成早期激活后回到文本控制台。
 
@@ -46,7 +46,7 @@
 aliases 会覆盖同名 unit。上游把「停 painter + 写 `/run/sheng-boot-ui.done`」的
 握手挂在 `systemd.services.display-manager` 上，所以在 greetd 镜像里这两项会被
 静默丢弃，`nixos-rebuild switch` 重新拉起 `graphical.target` 的依赖时会**重播**
-开机动画：painter 抢走 VT2 并置 `KD_GRAPHICS`，120 秒后落入 VT3；而 compositor
+开机动画：painter 抢走 VT2 并置 `KD_GRAPHICS`，60 秒后落入 VT3；而 compositor
 占用 CRTC 时 fbcon 画不出来（`fb0: sys_imageblit: framebuffer is not in virtual
 address space`），屏幕就停在最后一帧雪花上。系统本身照常运行（SSH、niri 都在）。
 

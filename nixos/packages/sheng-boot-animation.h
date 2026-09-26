@@ -164,8 +164,8 @@ static int boot_animate(int argc, char **argv) {
   const char *phase = argv[testing ? 9 : 3];
   const char *control = argv[testing ? 10 : 4];
   if (strcmp(phase, "prepare") && strcmp(phase, "start")) return 2;
-  unsigned max_frames = testing ? parse_number(argv[11], "frames") : 2400;
-  if (!max_frames || max_frames > 2400) return 2;
+  unsigned max_frames = testing ? parse_number(argv[11], "frames") : 1200;
+  if (!max_frames || max_frames > 1200) return 2;
   struct target target = { .fd = -1 };
   struct boot_frame frames[BOOT_FRAME_COUNT] = {{0}};
   struct boot_frame credit = {0};
@@ -250,7 +250,7 @@ static int boot_animate(int argc, char **argv) {
       struct vt_stat state;
       if (ioctl(tty_fd, VT_GETSTATE, &state) < 0 || state.v_active != 2) break;
       if (boot_esc_pressed(input_fds, &input_count, tick)) { details = 1; break; }
-      if (elapsed_ms(&lifetime) >= 120000) { details = 1; break; }
+      if (elapsed_ms(&lifetime) >= 60000) { details = 1; break; }
     }
     struct boot_frame *frame = &frames[tick % BOOT_FRAME_COUNT];
     struct timespec started_at;

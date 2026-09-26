@@ -35,7 +35,7 @@ kernel log level. Logs remain in `dmesg`, the journal and `/run/log/stage-1.log`
 Press Esc on an external keyboard during the animation, or run
 `sudo sheng-boot-details`, to reveal VT3 and disable animation for the current
 boot. Stage-1 failure, emergency/rescue targets, display-manager failure and the
-120-second animation limit also reveal diagnostics. `sheng.boot-ui=0` disables
+60-second animation limit also reveal diagnostics. `sheng.boot-ui=0` disables
 the UI for one boot. Systems without a display manager return to the text console
 at the end of early stage-2 activation.
 
@@ -74,7 +74,7 @@ the handoff (`touch /run/sheng-boot-ui.done` plus `painter --stop`) on
 `systemd.services.display-manager`, so on greetd images both are silently
 dropped. `nixos-rebuild switch` re-starting the dependencies of
 `graphical.target` then **replays** the boot animation: the painter steals VT2
-with `KD_GRAPHICS`, falls back to VT3 after 120 seconds, and while a compositor
+with `KD_GRAPHICS`, falls back to VT3 after 60 seconds, and while a compositor
 owns the CRTC fbcon cannot draw (`fb0: sys_imageblit: framebuffer is not in
 virtual address space`), so the panel keeps the last animation frame. The system
 itself keeps running (SSH and niri stay up).
