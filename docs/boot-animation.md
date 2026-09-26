@@ -65,6 +65,34 @@ Verify the installed `sheng-boot-splash` unit's `ExecStart` references the new
 assets. Updating the development checkout or Home Manager alone does not update
 the device's system service. Roll back both the boot image and system generation.
 
+## greetd / niri handoff
+
+This nixpkgs fork defines the display manager as `greetd.service` and exposes it
+with `aliases = [ "display-manager.service" ]`; when the `systemd/system`
+directory is generated, the alias overwrites the like-named unit. Upstream hangs
+the handoff (`touch /run/sheng-boot-ui.done` plus `painter --stop`) on
+`systemd.services.display-manager`, so on greetd images both are silently
+dropped. `nixos-rebuild switch` re-starting the dependencies of
+`graphical.target` then **replays** the boot animation: the painter steals VT2
+with `KD_GRAPHICS`, falls back to VT3 after 120 seconds, and while a compositor
+owns the CRTC fbcon cannot draw (`fb0: sys_imageblit: framebuffer is not in
+virtual address space`), so the panel keeps the last animation frame. The system
+itself keeps running (SSH and niri stay up).
+
+This branch re-attaches the same handoff to `greetd.service` through
+`nixos/modules/sheng-local/greeter-boot-ui-handoff.nix`. GDM defines
+`display-manager.service` itself and is unaffected; images without a display
+manager do not involve the handoff at all.
+
+Confirm and recover in place:
+
+```sh
+journalctl -b -o short-monotonic | grep -E 'Starting Sheng rounded boot|sheng-boot-splash'
+ls -l /run/sheng-boot-ui*          # a missing .done means the guard was never armed
+sudo chvt 1                        # the desktop lives on VT1
+sudo touch /run/sheng-boot-ui.done # stop replays for the current boot
+```
+
 ## Build, preview and deployment
 
 ```sh

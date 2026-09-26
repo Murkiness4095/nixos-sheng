@@ -39,6 +39,30 @@
 动画开始前的厂商 Logo、解锁警告属于 Android bootloader，不由本实现控制。
 内核早期崩溃、显示驱动不可用时不能保证设备面板能显示诊断信息，仍需串口或 ADB。
 
+## greetd / niri 的交接
+
+本 nixpkgs 的 greetd 模块把显示管理器定义成 `greetd.service`，并用
+`aliases = [ "display-manager.service" ]` 暴露别名；生成 `systemd/system` 时
+aliases 会覆盖同名 unit。上游把「停 painter + 写 `/run/sheng-boot-ui.done`」的
+握手挂在 `systemd.services.display-manager` 上，所以在 greetd 镜像里这两项会被
+静默丢弃，`nixos-rebuild switch` 重新拉起 `graphical.target` 的依赖时会**重播**
+开机动画：painter 抢走 VT2 并置 `KD_GRAPHICS`，120 秒后落入 VT3；而 compositor
+占用 CRTC 时 fbcon 画不出来（`fb0: sys_imageblit: framebuffer is not in virtual
+address space`），屏幕就停在最后一帧雪花上。系统本身照常运行（SSH、niri 都在）。
+
+本分支已用 `nixos/modules/sheng-local/greeter-boot-ui-handoff.nix` 按
+`services.greetd.enable` 把同样的握手补到 `greetd.service`；GDM 自己定义
+`display-manager.service`，不受影响，无显示管理器的 minimal 也不涉及。
+
+现场确认与恢复：
+
+```sh
+journalctl -b -o short-monotonic | grep -E 'Starting Sheng rounded boot|sheng-boot-splash'
+ls -l /run/sheng-boot-ui*          # 缺 .done 就是守卫没武装
+sudo chvt 1                        # 桌面在 VT1，切回去
+sudo touch /run/sheng-boot-ui.done # 本次开机不再重播
+```
+
 ## 实现与交接
 
 使用现有 `sheng-fb-painter` 的 SFB1 绘制路径，未重新启用曾阻塞启动的 LVGL 路径。
