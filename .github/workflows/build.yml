@@ -60,6 +60,15 @@ jobs:
           grep -Fq 'page size: 4096' bootimg-info.txt
           grep -Fq 'root=PARTLABEL=userdata' bootimg-info.txt
 
+      - name: Assert kernel version
+        run: |
+          set -euo pipefail
+          v=$(nix eval --raw '.#nixos.config.boot.kernelPackages.kernel.version')
+          m=$(nix eval --raw '.#nixos.config.boot.kernelPackages.kernel.modDirVersion')
+          echo "kernel.version=$v modDirVersion=$m"
+          test "$v" = "7.2.2"
+          test "$m" = "7.2.2-sm8550"
+
       - name: Build rootfs image
         run: nix build -L .#nixos -o result-image
 
