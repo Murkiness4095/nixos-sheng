@@ -70,4 +70,7 @@
   services.getty.autologinUser = "root";
 
   system.stateVersion = lib.mkDefault "26.11";
+
+  # debug: USB ACM console (ttyGS0); occupies Type-C, disables USB host/keyboard
+  services.shengSerialConsole.enable = true;
 }
