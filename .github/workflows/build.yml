@@ -54,16 +54,16 @@ jobs:
           ls -l result-uboot/boot.img
           size=$(stat -L -c %s result-uboot/boot.img)
           test "$size" -lt $((192 * 1024 * 1024))
-          nix shell nixpkgs#mkbootimg -c unpack_bootimg --boot_img result-uboot/boot.img --out bootimg-unpacked | tee bootimg-info.txt
-          grep -Eq 'header_version.*\b2\b' bootimg-info.txt
-          grep -Eq 'kernel.*0x00008000|kernel_offset.*0x00008000|kernel_offset.*32768' bootimg-info.txt
-          grep -Eq 'page_size.*4096' bootimg-info.txt
+          nix shell nixpkgs#android-tools -c unpack_bootimg --boot_img result-uboot/boot.img --out bootimg-unpacked | tee bootimg-info.txt
+          grep -Fxq 'boot image header version: 2' bootimg-info.txt
+          grep -Fq 'kernel load address: 0x00008000' bootimg-info.txt
+          grep -Fq 'page size: 4096' bootimg-info.txt
           grep -Fq 'root=PARTLABEL=userdata' bootimg-info.txt
 
       - name: Build rootfs image
         run: nix build -L .#nixos -o result-image
 
-      - name: Verify, compress rootfs image
+      - name: Verify and compress rootfs image
         run: |
           set -euo pipefail
           img=result-image/sheng-rootfs.sparse.img
