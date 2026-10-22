@@ -1,0 +1,93 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            keep-env-derivations = true
+            keep-outputs = true
+
+      - name: Restore Nix store cache
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-aarch64-${{ runner.os }}-${{ hashFiles('flake.lock', '**/*.nix') }}
+          restore-prefixes-first-match: nix-aarch64-${{ runner.os }}-
+          gc-max-store-size-linux: 8G
+          purge: true
+          purge-created: 604800
+          purge-last-accessed: 604800
+          purge-primary-key: never
+
+      - name: Build U-Boot image
+        run: nix build -L .#u-boot -o result-uboot
+
+      - name: Verify and inspect boot.img
+        run: |
+          set -euo pipefail
+          test -f result-uboot/boot.img
+          ls -l result-uboot/boot.img
+          size=$(stat -L -c %s result-uboot/boot.img)
+          test "$size" -lt $((192 * 1024 * 1024))
+          nix shell nixpkgs#mkbootimg -c unpack_bootimg --boot_img result-uboot/boot.img --out bootimg-unpacked | tee bootimg-info.txt
+          grep -Eq 'header_version.*\b2\b' bootimg-info.txt
+          grep -Eq 'kernel.*0x00008000|kernel_offset.*0x00008000|kernel_offset.*32768' bootimg-info.txt
+          grep -Eq 'page_size.*4096' bootimg-info.txt
+          grep -Fq 'root=PARTLABEL=userdata' bootimg-info.txt
+
+      - name: Build rootfs image
+        run: nix build -L .#nixos -o result-image
+
+      - name: Verify, compress rootfs image
+        run: |
+          set -euo pipefail
+          img=result-image/sheng-rootfs.sparse.img
+          test -f "$img"
+          magic=$(od -An -tx1 -N4 "$img" | tr -d ' \n')
+          test "$magic" = "3aff26ed"
+          ls -lh "$img"
+          mkdir -p artifacts
+          cp result-uboot/boot.img artifacts/sheng-boot.img
+          nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o artifacts/sheng-rootfs.sparse.img.zst
+          ls -lh artifacts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-flashable
+          if-no-files-found: error
+          path: |
+            artifacts/sheng-boot.img
+            artifacts/sheng-rootfs.sparse.img.zst
+
+      - name: Save Nix store cache on failure
+        if: failure()
+        uses: nix-community/cache-nix-action/save@v7
+        with:
+          primary-key: nix-aarch64-${{ runner.os }}-${{ hashFiles('flake.lock', '**/*.nix') }}
+          gc-max-store-size-linux: 8G
