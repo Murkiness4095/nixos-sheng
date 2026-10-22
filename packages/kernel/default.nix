@@ -225,8 +225,8 @@ linuxManualConfig (
       ;
 
     # sm8550.config sets CONFIG_LOCALVERSION="-sm8550", so kernelrelease is
-    # 7.2.0-sm8550, not 7.2.0-sheng.
-    modDirVersion = "7.2.0-sm8550";
+    # 7.2.2-sm8550, not 7.2.2-sheng.
+    modDirVersion = "7.2.2-sm8550";
 
     allowImportFromDerivation = true;
 
