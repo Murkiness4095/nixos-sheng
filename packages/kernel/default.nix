@@ -137,6 +137,10 @@ let
       perl -0777 -pi -e '
         s/(#define NVT_LOG\(fmt, args\.\.\.\)\s*)pr_err/$1pr_debug/;
       ' drivers/input/touchscreen/nt36532e/nt36xxx.h
+
+      perl -pi -e 's/#define GS_CONSOLE_BUF_SIZE\s+8192/#define GS_CONSOLE_BUF_SIZE (1024 * 1024)/' drivers/usb/gadget/function/u_serial.c
+
+      grep -q '1024 \* 1024' drivers/usb/gadget/function/u_serial.c
     '';
     installPhase = "cp -r . $out";
   };
@@ -151,9 +155,11 @@ let
   ourConfigFragment = builtins.toFile "sheng-extra.config" ''
     CONFIG_USB_CONFIGFS_ACM=y
     CONFIG_USB_CONFIGFS_SERIAL=y
-    # =m, not =y: built in it auto-binds the UDC at boot, pinning the Type-C
-    # port in peripheral mode for the life of the system.
-    CONFIG_USB_G_SERIAL=m
+    # Built in, not =m: the early console must exist before any module loads.
+    # Binding the UDC at boot pins the Type-C port in peripheral mode for the
+    # life of the system; this is debug-only and accepted as such.
+    CONFIG_USB_G_SERIAL=y
+    CONFIG_U_SERIAL_CONSOLE=y
     CONFIG_GPIO_SHARED_PROXY=y
     # Without this the ps5169 retimer never binds, the DP controller defers
     # forever, and msm_drm -- all components or none -- never completes.

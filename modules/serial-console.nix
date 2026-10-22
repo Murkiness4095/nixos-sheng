@@ -21,13 +21,17 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Not a ConfigFS gadget: two drivers on one UDC re-enumerate mid-boot and
-    # kill serial output.
-    boot.kernelModules = [ "g_serial" ];
-
+    # g_serial is built into the kernel (CONFIG_USB_G_SERIAL=y), so there is
+    # no module to load here.
+    #
     # mkBefore because the LAST console= becomes /dev/console, and that must
-    # stay tty0 (the panel).
-    boot.kernelParams = lib.mkBefore [ "console=ttyGS0" ];
+    # stay tty0 (the panel). g_serial.use_acm=1 selects the ACM function.
+    # ignore_loglevel lets early printk reach the gadget.
+    boot.kernelParams = lib.mkBefore [
+      "console=ttyGS0"
+      "g_serial.use_acm=1"
+      "ignore_loglevel"
+    ];
 
     systemd.services."serial-getty@ttyGS0" = {
       enable = true;
