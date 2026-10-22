@@ -63,8 +63,8 @@ jobs:
       - name: Assert kernel version
         run: |
           set -euo pipefail
-          v=$(nix eval --raw '.#nixos.config.boot.kernelPackages.kernel.version')
-          m=$(nix eval --raw '.#nixos.config.boot.kernelPackages.kernel.modDirVersion')
+          v=$(nix eval --raw '.#nixosConfigurations.sheng.config.boot.kernelPackages.kernel.version')
+          m=$(nix eval --raw '.#nixosConfigurations.sheng.config.boot.kernelPackages.kernel.modDirVersion')
           echo "kernel.version=$v modDirVersion=$m"
           test "$v" = "7.2.2"
           test "$m" = "7.2.2-sm8550"
