@@ -237,7 +237,7 @@ linuxManualConfig (
     allowImportFromDerivation = true;
 
     extraMeta = {
-      branch = "sheng-7.2.0";
+      branch = "sheng-7.2.2";
       description = "Mainline kernel for the Xiaomi Pad 6S Pro (sheng, SM8550P)";
     };
   }
