@@ -27,8 +27,8 @@ let
   rawSrc = fetchFromGitHub {
     owner = "ianchb";
     repo = "sm8550-mainline";
-    rev = "ad75da348a020f0b7cb541ca2f06ab38cf77004d"; # sheng-7.2.2
-    hash = "sha256-Lbnf90NdICvMKwmJRwT24XYp6EvZxgaRjb6pvNpKWdw=";
+    rev = "005aa8ccae670a8e731a279e2a802ac75e1e662d"; # sheng-7.2.0
+    hash = "sha256-IGPK6s0gtPZ587NnLotFvDXx9IFWbo52PHjTNXQTQns=";
   };
 
   # Debug instrumentation for the U-Boot DSI work.
@@ -145,7 +145,7 @@ let
     installPhase = "cp -r . $out";
   };
 
-  version = "7.2.2-sheng";
+  version = "7.2.0-sheng";
 
   baseConfig = fetchurl {
     url = "https://raw.githubusercontent.com/ianchb/debian-sheng/1e2a85fb6d89acb8989c416c729696403744c7a7/sm8550.config";
@@ -231,13 +231,13 @@ linuxManualConfig (
       ;
 
     # sm8550.config sets CONFIG_LOCALVERSION="-sm8550", so kernelrelease is
-    # 7.2.2-sm8550, not 7.2.2-sheng.
-    modDirVersion = "7.2.2-sm8550";
+    # 7.2.0-sm8550, not 7.2.0-sheng.
+    modDirVersion = "7.2.0-sm8550";
 
     allowImportFromDerivation = true;
 
     extraMeta = {
-      branch = "sheng-7.2.2";
+      branch = "sheng-7.2.0";
       description = "Mainline kernel for the Xiaomi Pad 6S Pro (sheng, SM8550P)";
     };
   }

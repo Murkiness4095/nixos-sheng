@@ -387,7 +387,7 @@ This port stands on other people's work.
   original `sm8550-xiaomi-sheng.dts` that this board's device tree is trimmed down from.
   The only third-party copyright line in the sheng-specific U-Boot code is theirs.
 - **[ianchb](https://github.com/ianchb)** — [`sm8550-mainline`](https://github.com/ianchb/sm8550-mainline)
-  (branch `sheng-7.2.2`, pinned at `ad75da34`), the kernel this actually runs, and
+  (branch `sheng-7.2.0`, pinned at `005aa8cc`), the kernel this actually runs, and
   [`debian-sheng`](https://github.com/ianchb/debian-sheng), the source of the `sm8550.config`
   kernel configuration and of the vendor firmware/userspace packaging ported here.
 - **[alghiffaryfa19](https://gitlab.postmarketos.org/alghiffaryfa19)** — the postmarketOS
