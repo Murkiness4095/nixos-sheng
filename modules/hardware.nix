@@ -36,6 +36,11 @@
   # including ttyGS0 once the gadget console is up.
   boot.initrd.systemd.emergencyAccess = true;
 
+  # This kernel has no TPM at all (CONFIG_TCG_TPM is not set), but systemd's
+  # initrd TPM2 support adds tpm-tis/tpm-crb to availableKernelModules, and
+  # makeModulesClosure fails on modules the kernel does not build.
+  boot.initrd.systemd.tpm2.enable = false;
+
   # console=tty0 pairs with fbcon=map:0 to put the log on the panel; fbcon
   # alone is not a printk target. There is no reachable UART here: uart7 is
   # disabled in the DT and the ttyMSM0 console therefore never registers.
