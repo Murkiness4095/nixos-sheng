@@ -17,13 +17,30 @@
     # DisplayPort Playback, and one unresolvable link fails the whole card.
   };
 
-  boot.initrd.enable = false;
+  # Stage 1 is what waits for UFS, resolves /dev/disk/by-partlabel/userdata
+  # through udev and mounts the ext4 root. Without it the kernel's own
+  # wait_for_root() has no timeout under `rootwait` and nothing visible to
+  # report what it is waiting for.
+  boot.initrd.enable = true;
+  boot.initrd.systemd.enable = true;
+
+  # UFS, ext4 and sd_mod are built into this kernel (CONFIG_SCSI_UFS_QCOM,
+  # CONFIG_EXT4_FS, CONFIG_BLK_DEV_SD all =y), so stage 1 needs no modules.
+  # NixOS's default list names modules this config does not build at all
+  # (uhci_hcd, xhci_pci_prom21, ...), and makeModulesClosure errors out on a
+  # module it cannot find instead of skipping it.
+  boot.initrd.includeDefaultModules = false;
+
+  # If the root device never appears, drop to an unauthenticated shell
+  # rather than hanging. Its output goes to every registered console,
+  # including ttyGS0 once the gadget console is up.
+  boot.initrd.systemd.emergencyAccess = true;
 
   # console=tty0 pairs with fbcon=map:0 to put the log on the panel; fbcon
-  # alone is not a printk target, and serial is not connected.
+  # alone is not a printk target. There is no reachable UART here: uart7 is
+  # disabled in the DT and the ttyMSM0 console therefore never registers.
   boot.consoleLogLevel = lib.mkDefault 4;
   boot.kernelParams = [
-    "console=ttyMSM0,115200n8"
     "console=tty0"
     "fbcon=map:0"
     "root=PARTLABEL=${config.sheng.rootfs.partlabel}"

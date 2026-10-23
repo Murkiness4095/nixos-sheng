@@ -1,9 +1,10 @@
 # Writes /boot/extlinux/extlinux.conf and the menu file U-Boot imports.
 #
-# Forked from generic-extlinux-compatible, whose addEntry() returns early
-# unless $path/initrd exists -- and nixpkgs only creates it when
-# boot.initrd.enable is on, which is what makes root=PARTLABEL= work here.
-# The stock installer therefore emits a header with no LABELs at all.
+# Forked from generic-extlinux-compatible, whose addEntry() refuses to emit
+# an entry unless $path/initrd exists (nixpkgs only creates that symlink
+# when boot.initrd.enable is on), and which cannot write U-Boot's
+# sheng-bootmenu.env. This fork copies the initrd when the generation has
+# one and emits INITRD, so entries work with stage 1 both on and off.
 {
   config,
   lib,
@@ -56,7 +57,7 @@ let
 
       # $1 = system path, $2 = tag ("default" or a generation number)
       entry() {
-        local p k d label params
+        local p k d i label params
         p=$(readlink -f "$1")
         [ -e "$p/kernel" ] || return 0
         copyIn "$p/kernel"; k=$result
@@ -71,6 +72,12 @@ let
           printf '  MENU LABEL NixOS - Generation %s (%s)\n' "$2" "$label"
         fi
         printf '  LINUX ../nixos/%s\n' "$k"
+        # Optional: generations from before boot.initrd.enable was turned on
+        # have no initrd, and must stay bootable from the same menu.
+        if [ -e "$p/initrd" ]; then
+          copyIn "$p/initrd"; i=$result
+          printf '  INITRD ../nixos/%s\n' "$i"
+        fi
         printf '  FDT ../nixos/%s/%s\n' "$d" '${cfg.dtbName}'
         printf '  APPEND init=%s/init %s\n' "$p" "$params"
       }
