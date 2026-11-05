@@ -54,7 +54,7 @@ let
         result=$(basename "$dst")
       }
 
-      # $1 = system path, $2 = tag ("default" or a generation number)
+      # $1 = system path, $2 = tag, $3 = optional diagnostic parameters
       entry() {
         local p k d label params
         p=$(readlink -f "$1")
@@ -72,7 +72,7 @@ let
         fi
         printf '  LINUX ../nixos/%s\n' "$k"
         printf '  FDT ../nixos/%s/%s\n' "$d" '${cfg.dtbName}'
-        printf '  APPEND init=%s/init %s\n' "$p" "$params"
+        printf '  APPEND init=%s/init %s %s\n' "$p" "$params" "''${3:-}"
       }
 
       tmp="$target/extlinux/.extlinux.conf.$$"
@@ -84,6 +84,7 @@ let
         echo "PROMPT 0"
         echo "TIMEOUT 1"
         entry "$default" default
+        entry "$default" diagnostic "panic=0 loglevel=8 ignore_loglevel initcall_debug printk.time=1 log_buf_len=16M"
       } > "$tmp"
 
       menutmp="$target/.sheng-bootmenu.env.$$"
@@ -141,6 +142,12 @@ let
           "$n" "$g" "$ts" "$g" >> "$menutmp"
         n=$((n + 1))
       done
+
+      # Selectable with the tablet buttons; no working OS or keyboard needed.
+      # Do not use bootlinux here: its rescue fallback drops these parameters.
+      printf 'bootmenu_%d=NixOS diagnostics=setenv pxe_label_override nixos-diagnostic; run bootnixos\n' \
+        "$n" >> "$menutmp"
+      n=$((n + 1))
 
       printf 'bootmenu_%d=Reboot to fastboot (bootloader)=run rebootfastboot\n' \
         "$n" >> "$menutmp"
