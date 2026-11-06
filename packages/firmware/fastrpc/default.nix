@@ -8,6 +8,7 @@
   pkg-config,
   patchelf,
   libyaml,
+  libbsd,
 }:
 
 stdenv.mkDerivation rec {
@@ -26,7 +27,7 @@ stdenv.mkDerivation rec {
     pkg-config
     patchelf
   ];
-  buildInputs = [ libyaml ];
+  buildInputs = [ libyaml libbsd ];
 
   # Upstream's default is /usr/share/qcom, which nothing on NixOS populates; an
   # empty DSP search path makes the aDSP's sns_registry abort the whole ADSP.

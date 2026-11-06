@@ -60,8 +60,12 @@ jobs:
           grep -Fq 'page size: 4096' bootimg-info.txt
           grep -Fq 'root=PARTLABEL=userdata' bootimg-info.txt
 
-      - name: Build updated sensor and pen userspace
-        run: nix build -L --no-link .#fastrpc .#libssc .#iio-sensor-proxy .#sheng-pen-status
+      - name: Build device userspace before compiling the kernel
+        run: |
+          set -euo pipefail
+          for package in fastrpc libssc iio-sensor-proxy sheng-sensors sheng-firmware-blobs alsa-ucm-sheng sheng-devauth sheng-thp sheng-pen-status sheng-keyboard-helper sheng-fingerprint sheng-mipps-auth sheng-charger-mode; do
+            nix build -L --no-link ".#$package"
+          done
 
       - name: Assert kernel version
         run: |
