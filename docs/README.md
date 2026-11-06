@@ -66,10 +66,13 @@ below follows from that.
   directories, so the list has to be handed to it. Pick any NixOS generation with the
   volume keys. The last entry is always "Reboot to fastboot".
 
-- **Reboot to fastboot, from the menu.** The Android BCB/`misc` handshake is ignored by
-  this ABL (measured: it boots straight past `bootonce-bootloader`). The real mechanism is
-  an IMEM restart-reason cookie — `0x146aa65c = 0x77665500`, taken from the *stock* DTB —
-  plus a **PSCI** reset. `qcom_pshold` does not preserve the reason.
+- **Reboot to fastboot, from the menu.** `sheng_bootloader` resolves the device tree's
+  PMIC SDAM reboot-mode cell, preserves unrelated bits, verifies the write, and invokes
+  PSCI reset. The previous BCB and IMEM approaches did not work reliably on this tablet.
+
+- **Memory layout from ABL.** Validated external memory ranges take precedence over
+  the built-in 8 GiB board layout, preserving firmware holes and supporting the tested
+  16 GiB variant.
 
 - **Charger insert does not boot the device into Linux.** Stock ABL routes a cable
   insert to offline charging, which this port does not implement, so every plug-in used to
@@ -358,6 +361,9 @@ packages do.
 `services.shengFirmware.enable` installs the lot. Individually, via the overlay's
 `shengPackages`:
 
+See [the Debian reference baseline](debian-reference.md) for component selection,
+NixOS-specific differences, and the distinction between build and hardware validation.
+
 | Package | What it is |
 |---|---|
 | `sheng-firmware-blobs` | The Qualcomm/Xiaomi firmware images (ADSP, CDSP, modem, WLAN, touch). Installed via `hardware.firmware` **uncompressed** — this kernel has no `FW_LOADER_COMPRESS`. |
@@ -387,7 +393,7 @@ This port stands on other people's work.
   original `sm8550-xiaomi-sheng.dts` that this board's device tree is trimmed down from.
   The only third-party copyright line in the sheng-specific U-Boot code is theirs.
 - **[ianchb](https://github.com/ianchb)** — [`sm8550-mainline`](https://github.com/ianchb/sm8550-mainline)
-  (branch `sheng-7.2.0`), the kernel this actually runs, and
+  (branch `sheng-7.3.0`), the kernel this actually runs, and
   [`debian-sheng`](https://github.com/ianchb/debian-sheng), the source of the `sm8550.config`
   kernel configuration and of the vendor firmware/userspace packaging ported here.
 - **[alghiffaryfa19](https://gitlab.postmarketos.org/alghiffaryfa19)** — the postmarketOS
