@@ -31,7 +31,13 @@ stdenv.mkDerivation rec {
 
   # Upstream's default is /usr/share/qcom, which nothing on NixOS populates; an
   # empty DSP search path makes the aDSP's sns_registry abort the whole ADSP.
-  configureFlags = [ "--with-config-base-dir=/var/lib/qcom" ];
+  configureFlags = [
+    "--with-config-base-dir=/var/lib/qcom"
+    "--sbindir=${placeholder "out"}/bin"
+    "--with-systemdsystemunitdir=${placeholder "out"}/lib/systemd/system"
+    "--with-udevrulesdir=${placeholder "out"}/lib/udev/rules.d"
+    "--with-sysusersdir=${placeholder "out"}/lib/sysusers.d"
+  ];
 
   postInstall = ''
     install -Dm755 src/adsprpcd "$out/bin/adsprpcd"
