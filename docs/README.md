@@ -94,6 +94,8 @@ below follows from that.
 Vendor userspace works — sensors, fingerprint + QTEE, touch host processing, pen status,
 keyboard helper, 120 W charging authentication, ALSA UCM — behind the single switch
 `services.shengFirmware.enable`. See [Firmware](#firmware).
+Measured peripheral results and first-time headless pen pairing are recorded in
+[peripheral validation](peripheral-validation.md).
 
 ### Generic U-Boot bugs fixed along the way
 

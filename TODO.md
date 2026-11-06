@@ -67,18 +67,19 @@ INFO Debayer debayer_cpu.cpp:331 Unsupported input format R10_CSI2P
 INFO Camera camera_manager.cpp:223 Adding camera '.../cci@ac16000/i2c-bus@0/camera@3c'
 ```
 
-(`camera@3c` is the ov02b1b, I²C address 0x3c.) The camera registers and
-appears on the PipeWire graph, but can never produce a usable stream, so
-GStreamer correctly drops it and applications see two. This is not a
-configuration problem.
+(`camera@3c` is the ov02b1b, I²C address 0x3c.) The camera registers and can
+capture raw Bayer frames, but this CPU debayer cannot convert them to a usable colour preview. Raw capture and desktop camera
+support must therefore be tested separately. This is not fixed by enumeration alone.
 
 **Possible routes**, both upstream work rather than config:
 
 - Add `R10_CSI2P` support to libcamera's `debayer_cpu.cpp`.
 - Have the CAMSS pipeline hand over an unpacked 10-bit variant instead.
 
-Worth checking whether debian-sheng exposes all three — if it does, this is
-solvable and the difference is worth finding.
+A fresh libcamera 0.7.2 test receives three ABGR8888 frames each from the main
+back and front cameras, and three R10_CSI2P raw frames from ov02b1b. The
+unsupported-format warning remains. No images were saved; desktop preview
+and recording still need separate verification.
 
 **Ruled out already:** the kernel sensor drivers are present and all three
 sensors bind; libcamera's `Failed to create camera sensor helper` warnings
@@ -107,11 +108,11 @@ KWin has nothing to identify the device with or map to an output.
 The device itself is fine: name `NVTCapacitiveTouchScreen`, vendor `0x2717`
 (Xiaomi), product `0x3653`, bus `0x0006`, on `/dev/input/event3`.
 
-**Fix.** A one-line change in the driver to point `dev.parent` at the SPI
-device (and ideally fill `input->id.*` and `->phys` too). That belongs
-upstream in ianchb's experimental nt36532e driver, or as a patch carried in
-`packages/kernel`. A udev rule cannot properly substitute for a missing
-parent.
+**Historical proposed fix.** Setting `dev.parent` on a kernel-created input
+device was suggested for the original driver. The current THP service creates
+virtual devices through uinput, so that proposal must not be treated as a
+verified fix for the current stack. Reproduce the blank label in a desktop
+session and inspect the properties KWin actually reads before patching it.
 
 Note the DSI panel also reports 0 bytes of EDID, which is normal for an
 internal panel but means there is no display name to pair a touchscreen
@@ -132,10 +133,11 @@ with either.
   device, check that a keyboard appears, that `pgrep plasma-keyboard` finds a
   process while the greeter is up, and that `journalctl -u display-manager` is
   free of kwin input-method errors.
-- **Cold-boot verification owed.** The audio, camera and Maliit fixes have
-  all been applied with `nixos-rebuild switch` plus service restarts. The
-  ordering of `sheng-alsa-ucm.service` against the sound card appearing has
-  not been proven from a cold boot.
+- **Desktop verification owed.** Greeter, camera applications and Maliit still
+  need a desktop-session test. Audio UCM device ordering has now been verified
+  across fresh-image and subsequent boots; ALSA playback was heard by the user
+  and microphone capture produced nonzero levels. See
+  [peripheral validation](docs/peripheral-validation.md) for the measured scope.
 - **`iio-sensor-proxy` takes ~20 s to expose all four sensors.** libssc waits
   5 s for the QRTR bus on every `discover`, and there are four SSC drivers, so
   auto-rotate only becomes available about 25 s after boot. Three fixes live

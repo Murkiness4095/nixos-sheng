@@ -91,3 +91,31 @@ NixOS 也可在 Android 初始化后正常启动及 rebuild。测试使用设备
 Recovery 同样分 A/B 槽：`fastboot reboot recovery` 会启动当前槽的 recovery。
 切换后看到另一款 recovery 不代表原 recovery 被替换。可分别安装匹配 sheng 的 recovery，
 无需因此修改 U-Boot。
+
+## Android OTA 的边界
+
+当前没有实现“原生 Android OTA 后自动保留 NixOS 启动槽”。Android 从 A 槽更新时，
+可能把更新写到非活动的 B 槽，包括覆盖 NixOS 的 `boot_b`、`dtbo_b`，随后切换到 B 槽。
+`linux` 文件系统与启动槽是两回事：Linux 启动入口被覆盖，不等于根文件系统丢失。
+
+不能把“OTA 后直接重刷 boot_b”当成通用升级方案。Virtual A/B 升级还涉及快照合并和
+`super` 的逻辑分区布局；若升级后只有 Android B 槽可启动，直接覆盖 B 槽就会丢失这个入口。
+应先针对具体升级包确认 Android A 槽可启动，再恢复 NixOS B 槽；必要时使用匹配版本的完整
+Android 包选择性恢复 A 槽启动链及 `super`，保留 `linux` 和 Linux 启动槽。
+这套 Android 升级迁移流程尚未实测，不应视为已支持的自动 OTA。
+
+已知 A 槽安卓正常、仅 B 槽 Linux 启动文件需要恢复时，可以使用匹配当前系统的双系统
+U-Boot 产物恢复入口，无需重刷 `linux`：
+
+```sh
+fastboot flash boot_b sheng-boot-dual.img
+fastboot erase dtbo_b
+fastboot set_active b
+fastboot reboot
+```
+
+不要把单系统 `sheng-boot.img` 用在这里，它会读取 `userdata`。
+不要为恢复 Linux 启动入口而清除 `userdata`、`metadata`、`linux` 或重建 GPT。
+
+外设的实际测试范围及无桌面环境的笔配对方法见
+[外设验证](peripheral-validation.md)。
