@@ -32,6 +32,8 @@ in
   patches = [
     ./patches/0001-add-display-handoff-diagnostic.patch
     ./patches/0002-trace-linux-handoff.patch
+    ./patches/0003-check-loaded-kernel.patch
+    ./patches/0004-prefer-abl-memory-layout.patch
   ];
 
   # The MDSS register sequencing is Zig. Passed as a make variable rather than

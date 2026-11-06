@@ -1,0 +1,31 @@
+--- a/arch/arm/mach-snapdragon/board.c
++++ b/arch/arm/mach-snapdragon/board.c
+@@ -264,18 +264,17 @@
+ 		panic("Internal FDT is invalid and no external FDT was provided! (fdt=%#llx)\n",
+ 		      (phys_addr_t)external_fdt);
+ 
+-	/* Prefer memory information from internal DT if it's present */
+-	if (internal_valid)
++	/* ABL knows the installed RAM variant and firmware carveouts. The
++	 * built-in sheng tree contains a captured 8 GiB layout; using it on
++	 * a 16 GiB tablet exposes firmware-owned holes as ordinary RAM.
++	 * Keep the built-in hardware tree, but prefer ABL for DRAM ranges.
++	 */
++	if (external_valid)
++		ret = qcom_parse_memory(external_fdt);
++
++	if (ret < 0 && internal_valid) {
++		debug("No valid ABL memory info, falling back to internal FDT\n");
+ 		ret = qcom_parse_memory(internal_fdt);
+-
+-	if (ret < 0 && external_valid) {
+-		/* No internal FDT or it lacks a proper /memory node.
+-		 * The previous bootloader handed us something, let's try that.
+-		 */
+-		if (internal_valid)
+-			debug("No memory info in internal FDT, falling back to external\n");
+-
+-		ret = qcom_parse_memory(external_fdt);
+ 	}
+ 
+ 	if (ret < 0)

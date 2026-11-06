@@ -1,17 +1,52 @@
 --- a/arch/arm/lib/bootm.c
 +++ b/arch/arm/lib/bootm.c
-@@ -265,16 +265,32 @@
+@@ -26,6 +26,7 @@
+ #include <linux/libfdt.h>
+ #include <mapmem.h>
+ #include <fdt_support.h>
++#include <u-boot/crc.h>
+ #include <asm/bootm.h>
+ #include <asm/secure.h>
+ #include <linux/compiler.h>
+@@ -265,16 +266,59 @@
  		(ulong) kernel_entry);
  	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
  
 +	/* Explicit diagnostic opt-in; leave normal boots unchanged. */
 +	bool sheng_trace = env_get_yesno("sheng_trace_handoff") == 1;
 +
-+	if (sheng_trace)
++	if (sheng_trace) {
++		const void *fdt = images->ft_addr;
++		int node = -1, len;
++		const fdt32_t *reg;
++		const char *args;
 +		printf("SHENG handoff: entry=%llx fdt=%llx EL=%u\n",
 +		       (unsigned long long)images->ep,
 +		       (unsigned long long)(uintptr_t)images->ft_addr,
 +		       current_el());
++		ulong loaded_size = env_get_ulong("sheng_loaded_kernel_size", 16, 0);
++		if (loaded_size)
++			printf("SHENG kernel CRC32 before jump: %08x bytes=%lx\n",
++			       crc32(0, (const unsigned char *)(uintptr_t)images->ep,
++				     loaded_size), loaded_size);
++		printf("SHENG FDT: check=%d bytes=%u\n",
++		       fdt_check_header(fdt), fdt_totalsize(fdt));
++		while ((node = fdt_node_offset_by_prop_value(fdt, node,
++				"device_type", "memory", 7)) >= 0) {
++			reg = fdt_getprop(fdt, node, "reg", &len);
++			printf("SHENG memory: %s reg-bytes=%d\n",
++			       fdt_get_name(fdt, node, NULL), len);
++			if (reg && fdt_address_cells(fdt, 0) == 2 &&
++			    fdt_size_cells(fdt, 0) == 2)
++				for (int i = 0; i + 4 <= len / 4; i += 4)
++					printf("  %08x%08x + %08x%08x\n",
++					       fdt32_to_cpu(reg[i]), fdt32_to_cpu(reg[i + 1]),
++					       fdt32_to_cpu(reg[i + 2]), fdt32_to_cpu(reg[i + 3]));
++		}
++		node = fdt_path_offset(fdt, "/chosen");
++		args = node >= 0 ? fdt_getprop(fdt, node, "bootargs", NULL) : NULL;
++		printf("SHENG bootargs: %s\n", args ? args : "MISSING");
++	}
  	bootm_final(flag);
 +	if (sheng_trace)
 +		puts("SHENG handoff: devices stopped\n");
