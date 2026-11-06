@@ -1,0 +1,17 @@
+--- a/board/qualcomm/sheng/sheng.c
++++ b/board/qualcomm/sheng/sheng.c
+@@ -1071,6 +1071,14 @@
+  */
+ void board_preboot_os(void)
+ {
++	/* Diagnostic opt-in: isolate display teardown from the Linux handoff.
++	 * Keep the normal path unchanged unless explicitly selected by a menu.
++	 */
++	if (env_get_yesno("sheng_skip_display_teardown") == 1) {
++		puts("SHENG: skipping display teardown for handoff test\n");
++		return;
++	}
++
+ 	if (!IS_ENABLED(CONFIG_VIDEO_SHENG_MDSS))
+ 		return;
+ 

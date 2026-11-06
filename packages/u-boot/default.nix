@@ -29,6 +29,11 @@ in
 
   defconfig = "sm8550_defconfig";
 
+  patches = [
+    ./patches/0001-add-display-handoff-diagnostic.patch
+    ./patches/0002-trace-linux-handoff.patch
+  ];
+
   # The MDSS register sequencing is Zig. Passed as a make variable rather than
   # put on PATH, because nixpkgs' zig hook would replace buildPhase with `zig
   # build` and there is no build.zig here.

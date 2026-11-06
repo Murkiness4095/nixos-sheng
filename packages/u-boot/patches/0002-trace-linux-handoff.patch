@@ -1,0 +1,35 @@
+--- a/arch/arm/lib/bootm.c
++++ b/arch/arm/lib/bootm.c
+@@ -265,16 +265,32 @@
+ 		(ulong) kernel_entry);
+ 	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
+ 
++	/* Explicit diagnostic opt-in; leave normal boots unchanged. */
++	bool sheng_trace = env_get_yesno("sheng_trace_handoff") == 1;
++
++	if (sheng_trace)
++		printf("SHENG handoff: entry=%llx fdt=%llx EL=%u\n",
++		       (unsigned long long)images->ep,
++		       (unsigned long long)(uintptr_t)images->ft_addr,
++		       current_el());
+ 	bootm_final(flag);
++	if (sheng_trace)
++		puts("SHENG handoff: devices stopped\n");
+ 	cleanup_before_linux();
++	if (sheng_trace)
++		puts("SHENG handoff: caches stopped\n");
+ 
+ 	if (!(flag & BOOTM_STATE_OS_FAKE_GO)) {
+ #ifdef CONFIG_ARMV8_PSCI
+ 		armv8_setup_psci();
+ #endif
+ 		do_nonsec_virt_switch();
++		if (sheng_trace)
++			puts("SHENG handoff: virtualization configured\n");
+ 
+ 		update_os_arch_secondary_cores(images->os.arch);
++		if (sheng_trace)
++			puts("SHENG handoff: jumping to Linux\n");
+ 
+ #ifdef CONFIG_ARMV8_SWITCH_TO_EL1
+ 		armv8_switch_to_el2((u64)images->ft_addr, 0, 0, 0,
