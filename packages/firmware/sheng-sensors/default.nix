@@ -27,6 +27,11 @@ stdenvNoCC.mkDerivation {
     mkdir -p "$out/share"
     cp -r --no-preserve=mode -- usr/share/qcom "$out/share/"
 
+    # The DSP reads these absolute paths through FastRPC. Changing FastRPC's
+    # base directory alone does not rewrite this Debian/FHS registry config.
+    substituteInPlace "$out/share/qcom/sm8550/Xiaomi/sheng/vendor/etc/sensors/sns_reg_config" \
+      --replace-fail /usr/share/qcom /var/lib/qcom
+
     install -Dm644 ${./81-sheng-ssc-sensors.rules} \
       "$out/lib/udev/rules.d/81-sheng-ssc-sensors.rules"
 
