@@ -84,6 +84,10 @@ in
   systemd.services.sheng-alsa-ucm = {
     description = "Apply the sheng HiFi UCM verb";
     wantedBy = [ "multi-user.target" ];
+    # The card probes asynchronously. A condition alone skips this unit
+    # permanently if multi-user startup wins the race against the DSP.
+    requires = [ "dev-snd-controlC0.device" ];
+    after = [ "dev-snd-controlC0.device" ];
     before = [ "multi-user.target" ];
     unitConfig.ConditionPathExists = "/proc/asound/card0";
     environment.ALSA_CONFIG_UCM2 = "${ucm}/share/alsa/ucm2";
