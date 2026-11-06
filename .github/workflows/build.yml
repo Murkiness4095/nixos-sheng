@@ -69,6 +69,25 @@ jobs:
           test "$v" = "7.3.0-sheng"
           test "$m" = "7.3.0-sm8550"
 
+      - name: Export kernel closure for device rebuilds
+        run: |
+          set -euo pipefail
+          nix build -L .#nixosConfigurations.sheng.config.boot.kernelPackages.kernel -o result-kernel
+          mkdir -p kernel-artifacts
+          nix path-info -r ./result-kernel > kernel-artifacts/store-paths.txt
+          nix-store --export $(cat kernel-artifacts/store-paths.txt) | zstd -T0 -3 -o kernel-artifacts/sheng-kernel-closure.nar.zst
+          nix eval --raw .#nixosConfigurations.sheng.config.boot.kernelPackages.kernel.outPath > kernel-artifacts/kernel-path.txt
+          git rev-parse HEAD > kernel-artifacts/revision.txt
+          cp flake.lock kernel-artifacts/flake.lock
+          (cd kernel-artifacts && sha256sum sheng-kernel-closure.nar.zst > SHA256SUMS)
+
+      - name: Upload kernel closure
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-kernel-closure
+          if-no-files-found: error
+          path: kernel-artifacts/
+
       - name: Build rootfs image
         run: nix build -L .#nixos -o result-image
 
