@@ -5,8 +5,9 @@ NixOS and a U-Boot port for the **Xiaomi Pad 6S Pro 12.4** (`sheng`, Snapdragon 
 > **Project Status**
 > Early but usable. The tablet boots mainline Linux with a working display, backlight,
 > sensors, fingerprint reader, keyboard and pen. It needs an **unlocked bootloader**, and
-> **installing wipes the device** — dual-boot is not supported. Read
-> [Flashing](#flashing) before you start.
+> **single-system installation erases Android data**. Separate Android/NixOS
+> builds are available; follow [dual-system instructions](dual-boot.md) for those
+> artifacts, or [Flashing](#flashing) for single-system installation.
 
 ---
 
@@ -81,7 +82,7 @@ below follows from that.
   reboot is misread) and parked at `sheng: charging. Press POWER to boot.`
 
 - **Initramfs-less boot.** `boot.initrd.enable = false`; the kernel finds root through its
-  own `root=PARTLABEL=userdata`.
+  own `root=PARTLABEL=userdata` (single system) or `root=PARTLABEL=linux` (dual system).
 
 - **A/B slot marking.** ABL keeps slot state in GPT attribute bits 48–55 and decrements
   the retry counter on every handoff; plain Linux never sets the "successful" bit, so the
@@ -201,7 +202,8 @@ nix build .#u-boot --override-input u-boot-src ../u-boot
 ## Flashing
 
 > **Warning**
-> This **erases everything on the tablet**, including Android. Dual-boot is not supported.
+> These are **single-system instructions** and erase Android data. For Android/NixOS
+> coexistence, use the separate [dual-system artifacts and instructions](dual-boot.md).
 
 **Prerequisites:** an unlocked bootloader, and `fastboot` on your PATH.
 
@@ -233,8 +235,9 @@ fastboot reboot
 > the safe one: `userdata` is full of Android's data, and that is precisely what those
 > `DONT_CARE` regions preserve.
 
-Both slots are written because ABL chooses which one to boot and the choice is not
-yours to make reliably.
+The single-system installer writes both boot slots so either slot starts NixOS.
+The dual-system procedure writes only the designated Linux slot and selects it
+explicitly with `fastboot set_active`.
 
 The scripted equivalents, which validate the images first and refuse to write anything
 but their hardcoded partitions:

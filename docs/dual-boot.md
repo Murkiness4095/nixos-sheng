@@ -41,3 +41,45 @@ sudo reboot
 现有 `fastboot-flash` 和 `flash-rootfs` 是单系统工具，不能用于双系统部署：
 前者写两个 boot 槽，后者针对 userdata。双系统只操作确定用于 Linux 的启动槽及 `linux` 分区。
 Android OTA 对 A/B 槽位的覆盖需另行处理；不能把占用一个启动槽后的更新方式当作纯安卓使用。
+
+## 已有安卓和 linux 分区时安装
+
+以下示例要求安卓 A 槽已能正常启动，`linux` 分区已经建立且允许覆盖。
+它不负责分区、恢复已经被单系统覆盖的安卓数据，或修复不完整的安卓启动链。
+先确认 `fastboot devices` 只有目标设备，再执行：
+
+```sh
+zstd -d sheng-rootfs-dual.sparse.img.zst
+fastboot erase dtbo_b
+fastboot flash boot_b sheng-boot-dual.img
+fastboot erase linux
+fastboot flash linux sheng-rootfs-dual.sparse.img
+fastboot set_active b
+fastboot reboot
+```
+
+必须先擦除 `linux`，避免 Android sparse 镜像中的 DONT_CARE 区域保留旧文件系统数据。
+不要擦除 `userdata`、`metadata` 或 A 槽分区；它们属于安卓。
+
+第一阶段通过电脑上的 fastboot 切换启动槽，U-Boot 菜单暂不直接切换安卓：
+
+```sh
+# NixOS 中先进入 fastboot；也可用电源键和音量下键进入。
+sudo systemctl reboot --reboot-argument=bootloader
+
+# 电脑上选择安卓 A 槽
+fastboot set_active a
+fastboot reboot
+
+# 从安卓进入 fastboot 后，电脑上选择 NixOS B 槽
+fastboot set_active b
+fastboot reboot
+```
+
+## 设备验证范围
+
+已用 GitHub CI 双系统产物在独立 `linux` 分区启动，验证 B 槽启动成功标记、
+标准 `nixos-rebuild boot`、新增配置世代后的启动，以及 `--rollback` 回退到原始 CI 世代。
+显示接口、声卡与 UCM、触摸服务、指纹设备枚举、加速度计、环境光及 Wi-Fi 均完成基础检查；
+这些检查不等于音频播放、指纹录入或手写笔绘画的完整测试。
+安卓恢复与两个系统之间的切换仍在设备验证中，完成前保持实验状态。
