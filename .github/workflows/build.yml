@@ -94,7 +94,7 @@ jobs:
           nix build -L .#nixosConfigurations.sheng.config.system.build.toplevel -o result-system
           for template in minimal flake-parts; do
             nix build -L "./examples/$template#nixosConfigurations.sheng.config.system.build.toplevel" \
-              --override-input nixos-sheng . --no-write-lock-file -o "result-$template"
+              --no-update-lock-file -o "result-$template"
             test "$(readlink -f "result-$template")" = "$(readlink -f result-system)"
           done
 
