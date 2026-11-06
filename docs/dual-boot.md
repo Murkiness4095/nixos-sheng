@@ -40,7 +40,8 @@ sudo reboot
 
 现有 `fastboot-flash` 和 `flash-rootfs` 是单系统工具，不能用于双系统部署：
 前者写两个 boot 槽，后者针对 userdata。双系统只操作确定用于 Linux 的启动槽及 `linux` 分区。
-Android OTA 对 A/B 槽位的覆盖需另行处理；不能把占用一个启动槽后的更新方式当作纯安卓使用。
+用户已明确采用选择性重刷 Android 的维护方式，不需要原生 OTA 自动保护。
+重刷前仍要审查包内脚本，独立根分区不会阻止脚本覆盖另一个系统的 boot 槽。
 
 ## 已有安卓和 linux 分区时安装
 
@@ -81,18 +82,22 @@ fastboot reboot
 已用 GitHub CI 双系统产物在独立 `linux` 分区启动，验证 B 槽启动成功标记、
 标准 `nixos-rebuild boot`、新增配置世代后的启动，以及 `--rollback` 回退到原始 CI 世代。
 显示接口、声卡与 UCM、触摸服务、指纹设备枚举、加速度计、环境光及 Wi-Fi 均完成基础检查；
-这些检查不等于音频播放、指纹录入或手写笔绘画的完整测试。
+上述是早期基础检查。后续已完成扬声器实听、麦克风电平、笔压感和指纹录入/匹配/拒绝/删除，
+详见 [外设验证](peripheral-validation.md)；桌面应用和长期使用仍未全量验收。
 Android A 槽和 NixOS B 槽已完成双向切换测试，Android 的初始化状态与测试文件在切换后保留，
 NixOS 也可在 Android 初始化后正常启动及 rebuild。测试使用设备原有 Android 16
 `OS3.0.304.0.WNXCNXM` 系统内容，保留原 `super`，恢复同版本官方
 `boot`、`dtbo`、`init_boot` 和 `vendor_boot`；这不等于重新刷入完整官方 ROM，
-也不代表已验证所有第三方 ROM。双系统仍属于实验支持，尤其需要谨慎处理 Android OTA。
+也不代表已验证所有第三方 ROM。双系统仍属于实验支持，后续 Android 按选择性重刷维护。
 
 Recovery 同样分 A/B 槽：`fastboot reboot recovery` 会启动当前槽的 recovery。
 切换后看到另一款 recovery 不代表原 recovery 被替换。可分别安装匹配 sheng 的 recovery，
 无需因此修改 U-Boot。
 
-## Android OTA 的边界
+## Android 维护策略：选择性重刷
+
+用户明确不需要原生 OTA 自动保留双系统；接受按具体 ROM 包选择性重刷。
+OTA 自动化不再列为移植待办，下面仅解释为何不能直接运行整包脚本或随意恢复一个槽。
 
 当前没有实现“原生 Android OTA 后自动保留 NixOS 启动槽”。Android 从 A 槽更新时，
 可能把更新写到非活动的 B 槽，包括覆盖 NixOS 的 `boot_b`、`dtbo_b`，随后切换到 B 槽。

@@ -1,163 +1,56 @@
-# TODO
+# 待办与验收标准
 
-Unfinished hardware work, plus the odd solved case whose false leads are worth
-keeping. Everything here was measured on hardware.
+截至 2026-11-07（北京时间）。先读 [交接入口](docs/HANDOVER.md) 和
+[实测矩阵](docs/peripheral-validation.md)，再决定下一步；不要重新把已验收的启动问题当作未完成事项。
 
----
+## 已完成的基础验收
 
-## SOLVED — the ADSP crash loop (battery, sensors, MiPPS)
+- [x] U-Boot 内存来源修复、正常启动及返回真正 fastboot。
+- [x] 7.3.0 内核、当前锁定 Nixpkgs、两个个人配置样板完整 CI 构建。
+- [x] 单/双系统独立产物、关键硬件配置比较、主分支产物与实机基线核对。
+- [x] 双系统 Android A / NixOS B、双向切换、两边数据保留。
+- [x] NixOS rebuild、候选世代启动、回退；首启 store 注册和 rootfs 扩容。
+- [x] 声卡启动顺序、扬声器实听、麦克风电平；触摸、原装无触控板键盘。
+- [x] 焦点触控笔在 120 Hz 的坐标、倾角、悬停、按键和真实压感；首次蓝牙配对。
+- [x] 指纹录入、正确匹配、未录入手指拒绝和测试数据删除。
+- [x] 主摄/前摄彩色帧、副摄原始帧采集；两槽橙狐。
 
-Kept because the symptoms pointed everywhere except the cause.
+## P1：日常使用优先
 
-**Symptoms.** Every `/sys/class/power_supply/qcom-battmgr-bat/*` read returned
-`EAGAIN`; `upower` showed 0% and `battery-missing`. No auto-rotate,
-`HasAccelerometer false`. `xiaomi-mipps-auth` failed with `Read returned None`
-on the pmic-glink `xiaomi` node.
+| 工作 | 验收标准 | 边界 |
+| --- | --- | --- |
+| 实际桌面配置 | 使用用户最终 nix-config；登录/注销、显示缩放、触摸映射、锁屏、屏幕键盘可用 | 当前 CI 基线是命令行，不等于已验收 KDE/GNOME |
+| 待机与唤醒 | 记录挂起方式、唤醒源和恢复后的显示、触摸、声音、Wi-Fi/蓝牙；重复多次并保留日志 | 尚无系统性待机实测，不预设哪种 suspend 模式可用 |
+| 桌面笔绘画 | 60/120 Hz 下在实际应用测试压感、倾角、橡皮/按键和防误触 | 事件成功不等于所有绘画应用已适配；144 Hz 不在 THP 声明的笔扫描支持范围 |
+| 蓝牙重连 | NixOS 重启、休眠、笔重新吸附/取下后的自动连接和压感恢复 | 首次配对已验证，持久重连及跨 Android 配对关系尚未系统测试 |
 
-**Cause.** One thing: the ADSP was crashing and recovering roughly every five
-seconds, 76 times in the first eight minutes.
+## P2：外设完善
 
-```
-PDM: service 'sensor_process' crash: 'EF:sensor_process:0x4:sns_registry:0x6b:sns_registry_s'
-qcom_q6v5_pas 6800000.remoteproc: fatal error received: err_qdi.c:1211:...:sns_registry_sensor.c:329:SNS_RC_SUCCESS == rc
-```
+| 工作 | 验收标准 | 参考/现状 |
+| --- | --- | --- |
+| 续航、充电与关机充电 | 记录充电器/线材、功率测量方法、待机/屏亮耗电、插拔和关机插电行为 | 电量/ADSP 正常不等于 120 W 已实测；优先比较 Debian 的认证/charger-mode 方案 |
+| 自动旋转与方向 | 桌面实际旋转正确，锁定策略可控；验证键盘装卸/折叠后的 tablet-mode | 传感器可用不等于桌面策略已验证 |
+| 原装键盘细节 | 折叠停用、麦克风指示灯、特殊键、热插拔 | Shift 事件已测；触控板版键盘没有本次实物，不记故障也不记通过 |
+| 音频桌面路由 | PipeWire 默认设备、音量、静音、各麦克风/声道、蓝牙音频和适用配件 | 当前证明的是 ALSA 播放实听及内置麦克风电平 |
+| 摄像头应用 | 前/主摄预览、录像、方向、权限；副摄完成可用彩色转换 | ov02b1b 原始帧已测，libcamera CPU 去马赛克仍拒绝 R10_CSI2P |
+| USB/扩展坞/DP | 关闭调试 gadget 并保留其他控制通道后，实测 host、键鼠、存储和外屏及声音 | 当前 USB 串口占用 Type-C；不能把它当作 host/DP 验收 |
+| 指纹桌面/PAM | 登录、锁屏、sudo 的用户体验及超时恢复 | 底层录入/匹配/拒绝/删除已测；不要再次为“设备枚举”要求录入 |
 
-`sns_registry` aborts the whole ADSP when it cannot read its registry, and it
-reads it back over fastrpc from the AP's filesystem. fastrpc is compiled with
-`CONFIG_BASE_DIR=/usr/share/qcom` (configure.ac default), reads
-`$CONFIG_BASE_DIR/conf.d/*.yaml`, matches `/sys/firmware/devicetree/base/model`
-against the machine key, and uses that machine's `DSP_LIBRARY_PATH` relative to
-`CONFIG_BASE_DIR`. Debian's `sheng-sensors` deb unpacks straight to
-`/usr/share/qcom`, so it works there. The Nix derivation copied the same tree
-to `$out/usr/share/qcom` — a path no profile links — so the search path was
-empty. Everything else rides on the ADSP: `qcom_battmgr` and the `xiaomi`
-power-supply node are pmic-glink endpoints on that same DSP.
+## P3：维护工具及上游工作
 
-Fixed by `--with-config-base-dir=/var/lib/qcom` plus the `sheng-sensors-data`
-unit that seeds it. It has to be a writable copy, not the store path: the DSP
-writes `temp.json` back into the tree.
+- [ ] 审核/改进旧 host 工具：`find-sheng` 的 macOS 网络发现假设、固定 tty/socket、SSH 主机密钥校验策略。
+  当前使用前应阅读源码，不能把它们当作已适配本机 Linux 的自动接管接口。
+- [ ] 若确有需求，再实现带模式和目标槽校验的双系统刷写工具；现有写两槽/擦 userdata 工具不适用于双系统。
+- [ ] 复验历史 KDE 触摸设备名称/映射问题。当前输入由 THP/uinput 生成，旧“给内核 input 设置 parent”的建议不应直接套用。
+- [ ] 整理可上游化的 IIO 发现、声明与可用性通知修复；核对当前上游再提补丁，不重复提交已合并实现。
+- [ ] U-Boot 调试构建、日志黑盒和手工救援路径在相关代码变化时单独验证。
+  正常世代启动通过不代表所有历史诊断入口都已回归。
 
-The registry has to be there **before the ADSP boots**. Putting it in place on
-a running system stops the crash loop but the sensor PD never registers QMI
-service 400, so `ssccli` keeps reporting `SSC QMI Service not found`; only
-after `echo stop/start > /sys/class/remoteproc/remoteproc0/state` does
-`qrtr-DEBUG` show `added server on 5:21 -> service 400`. From a cold boot the
-seed unit orders before `adsprpcd-sensorspd`, so this is a debugging note, not
-a remaining bug.
+## 不在当前目标内
 
-**Everything else matched debian-sheng and was not the problem** — same kernel
-tree and `sm8550.config`, same fastrpc v1.0.2, same libssc with the same
-`wait_for_qmi_service.patch`, same iio-sensor-proxy patch set, and all 276
-sensor data files byte-identical.
+- Android 原生 OTA 自动保护/恢复 Linux 槽：用户明确不需要，后续按具体 Android 包选择性重刷维护。
+- 重写整套 U-Boot、为 EFI 而迁移到另一套架构：当前标准 NixOS 更新链已经工作，没有先做这些的要求。
+- 自动把所有板级依赖升级到 HEAD：固件/驱动兼容性优先，遵循 [Debian 策略](docs/debian-reference.md)。
 
----
-
-## Third camera (ov02b1b) — blocked upstream in libcamera
-
-**Symptom.** Camera apps offer two cameras, not three.
-
-The device has 1 front and 2 back sensors. Working: `s5kjn1` (main back) and
-`ov32d40` (front). Not working: `ov02b1b` (secondary back).
-
-**Cause.** `ov02b1b` emits `R10_CSI2P` — packed 10-bit Bayer — and
-libcamera's CPU debayer rejects that format:
-
-```
-INFO Debayer debayer_cpu.cpp:331 Unsupported input format R10_CSI2P
-INFO Camera camera_manager.cpp:223 Adding camera '.../cci@ac16000/i2c-bus@0/camera@3c'
-```
-
-(`camera@3c` is the ov02b1b, I²C address 0x3c.) The camera registers and can
-capture raw Bayer frames, but this CPU debayer cannot convert them to a usable colour preview. Raw capture and desktop camera
-support must therefore be tested separately. This is not fixed by enumeration alone.
-
-**Possible routes**, both upstream work rather than config:
-
-- Add `R10_CSI2P` support to libcamera's `debayer_cpu.cpp`.
-- Have the CAMSS pipeline hand over an unpacked 10-bit variant instead.
-
-A fresh libcamera 0.7.2 test receives three ABGR8888 frames each from the main
-back and front cameras, and three R10_CSI2P raw frames from ov02b1b. The
-unsupported-format warning remains. No images were saved; desktop preview
-and recording still need separate verification.
-
-**Ruled out already:** the kernel sensor drivers are present and all three
-sensors bind; libcamera's `Failed to create camera sensor helper` warnings
-are not fatal (`cam -l` lists all three cameras with those warnings present).
-
----
-
-## Touchscreen shows no device name in KDE
-
-**Symptom.** Touch input works, but KDE's touchscreen settings shows
-`Device: <blank>` and an empty, greyed-out dropdown.
-
-**Cause.** The nt36532e driver registers its input devices with no parent:
-
-```
-NVTCapacitiveTouchScreen -> /virtual/input/input3
-NVTCapacitivePenM80p     -> /virtual/input/input4
-NVTCapacitivePenP81c     -> /virtual/input/input5
-```
-
-Because `input_dev->dev.parent` is never set they land under
-`/devices/virtual/`, so udev exposes only `ID_INPUT=1` and
-`ID_INPUT_TOUCHSCREEN=1` — no `ID_PATH`, no vendor or model strings — and
-KWin has nothing to identify the device with or map to an output.
-
-The device itself is fine: name `NVTCapacitiveTouchScreen`, vendor `0x2717`
-(Xiaomi), product `0x3653`, bus `0x0006`, on `/dev/input/event3`.
-
-**Historical proposed fix.** Setting `dev.parent` on a kernel-created input
-device was suggested for the original driver. The current THP service creates
-virtual devices through uinput, so that proposal must not be treated as a
-verified fix for the current stack. Reproduce the blank label in a desktop
-session and inspect the properties KWin actually reads before patching it.
-
-Note the DSI panel also reports 0 bytes of EDID, which is normal for an
-internal panel but means there is no display name to pair a touchscreen
-with either.
-
----
-
-## Smaller things
-
-- **Qrca cannot use the cameras.** Its Qt backend consumes neither libcamera
-  nor PipeWire here and reports "camera is not supported on the platform".
-  Snapshot and Kamoso (GStreamer) work. `libcamerify <app>` is the shim for
-  V4L2-only applications.
-- **Greeter on-screen keyboard is unverified.** `modules/virtual-keyboard.nix`
-  gives SDDM's kwin greeter the `--inputmethod plasma-keyboard` that nixpkgs
-  omits, which is why the Breeze theme's keyboard button does nothing. Reasoned
-  from the nixpkgs and KDE sources and eval-checked, **not measured**. On the
-  device, check that a keyboard appears, that `pgrep plasma-keyboard` finds a
-  process while the greeter is up, and that `journalctl -u display-manager` is
-  free of kwin input-method errors.
-- **Desktop verification owed.** Greeter, camera applications and Maliit still
-  need a desktop-session test. Audio UCM device ordering has now been verified
-  across fresh-image and subsequent boots; ALSA playback was heard by the user
-  and microphone capture produced nonzero levels. See
-  [peripheral validation](docs/peripheral-validation.md) for the measured scope.
-- **`iio-sensor-proxy` takes ~20 s to expose all four sensors.** libssc waits
-  5 s for the QRTR bus on every `discover`, and there are four SSC drivers, so
-  auto-rotate only becomes available about 25 s after boot. Three fixes live
-  in `packages/firmware/iio-sensor-proxy/`, all worth sending upstream:
-  pmaports' no-exit patch left the client tables NULL (`0100-`), the SSC
-  drivers tore down a sensor that lazy-create had never made (`0101-`),
-  availability was only ever signalled to clients holding a claim, so KWin
-  never learned the accelerometer had shown up (`0102-`), and a claim that
-  arrived during the discovery wait was recorded but never started polling
-  (`0103-`).
-- **KWin never re-enables the sensor on its own.** `availableChanged` only
-  reaches `setAutoRotateAvailable()`, so the capability comes back but
-  `applySensorChanges()` — the sole caller of `OrientationSensor::setEnabled`
-  — is wired to lid, tablet-mode and reading events only. Upstream that gap
-  is unreachable because availability never changes after startup. `0103-`
-  covers it from our side by honouring the claim KWin already made; a real
-  fix belongs in KWin.
-- **Auto-rotate defaults to `inTabletMode` and `tabletMode` is always false.**
-  `gpio-keys` advertises `SW_TABLET_MODE` but nothing drives it, so the policy
-  has to be set to Always in System Settings for rotation to actually fire.
-- **Two cosmetic libssc complaints**, neither fatal: `Mount matrix provided by
-  firmware is all 0` (the udev rule supplies `ACCEL_MOUNT_MATRIX` anyway) and
-  `Failed to unpack Xiaomi Davinci proximity measurement message`.
+历史故障、推理和底层调试线索移到 [排障笔记](docs/bringup-notes.md)。
+每项工作完成后记录源提交、CI、实机结果和限制，再勾选或移除；不要仅凭构建成功关闭交互类待办。

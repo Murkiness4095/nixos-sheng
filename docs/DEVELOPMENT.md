@@ -3,7 +3,10 @@
 Working on `nixos-sheng`: the layout, the scripts, how to get diagnostics off a device
 with no serial port, and the things that have already cost someone a recovery.
 
-If you are just installing, you want [README.md](README.md) instead.
+Start with the [current handover](HANDOVER.md) and [task list](../TODO.md).
+This page retains low-level debugging recipes; historical measurements must be
+revalidated against the current source. For installation, use
+[README.md](README.md) or the [dual-system guide](dual-boot.md).
 
 ---
 
@@ -25,13 +28,13 @@ nixos/
 
 | Module | Does |
 |---|---|
-| `hardware.nix` | Kernel, device tree (+ a `disable-dp-altmode` overlay), kernel params, root filesystem, firmware, networking. Unconditional. |
+| `hardware.nix` | Kernel, DTB, mode-dependent root PARTLABEL, firmware and networking. Current board defaults also enable USB serial. |
 | `image.nix` | `system.build.shengImage` — the ext4 + sparse rootfs images. |
 | `extlinux.nix` | A fork of `generic-extlinux-compatible` that also writes U-Boot's `sheng-bootmenu.env`. |
 | `firmware.nix` | `services.shengFirmware.enable` — the vendor userspace. |
 | `boot-slot.nix` | `services.shengBootSlot.enable` — `qbootctl -m`. |
 | `nix-bootstrap.nix` | `services.shengNixBootstrap.enable` — first-boot store registration. |
-| `serial-console.nix` | `services.shengSerialConsole.enable` — the ttyGS0 gadget console. Off by default. |
+| `serial-console.nix` | ttyGS0 gadget console. Standalone option defaults off; `hardware.nix` enables it in the shipped board configuration. |
 
 **U-Boot lives in a different repository.** It is pinned as the non-flake input
 `u-boot-src` (`github:SushyDev/u-boot`, branch `xiaomi-sheng`). To build against a local
@@ -41,9 +44,11 @@ checkout:
 nix build .#u-boot --override-input u-boot-src ../u-boot
 ```
 
-The `disable-dp-altmode` overlay in `hardware.nix` is not optional: `mdss_dp0`
-`EPROBE_DEFER`s forever on the Type-C retimer and takes the whole msm KMS aggregate down
-with it.
+Do not reintroduce the old `disable-dp-altmode` advice: the current hardware
+module intentionally carries no such overlay. Its comment explains that an
+unresolvable DisplayPort audio link can prevent the entire sound card from
+registering. USB host and external DisplayPort still require their own tests;
+working internal display and audio are not proof that those features work.
 
 ---
 
@@ -75,16 +80,30 @@ The sweep is macOS-specific (`ipconfig`), falling back to `192.168.2.1`.
 
 ### Over the USB serial gadget
 
-> **This is opt-in.** `services.shengSerialConsole.enable` defaults to `false`, because
-> binding the g_serial gadget to the UDC holds the Type-C port in peripheral mode and kills
-> USB host mode with it. An image built without it has no `ttyGS0` at all — `exec`,
-> `read-blackbox` and `capture-linux-dpu` all depend on this, so a debugging image wants:
->
-> ```nix
-> services.shengSerialConsole.enable = true;
-> ```
->
-> On a stock image the equivalent way in is a USB keyboard on tty1, which autologins.
+The standalone `services.shengSerialConsole.enable` option defaults to false,
+but **the shipped board configuration explicitly enables it**. A normal current
+CI image therefore provides the Linux USB ACM console. It binds g_serial and
+holds Type-C in peripheral mode; host keyboards, hubs and DP are not validated
+while this diagnostic gadget owns the port. Before disabling it for host tests,
+establish another working control path.
+
+On Linux the host device is usually `/dev/ttyACM0`, not the macOS
+`/dev/cu.usbmodem101` path used by the older examples below. Confirm the actual
+node after each reconnect and use a single serial reader.
+
+If permissions prevent access, the tested temporary host rule uses `/run`, not
+NixOS's read-only `/etc`:
+
+```sh
+sudo mkdir -p /run/udev/rules.d
+echo 'SUBSYSTEM=="tty", ATTRS{idVendor}=="0525", ATTRS{idProduct}=="a4a7", MODE="0666"' | sudo tee /run/udev/rules.d/70-sheng-debug.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger --subsystem-match=tty --action=change
+```
+
+This deliberately broad local debugging rule expires on host reboot. For normal
+long-term use, express an appropriate user/group rule in the host NixOS config.
+Never interpret permission denial as a tablet boot failure.
 
 With it enabled, `ttyGS0` has root autologin. `tio` is an external prerequisite — it is not
 packaged here:
@@ -104,7 +123,12 @@ nix run .#exec -- 'df -h /'
 
 ## Scripts
 
-All are `nix run .#<name>`, or run directly out of `nixos/scripts/`.
+All are `nix run .#<name>`, or run directly out of `scripts/`.
+
+**Mode warning:** `flash-uboot` and `fastboot-flash` write both boot slots;
+`flash-rootfs` erases `userdata`. These scripts predate the separate dual-system
+outputs and must not be used to preserve Android/NixOS coexistence. Use the
+[dual-system procedure](dual-boot.md) instead.
 
 | Script | Usage | Needs |
 |---|---|---|
@@ -134,7 +158,9 @@ that also resolves to `xbl_a xbl_b xbl_config_a xbl_config_b abl_a abl_b`**, siz
 the partition (32 MiB–512 MiB and larger than the image), `dd`s with `conv=fsync`, then
 reads back and compares SHA-256. Then it reboots and clears the IP cache.
 
-Both slots are written, because which one is live is ambiguous.
+The script writes both slots unconditionally. Slot state is inspectable with
+`qbootctl` or fastboot; this hardcoded behaviour is a script limitation, not a
+requirement of U-Boot. In dual mode it would overwrite Android boot_a.
 
 ### `flash-rootfs` — the destructive one
 
@@ -267,8 +293,15 @@ nix run .#exec -- 'tr " " "\n" < /proc/cmdline | grep sheng'
 
 ### Did my U-Boot change actually boot?
 
-Bump `sheng.b=`, build, `flash-uboot`, then read the tag back off `/proc/cmdline` with the
-command above. If it still shows the old number, you are looking at the old image.
+Prefer `fastboot boot` for a temporary candidate first, preserve a known-good
+image, and verify what was loaded. For a permanent update, read back the intended
+boot partition and compare the hash; in dual mode the intended Linux slot is B,
+not both slots. Inspect applicable `/chosen` diagnostics as well.
+
+The historical `sheng.b=` tag is carried by the rescue bootargs. It is useful
+only when that path actually ran; normal extlinux generations do not necessarily
+inherit it. Do not infer that a normal boot used an old U-Boot merely because
+the rescue-only tag is absent.
 
 ### The panel is black or glitched
 
@@ -305,12 +338,19 @@ dumps of `0x80000`–`0x800fc` were comparing an all-zero gap and falsely matchi
 The A/B retry counter ran out. **Do not reboot eight times to test** — read the bits:
 
 ```sh
-nix run nixpkgs#qbootctl            # both slots
-sfdisk --part-attrs /dev/sdX 14     # boot_a
+# On NixOS: inspect both slots without changing them.
+qbootctl
+
+# On the host in fastboot:
+fastboot getvar current-slot
+fastboot getvar slot-successful:a
+fastboot getvar slot-successful:b
 ```
 
-Recover with `fastboot set_active b && fastboot reboot`. The UFS disk letter moves between
-boots (`sdd`/`sde`/`sdf`), so always resolve through `/dev/disk/by-partlabel/`.
+Select a slot only after identifying a known-good system in that slot. A retry
+counter reset cannot repair an invalid kernel or rootfs. The UFS disk letter
+moves between boots, so resolve partitions through `/dev/disk/by-partlabel/`
+in Linux or `/dev/block/by-name/` in Recovery, never a copied `/dev/sdX` number.
 
 ### Changing a panel timing constant
 
