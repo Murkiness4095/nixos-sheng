@@ -39,6 +39,18 @@
 
       sheng = self.lib.shengSystem { inherit nixpkgs; };
 
+      shengDual = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [
+          {
+            sheng.rootfs.partlabel = "linux";
+            # nixos-rebuild --flake /etc/nixos selects this configuration by
+            # hostname, rather than the single-system `sheng` configuration.
+            networking.hostName = "sheng-dual";
+          }
+        ];
+      };
+
       mkScripts =
         hostPkgs:
         let
@@ -126,6 +138,7 @@
       overlays.default = import ./overlay.nix;
 
       nixosConfigurations.sheng = sheng;
+      nixosConfigurations.sheng-dual = shengDual;
 
       packages = forHosts (
         hostPkgs:
@@ -135,10 +148,17 @@
             default = sheng.config.system.build.shengImage;
 
             nixos = sheng.config.system.build.shengImage;
+            nixos-dual = shengDual.config.system.build.shengImage;
 
             u-boot = pkgs.callPackage ./packages/u-boot {
               src = u-boot-src;
               version = u-boot-src.shortRev or "dirty";
+            };
+
+            u-boot-dual = pkgs.callPackage ./packages/u-boot {
+              src = u-boot-src;
+              version = u-boot-src.shortRev or "dirty";
+              rootPartition = "linux";
             };
 
             kernel = pkgs.shengKernel;
