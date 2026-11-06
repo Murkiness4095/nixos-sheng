@@ -2,7 +2,7 @@
 {
   lib,
   buildUBoot,
-  zig,
+  zig_0_15,
   xxd,
   android-tools,
   src,
@@ -39,7 +39,8 @@ in
   # The MDSS register sequencing is Zig. Passed as a make variable rather than
   # put on PATH, because nixpkgs' zig hook would replace buildPhase with `zig
   # build` and there is no build.zig here.
-  extraMakeFlags = [ "ZIG=${lib.getExe zig}" ];
+  # This source uses Zig 0.15 syntax; nixpkgs.zig now points to 0.17.
+  extraMakeFlags = [ "ZIG=${lib.getExe zig_0_15}" ];
 
   filesToInstall = [
     "u-boot.bin"
