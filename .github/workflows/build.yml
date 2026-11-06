@@ -60,6 +60,9 @@ jobs:
           grep -Fq 'page size: 4096' bootimg-info.txt
           grep -Fq 'root=PARTLABEL=userdata' bootimg-info.txt
 
+      - name: Build updated sensor and pen userspace
+        run: nix build -L --no-link .#fastrpc .#libssc .#iio-sensor-proxy .#sheng-pen-status
+
       - name: Assert kernel version
         run: |
           set -euo pipefail
