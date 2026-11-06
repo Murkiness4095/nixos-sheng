@@ -82,4 +82,12 @@ fastboot reboot
 标准 `nixos-rebuild boot`、新增配置世代后的启动，以及 `--rollback` 回退到原始 CI 世代。
 显示接口、声卡与 UCM、触摸服务、指纹设备枚举、加速度计、环境光及 Wi-Fi 均完成基础检查；
 这些检查不等于音频播放、指纹录入或手写笔绘画的完整测试。
-安卓恢复与两个系统之间的切换仍在设备验证中，完成前保持实验状态。
+Android A 槽和 NixOS B 槽已完成双向切换测试，Android 的初始化状态与测试文件在切换后保留，
+NixOS 也可在 Android 初始化后正常启动及 rebuild。测试使用设备原有 Android 16
+`OS3.0.304.0.WNXCNXM` 系统内容，保留原 `super`，恢复同版本官方
+`boot`、`dtbo`、`init_boot` 和 `vendor_boot`；这不等于重新刷入完整官方 ROM，
+也不代表已验证所有第三方 ROM。双系统仍属于实验支持，尤其需要谨慎处理 Android OTA。
+
+Recovery 同样分 A/B 槽：`fastboot reboot recovery` 会启动当前槽的 recovery。
+切换后看到另一款 recovery 不代表原 recovery 被替换。可分别安装匹配 sheng 的 recovery，
+无需因此修改 U-Boot。
