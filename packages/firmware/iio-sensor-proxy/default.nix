@@ -54,7 +54,7 @@ stdenv.mkDerivation {
   ];
 
   mesonFlags = [
-    "-Dssc-support=true"
+    "-Dssc-support=enabled"
     "-Dsystemdsystemunitdir=${placeholder "out"}/lib/systemd/system"
     "-Dudevrulesdir=${placeholder "out"}/lib/udev/rules.d"
   ];
