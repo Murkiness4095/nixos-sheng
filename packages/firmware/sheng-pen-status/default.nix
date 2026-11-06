@@ -10,8 +10,8 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "ianchb";
     repo = "xiaomi-pen-status";
-    rev = "8b0ff3eb143b84541cc1e55ea9cdd3a723256021";
-    hash = "sha256-qQ/9y/CsJN3E1EIUbAJx4iMF8SQ+hMokYJrVCgYG7bA=";
+    rev = "fcf349109d2e69aedf7170479cc38b102ba1d4c0";
+    hash = "sha256-UwRYo4nSElw14HRsuNlR7XimSA26RLmsB4iivf9IT6Y=";
   };
 
   nativeBuildInputs = [ qt6.qmake qt6.wrapQtAppsHook pkg-config ];

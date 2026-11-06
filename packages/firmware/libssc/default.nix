@@ -13,18 +13,19 @@
   protobuf,
   protobufc,
   libqmi,
+  python3,
 }:
 
 stdenv.mkDerivation {
   pname = "libssc";
-  version = "0.3.0";
+  version = "0.4.4";
 
   src = fetchFromGitea {
     domain = "codeberg.org";
     owner = "DylanVanAssche";
     repo = "libssc";
-    rev = "f6dfbfa5f34ef22f3d47ef346c22834e79c60df1"; # main as of 2026-08-18
-    hash = "sha256-UPLKuePBKgQsA0qgY5xcvoj6jpxHhxJ9pMWJdD23LSg=";
+    rev = "033e2a32095c024d6dbdfb1d4ae1db4a94be32f1";
+    hash = "sha256-1ZgEUddT2VGaR+bQrSPNJehzmQMp7EuCQOoRr12B9+w=";
   };
 
   # Adds a 5x1s retry around the SSC service lookup: sensorspd takes a moment
@@ -41,6 +42,7 @@ stdenv.mkDerivation {
     ninja
     pkg-config
     protobuf
+    python3
   ];
   buildInputs = [ glib ];
   # libssc.pc Requires: these, so consumers resolving it via pkg-config need

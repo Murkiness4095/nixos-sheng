@@ -1,5 +1,5 @@
 # Qualcomm FastRPC userspace (ADSP RPC transport) + the adsprpcd sensor
-# daemon service. Source: https://github.com/qualcomm/fastrpc (v1.0.2).
+# daemon service. Source: https://github.com/qualcomm/fastrpc (v1.0.8).
 {
   lib,
   stdenv,
@@ -12,13 +12,13 @@
 
 stdenv.mkDerivation rec {
   pname = "fastrpc";
-  version = "1.0.2";
+  version = "1.0.8";
 
   src = fetchFromGitHub {
     owner = "qualcomm";
     repo = "fastrpc";
     rev = "v${version}";
-    hash = "sha256-/RXH34zqAxtWty75UHoOvS6fdmB+UfTRtB6G9IZiSWk=";
+    hash = "sha256-XL0u7zNRxpUHBQ761aXFUupR0AHJfRFRZPa92LNn2ZQ=";
   };
 
   nativeBuildInputs = [

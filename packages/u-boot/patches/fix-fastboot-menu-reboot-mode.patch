@@ -13,10 +13,10 @@
  #include <power/pmic.h>
  #include <linux/psci.h>
 +#include <sysreset.h>
+ #include <sheng_mdss_abi.h>
  
  DECLARE_GLOBAL_DATA_PTR;
- 
-@@ -1109,3 +1111,80 @@
+@@ -1012,3 +1014,80 @@
  
  	sheng_mdss_teardown();
  }
@@ -99,19 +99,16 @@
 +	   "[check] - inspect the reboot-mode byte without writing or resetting");
 --- a/board/qualcomm/sheng.env
 +++ b/board/qualcomm/sheng.env
-@@ -110,34 +110,10 @@
- # env persists for the lifetime of this boot once a generated entry has
- # been highlighted and then backed out of.
+@@ -76,28 +76,9 @@
+ # cleared explicitly: the variable persists for the rest of this boot once
+ # a generated entry has been highlighted.
  bootmenu_0=Boot NixOS=setenv pxe_label_override; run bootlinux
 -# Reboot into ABL's fastboot.
 -#
--# Qualcomm does NOT use the Android BCB/misc handshake for this. Tried
--# first (b372) and it does nothing: the bcb write succeeds, the board
--# resets, and ABL boots normally straight past it.
--#
--# The real mechanism is a magic cookie in IMEM, which ABL reads after the
--# reset. Address from the STOCK Android DTB (vendor_boot.img), which is
--# authoritative for what ABL actually looks at:
+-# Qualcomm does not use the Android BCB/misc handshake here: the bcb
+-# write succeeds and ABL boots straight past it. The mechanism is a magic
+-# cookie in IMEM, read after the reset. Address from the stock Android
+-# DTB, which is what ABL actually looks at:
 -#
 -#     qcom,msm-imem@146aa000 {
 -#             restart_reason@65c { reg = <0x65c 0x04>; };
@@ -120,20 +117,16 @@
 -# boot-to-bootloader value. (Mainline's sm8550.dtsi describes a DIFFERENT
 -# imem at 0x14680000 -- do not use that one.)
 -#
--# This is the one reset-shaped entry that is safe, and the "NEVER ADD A
--# reset ENTRY" rule below still stands for plain resets. The difference
--# is where it lands: a plain reset returns to this menu, so a stuck or
--# bouncing button re-selects it forever and never reaches Linux. This
--# lands in fastboot, which is a terminal, recoverable state -- and ABL
--# clears the restart-reason cookie when it honours it, so the next boot
--# is normal even if nobody touches anything.
+-# The one reset-shaped entry that is safe: it lands in fastboot, a
+-# terminal recoverable state, and ABL clears the cookie when it honours
+-# it. The "NEVER ADD A reset ENTRY" rule below still holds for plain
+-# resets.
 -#
--# NOT U-Boot's own fastboot: this build has no USB gadget stack at all.
-+# Use the same PMIC SDAM reboot-mode cell as Linux, then PSCI reset.
-+# The command checks the DT bitfield and verifies the write before reset.
+-# Not U-Boot's own fastboot: this build has no USB gadget stack.
++# Use the verified PMIC reboot-mode cell and PSCI reset.
  bootmenu_1=Reboot to fastboot (bootloader)=run rebootfastboot
 -rebootfastboot=mw.l 0x146aa65c 0x77665500 && reset
 +rebootfastboot=sheng_bootloader
- # NEVER ADD A "reset" ENTRY. A stuck or bouncing button selects it, the
- # board reboots into the menu, and selects it again -- a loop that never
- # reaches Linux and can only be broken over fastboot. Every other
+ # NEVER ADD A "reset" ENTRY. A stuck button selects it, the board reboots
+ # into the menu, and selects it again -- a loop only fastboot breaks.
+ #

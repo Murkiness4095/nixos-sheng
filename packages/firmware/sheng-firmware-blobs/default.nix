@@ -16,7 +16,7 @@ stdenvNoCC.mkDerivation {
   src = fetchFromGitHub {
     owner = "ianchb";
     repo = "sheng-firmware";
-    rev = "2c1e2729a085c7f0470c855d236e49455c4601f0"; # master as of 2026-08-18
+    rev = "053da477a5c338ac28d7c1c869e8c3ff7ca24d11";
     hash = "sha256-8aoSMGso93KQKtMgo7CwI0AdMdHrdmY9aLRd/Ywm/0E=";
   };
 

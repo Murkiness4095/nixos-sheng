@@ -88,6 +88,36 @@ jobs:
           if-no-files-found: error
           path: kernel-artifacts/
 
+      - name: Build and compare personal configuration templates
+        run: |
+          set -euo pipefail
+          nix build -L .#nixosConfigurations.sheng.config.system.build.toplevel -o result-system
+          for template in minimal flake-parts; do
+            nix build -L "./examples/$template#nixosConfigurations.sheng.config.system.build.toplevel" \
+              --override-input nixos-sheng . --no-write-lock-file -o "result-$template"
+            test "$(readlink -f "result-$template")" = "$(readlink -f result-system)"
+          done
+
+      - name: Export system closure for installation without reflashing
+        run: |
+          set -euo pipefail
+          mkdir -p system-artifacts
+          nix path-info -r ./result-system > system-artifacts/store-paths.txt
+          nix-store --export $(cat system-artifacts/store-paths.txt) | zstd -T0 -3 -o system-artifacts/sheng-system-closure.nar.zst
+          readlink -f result-system > system-artifacts/system-path.txt
+          readlink -f result-system/kernel > system-artifacts/kernel-path.txt
+          readlink -f result-system/dtbs > system-artifacts/dtb-path.txt
+          git rev-parse HEAD > system-artifacts/revision.txt
+          cp flake.lock system-artifacts/flake.lock
+          (cd system-artifacts && sha256sum sheng-system-closure.nar.zst > SHA256SUMS)
+
+      - name: Upload system closure
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-system-closure
+          if-no-files-found: error
+          path: system-artifacts/
+
       - name: Build rootfs image
         run: nix build -L .#nixos -o result-image
 
