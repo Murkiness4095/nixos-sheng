@@ -1,0 +1,139 @@
+--- a/board/qualcomm/sheng/sheng.c
++++ b/board/qualcomm/sheng/sheng.c
+@@ -10,6 +10,7 @@
+  * side channels into /chosen. See drivers/video/qualcomm/ARCHITECTURE.md.
+  */
+ 
++#include <command.h>
+ #include <dm.h>
+ #include <env.h>
+ #include <fdt_support.h>
+@@ -27,6 +28,7 @@
+ #include <linux/sizes.h>
+ #include <power/pmic.h>
+ #include <linux/psci.h>
++#include <sysreset.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -1109,3 +1111,80 @@
+ 
+ 	sheng_mdss_teardown();
+ }
++
++/* Match Linux's nvmem-reboot-mode path, including its bitfield semantics.
++ * Only invoked by the explicit bootloader menu command, never during boot.
++ */
++static int do_sheng_bootloader(struct cmd_tbl *cmdtp, int flag,
++			      int argc, char *const argv[])
++{
++	ofnode mode_node, cell, provider, pmic_node;
++	struct udevice *pmic;
++	u32 reg[2], bits[2], base, mode, mask, addr;
++	int old, value, ret;
++	bool check = argc == 2 && !strcmp(argv[1], "check");
++
++	if (argc > 1 && !check)
++		return CMD_RET_USAGE;
++
++	mode_node = ofnode_path("/reboot-mode");
++	if (!ofnode_valid(mode_node) ||
++	    !ofnode_device_is_compatible(mode_node, "nvmem-reboot-mode") ||
++	    ofnode_read_u32(mode_node, "mode-bootloader", &mode))
++		goto bad_dt;
++
++	cell = ofnode_parse_phandle(mode_node, "nvmem-cells", 0);
++	if (!ofnode_valid(cell) ||
++	    ofnode_read_u32_array(cell, "reg", reg, 2) ||
++	    ofnode_read_u32_array(cell, "bits", bits, 2))
++		goto bad_dt;
++	provider = ofnode_get_parent(cell);
++	if (!ofnode_device_is_compatible(provider, "qcom,spmi-sdam") ||
++	    ofnode_read_u32(provider, "reg", &base) ||
++	    reg[1] != 1 || reg[0] > 0xff || base > 0xff00 ||
++	    (base & 0xff) || !bits[1] || bits[0] >= 8 ||
++	    bits[1] > 8 - bits[0] || mode >= (1U << bits[1]))
++		goto bad_dt;
++
++	pmic_node = ofnode_get_parent(provider);
++	ret = uclass_get_device_by_ofnode(UCLASS_PMIC, pmic_node, &pmic);
++	if (ret) {
++		printf("sheng: cannot access reboot-mode PMIC: %d\n", ret);
++		return CMD_RET_FAILURE;
++	}
++	addr = base + reg[0];
++	mask = ((1U << bits[1]) - 1) << bits[0];
++	old = pmic_reg_read(pmic, addr);
++	if (old < 0) {
++		printf("sheng: cannot read reboot-mode byte: %d\n", old);
++		return CMD_RET_FAILURE;
++	}
++	value = (old & ~mask) | (mode << bits[0]);
++	printf("sheng: reboot mode PMIC@%x bits=%u:%u raw=%02x target=%02x%s\n",
++	       addr, bits[0], bits[1], old, value, check ? " (read-only check)" : "");
++	if (check)
++		return CMD_RET_SUCCESS;
++
++	ret = pmic_reg_write(pmic, addr, value);
++	if (ret || pmic_reg_read(pmic, addr) != value) {
++		pmic_reg_write(pmic, addr, old);
++		puts("sheng: reboot-mode write verification failed; staying in U-Boot\n");
++		return CMD_RET_FAILURE;
++	}
++	/* Linux's working reboot path uses PSCI SYSTEM_RESET. Avoid the generic
++	 * reset driver's PS_HOLD fallback and the obsolete IMEM cookie.
++	 */
++	puts("sheng: rebooting to bootloader via PSCI\n");
++	psci_sys_reset(SYSRESET_COLD);
++	pmic_reg_write(pmic, addr, old);
++	puts("sheng: PSCI reset returned; restored previous reboot mode\n");
++	return CMD_RET_FAILURE;
++
++bad_dt:
++	puts("sheng: unsupported reboot-mode device tree; staying in U-Boot\n");
++	return CMD_RET_FAILURE;
++}
++
++U_BOOT_CMD(sheng_bootloader, 2, 0, do_sheng_bootloader,
++	   "reboot to ABL bootloader using the board reboot-mode cell",
++	   "[check] - inspect the reboot-mode byte without writing or resetting");
+--- a/board/qualcomm/sheng.env
++++ b/board/qualcomm/sheng.env
+@@ -110,34 +110,10 @@
+ # env persists for the lifetime of this boot once a generated entry has
+ # been highlighted and then backed out of.
+ bootmenu_0=Boot NixOS=setenv pxe_label_override; run bootlinux
+-# Reboot into ABL's fastboot.
+-#
+-# Qualcomm does NOT use the Android BCB/misc handshake for this. Tried
+-# first (b372) and it does nothing: the bcb write succeeds, the board
+-# resets, and ABL boots normally straight past it.
+-#
+-# The real mechanism is a magic cookie in IMEM, which ABL reads after the
+-# reset. Address from the STOCK Android DTB (vendor_boot.img), which is
+-# authoritative for what ABL actually looks at:
+-#
+-#     qcom,msm-imem@146aa000 {
+-#             restart_reason@65c { reg = <0x65c 0x04>; };
+-#
+-# so 0x146aa000 + 0x65c = 0x146aa65c, and 0x77665500 is the
+-# boot-to-bootloader value. (Mainline's sm8550.dtsi describes a DIFFERENT
+-# imem at 0x14680000 -- do not use that one.)
+-#
+-# This is the one reset-shaped entry that is safe, and the "NEVER ADD A
+-# reset ENTRY" rule below still stands for plain resets. The difference
+-# is where it lands: a plain reset returns to this menu, so a stuck or
+-# bouncing button re-selects it forever and never reaches Linux. This
+-# lands in fastboot, which is a terminal, recoverable state -- and ABL
+-# clears the restart-reason cookie when it honours it, so the next boot
+-# is normal even if nobody touches anything.
+-#
+-# NOT U-Boot's own fastboot: this build has no USB gadget stack at all.
++# Use the same PMIC SDAM reboot-mode cell as Linux, then PSCI reset.
++# The command checks the DT bitfield and verifies the write before reset.
+ bootmenu_1=Reboot to fastboot (bootloader)=run rebootfastboot
+-rebootfastboot=mw.l 0x146aa65c 0x77665500 && reset
++rebootfastboot=sheng_bootloader
+ # NEVER ADD A "reset" ENTRY. A stuck or bouncing button selects it, the
+ # board reboots into the menu, and selects it again -- a loop that never
+ # reaches Linux and can only be broken over fastboot. Every other
