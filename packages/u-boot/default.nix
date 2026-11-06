@@ -7,6 +7,7 @@
   android-tools,
   src,
   version ? "sheng",
+  rootPartition ? "userdata",
 }:
 
 let
@@ -15,7 +16,7 @@ let
   mkbootimgArgs = [
     "--kernel u-boot-dtb.bin"
     "--dtb u-boot.dtb"
-    "--cmdline 'console=ttyMSM0,115200n8 console=ttyGS0,115200n8 g_serial.use_acm=1 root=PARTLABEL=userdata'"
+    "--cmdline 'console=ttyMSM0,115200n8 console=ttyGS0,115200n8 g_serial.use_acm=1 root=PARTLABEL=${rootPartition}'"
     "--base 0x00000000"
     "--kernel_offset 0x00008000"
     "--tags_offset 0x01e00000"
@@ -24,6 +25,8 @@ let
     "--id"
   ];
 in
+assert lib.assertMsg (builtins.match "[A-Za-z0-9_-]{1,36}" rootPartition != null)
+  "U-Boot rootPartition must be a simple GPT partition label";
 (buildUBoot {
   inherit src version;
 
@@ -72,4 +75,13 @@ in
     postInstall = ''
       mkbootimg ${lib.concatStringsSep " " mkbootimgArgs} -o "$out/boot.img"
     '';
+  } // lib.optionalAttrs (rootPartition != "userdata") {
+    # Keep the existing single-system environment byte-for-byte unchanged.
+    # Both normal/menu loading and the rescue path must select the same root.
+    postPatch = (old.postPatch or "") + ''
+      substituteInPlace board/qualcomm/sheng.env \
+        --replace-fail "part number scsi 0 userdata partnum" "part number scsi 0 ${rootPartition} partnum" \
+        --replace-fail "root=PARTLABEL=userdata" "root=PARTLABEL=${rootPartition}"
+    '';
+
   })

@@ -1,0 +1,182 @@
+name: build-dual
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            keep-env-derivations = true
+            keep-outputs = true
+
+      - name: Restore Nix store cache
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-aarch64-${{ runner.os }}-${{ hashFiles('flake.lock', '**/*.nix') }}
+          restore-prefixes-first-match: nix-aarch64-${{ runner.os }}-
+          gc-max-store-size-linux: 8G
+          purge: true
+          purge-created: 604800
+          purge-last-accessed: 604800
+          purge-primary-key: never
+
+      - name: Build U-Boot image
+        run: nix build -L .#u-boot-dual -o result-uboot
+
+      - name: Verify and inspect boot.img
+        run: |
+          set -euo pipefail
+          test -f result-uboot/boot.img
+          ls -l result-uboot/boot.img
+          size=$(stat -L -c %s result-uboot/boot.img)
+          test "$size" -lt $((192 * 1024 * 1024))
+          nix shell nixpkgs#android-tools -c unpack_bootimg --boot_img result-uboot/boot.img --out bootimg-unpacked | tee bootimg-info.txt
+          grep -Fxq 'boot image header version: 2' bootimg-info.txt
+          grep -Fq 'kernel load address: 0x00008000' bootimg-info.txt
+          grep -Fq 'page size: 4096' bootimg-info.txt
+          grep -Fq 'root=PARTLABEL=linux' bootimg-info.txt
+
+      - name: Build device userspace before compiling the kernel
+        run: |
+          set -euo pipefail
+          for package in fastrpc libssc iio-sensor-proxy sheng-sensors sheng-firmware-blobs alsa-ucm-sheng sheng-devauth sheng-thp sheng-pen-status sheng-keyboard-helper sheng-fingerprint sheng-mipps-auth sheng-charger-mode; do
+            nix build -L --no-link ".#$package"
+          done
+
+      - name: Assert kernel version
+        run: |
+          set -euo pipefail
+          v=$(nix eval --raw '.#nixosConfigurations.sheng-dual.config.boot.kernelPackages.kernel.version')
+          m=$(nix eval --raw '.#nixosConfigurations.sheng-dual.config.boot.kernelPackages.kernel.modDirVersion')
+          echo "kernel.version=$v modDirVersion=$m"
+          test "$v" = "7.3.0-sheng"
+          test "$m" = "7.3.0-sm8550"
+
+      - name: Restore kernel closure from a successful build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          kernel=$(nix eval --raw .#nixosConfigurations.sheng-dual.config.boot.kernelPackages.kernel.outPath)
+          if nix path-info "$kernel" >/dev/null 2>&1; then
+            exit 0
+          fi
+          if ! previous=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty'); then
+            echo "Kernel artifact discovery unavailable; building from source."
+            exit 0
+          fi
+          if [ -z "$previous" ] || ! gh run download "$previous" --repo "$GITHUB_REPOSITORY" --name sheng-kernel-closure --dir seed-kernel; then
+            echo "No previous kernel artifact; building from source."
+            exit 0
+          fi
+          (cd seed-kernel && sha256sum -c SHA256SUMS)
+          zstd -dc seed-kernel/sheng-kernel-closure.nar.zst | sudo "$(command -v nix-store)" --import > seed-kernel/imported-paths.txt
+
+      - name: Export kernel closure for device rebuilds
+        run: |
+          set -euo pipefail
+          nix build -L .#nixosConfigurations.sheng-dual.config.boot.kernelPackages.kernel -o result-kernel
+          mkdir -p kernel-artifacts
+          nix path-info -r ./result-kernel > kernel-artifacts/store-paths.txt
+          nix-store --export $(cat kernel-artifacts/store-paths.txt) | zstd -T0 -3 -o kernel-artifacts/sheng-kernel-closure.nar.zst
+          nix eval --raw .#nixosConfigurations.sheng-dual.config.boot.kernelPackages.kernel.outPath > kernel-artifacts/kernel-path.txt
+          git rev-parse HEAD > kernel-artifacts/revision.txt
+          cp flake.lock kernel-artifacts/flake.lock
+          (cd kernel-artifacts && sha256sum sheng-kernel-closure.nar.zst > SHA256SUMS)
+
+      - name: Upload kernel closure
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-kernel-closure
+          if-no-files-found: error
+          path: kernel-artifacts/
+
+      - name: Compare single and dual hardware configurations
+        run: |
+          set -euo pipefail
+          nix build -L .#nixosConfigurations.sheng.config.system.build.toplevel -o result-single-system
+          nix build -L .#nixosConfigurations.sheng-dual.config.system.build.toplevel -o result-system
+          test "$(readlink -f result-single-system/kernel)" = "$(readlink -f result-system/kernel)"
+          test "$(readlink -f result-single-system/dtbs)" = "$(readlink -f result-system/dtbs)"
+          selector='c: { kernel = c.boot.kernelPackages.kernel.outPath; firmware = toString c.hardware.firmware; vendorServices = c.services.shengFirmware.enable; serial = c.services.shengSerialConsole.enable; slotMarking = c.services.shengBootSlot.enable; fingerprint = c.services.fprintd.enable; bluetooth = c.hardware.bluetooth.enable; networkmanager = c.networking.networkmanager.enable; audio = c.systemd.services.sheng-alsa-ucm.serviceConfig.ExecStart; audioDependencies = c.systemd.services.sheng-alsa-ucm.requires; params = builtins.filter (p: builtins.match "root=.*" p == null) c.boot.kernelParams; }'
+          nix eval --json --apply "$selector" .#nixosConfigurations.sheng.config > single-hardware.json
+          nix eval --json --apply "$selector" .#nixosConfigurations.sheng-dual.config > dual-hardware.json
+          cmp single-hardware.json dual-hardware.json
+          test "$(nix eval --raw .#nixosConfigurations.sheng.config.sheng.rootfs.partlabel)" = userdata
+          test "$(nix eval --raw .#nixosConfigurations.sheng-dual.config.sheng.rootfs.partlabel)" = linux
+
+      - name: Export system closure for installation without reflashing
+        run: |
+          set -euo pipefail
+          mkdir -p system-artifacts
+          nix path-info -r ./result-system > system-artifacts/store-paths.txt
+          nix-store --export $(cat system-artifacts/store-paths.txt) | zstd -T0 -3 -o system-artifacts/sheng-system-closure.nar.zst
+          readlink -f result-system > system-artifacts/system-path.txt
+          readlink -f result-system/kernel > system-artifacts/kernel-path.txt
+          readlink -f result-system/dtbs > system-artifacts/dtb-path.txt
+          git rev-parse HEAD > system-artifacts/revision.txt
+          cp flake.lock system-artifacts/flake.lock
+          (cd system-artifacts && sha256sum sheng-system-closure.nar.zst > SHA256SUMS)
+
+      - name: Upload system closure
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-dual-system-closure
+          if-no-files-found: error
+          path: system-artifacts/
+
+      - name: Build rootfs image
+        run: nix build -L .#nixos-dual -o result-image
+
+      - name: Verify and compress rootfs image
+        run: |
+          set -euo pipefail
+          img=result-image/sheng-rootfs.sparse.img
+          test -f "$img"
+          magic=$(od -An -tx1 -N4 "$img" | tr -d ' \n')
+          test "$magic" = "3aff26ed"
+          ls -lh "$img"
+          mkdir -p artifacts
+          cp result-uboot/boot.img artifacts/sheng-boot-dual.img
+          nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o artifacts/sheng-rootfs-dual.sparse.img.zst
+          ls -lh artifacts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-dual-flashable
+          if-no-files-found: error
+          path: |
+            artifacts/sheng-boot-dual.img
+            artifacts/sheng-rootfs-dual.sparse.img.zst
+
+      - name: Save Nix store cache on failure
+        if: failure()
+        uses: nix-community/cache-nix-action/save@v7
+        with:
+          primary-key: nix-aarch64-${{ runner.os }}-${{ hashFiles('flake.lock', '**/*.nix') }}
+          gc-max-store-size-linux: 8G
