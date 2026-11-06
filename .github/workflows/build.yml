@@ -76,6 +76,26 @@ jobs:
           test "$v" = "7.3.0-sheng"
           test "$m" = "7.3.0-sm8550"
 
+      - name: Restore kernel closure from a successful build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          kernel=$(nix eval --raw .#nixosConfigurations.sheng.config.boot.kernelPackages.kernel.outPath)
+          if nix path-info "$kernel" >/dev/null 2>&1; then
+            exit 0
+          fi
+          if ! previous=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty'); then
+            echo "Kernel artifact discovery unavailable; building from source."
+            exit 0
+          fi
+          if [ -z "$previous" ] || ! gh run download "$previous" --repo "$GITHUB_REPOSITORY" --name sheng-kernel-closure --dir seed-kernel; then
+            echo "No previous kernel artifact; building from source."
+            exit 0
+          fi
+          (cd seed-kernel && sha256sum -c SHA256SUMS)
+          zstd -dc seed-kernel/sheng-kernel-closure.nar.zst | sudo "$(command -v nix-store)" --import > seed-kernel/imported-paths.txt
+
       - name: Export kernel closure for device rebuilds
         run: |
           set -euo pipefail
