@@ -6,11 +6,11 @@
         "u-boot-src": "u-boot-src"
       },
       "locked": {
-        "lastModified": 1793939510,
-        "narHash": "sha256-RdJQ30uugVOZk5mg+7Dl6oHEfNKe1HJKza4/lxleZek=",
+        "lastModified": 1793946438,
+        "narHash": "sha256-1un0wUSkE4i00241qPDPzacTxMO/KFKuoiYmSV6ZxRA=",
         "owner": "Murkiness4095",
         "repo": "nixos-sheng",
-        "rev": "b8510d15438f9a3738d40cfa1498a73b169d13b7",
+        "rev": "e2ddc2dac6d5ebc59db76ca42671eebf9d194054",
         "type": "github"
       },
       "original": {
@@ -21,11 +21,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1787001381,
-        "narHash": "sha256-Ue1Yo8gfHdD4TMtNewhA4tkSYeFqXThju0nCyJc3ALo=",
+        "lastModified": 1793726008,
+        "narHash": "sha256-jQp1wKvbwWdLBASTXkSi/VYmDJ5AbBi1WvcMt9HWJC8=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "ec2d622de0773551768cf98f3fc50cbcc003b9c5",
+        "rev": "1d060086d60cb76a40cf37109f979d88a5bd6396",
         "type": "github"
       },
       "original": {
@@ -43,11 +43,11 @@
     "u-boot-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1787446235,
-        "narHash": "sha256-GPPQTTfnyKbtRQjSb34SpvBdaqV82XXM8IhLxMJodws=",
+        "lastModified": 1787502608,
+        "narHash": "sha256-Y1TQnXczQivmn05qCRvHygjinBy/I553u//aJCHb7Gc=",
         "owner": "SushyDev",
         "repo": "u-boot",
-        "rev": "2fa422313f6ab5bd9706d5c339f22ec31434a55e",
+        "rev": "7025b792e2884c5fb4747d891e30002ea029048a",
         "type": "github"
       },
       "original": {
