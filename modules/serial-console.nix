@@ -26,11 +26,11 @@ in
     #
     # mkBefore because the LAST console= becomes /dev/console, and that must
     # stay tty0 (the panel). g_serial.use_acm=1 selects the ACM function.
-    # ignore_loglevel lets early printk reach the gadget.
+    # The diagnostics boot entry enables verbose printk output when needed.
+    # Keep the normal log level: this kernel has extensive DSI/DPU tracing.
     boot.kernelParams = lib.mkBefore [
       "console=ttyGS0"
       "g_serial.use_acm=1"
-      "ignore_loglevel"
     ];
 
     systemd.services."serial-getty@ttyGS0" = {

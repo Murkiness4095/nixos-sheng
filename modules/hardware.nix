@@ -69,6 +69,10 @@
   # Set here, not as a runtime drop-in, which systemd applies first.
   services.getty.autologinUser = "root";
 
+  # A tablet's short power-key press must not shut down the bring-up console.
+  # A desktop profile can supply its own power-key policy.
+  services.logind.settings.Login.HandlePowerKey = lib.mkDefault "ignore";
+
   system.stateVersion = lib.mkDefault "26.11";
 
   # debug: USB ACM console (ttyGS0); occupies Type-C, disables USB host/keyboard
