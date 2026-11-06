@@ -50,7 +50,6 @@ stdenv.mkDerivation {
     mkdir -p "$out/etc/xdg/autostart"
     sed 's/^Exec=.*/Exec=xiaomi-pen-status/' xiaomi-pen-status.desktop \
       > "$out/etc/xdg/autostart/xiaomi-pen-status.desktop"
-    printf 'NotShowIn=GNOME;\n' >> "$out/etc/xdg/autostart/xiaomi-pen-status.desktop"
 
     runHook postInstall
   '';

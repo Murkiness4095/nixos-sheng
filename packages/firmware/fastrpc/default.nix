@@ -1,5 +1,5 @@
 # Qualcomm FastRPC userspace (ADSP RPC transport) + the adsprpcd sensor
-# daemon service. Source: https://github.com/qualcomm/fastrpc (v1.0.8).
+# daemon service. Source: https://github.com/qualcomm/fastrpc (v1.0.2).
 {
   lib,
   stdenv,
@@ -8,18 +8,17 @@
   pkg-config,
   patchelf,
   libyaml,
-  libbsd,
 }:
 
 stdenv.mkDerivation rec {
   pname = "fastrpc";
-  version = "1.0.8";
+  version = "1.0.2";
 
   src = fetchFromGitHub {
     owner = "qualcomm";
     repo = "fastrpc";
     rev = "v${version}";
-    hash = "sha256-XL0u7zNRxpUHBQ761aXFUupR0AHJfRFRZPa92LNn2ZQ=";
+    hash = "sha256-/RXH34zqAxtWty75UHoOvS6fdmB+UfTRtB6G9IZiSWk=";
   };
 
   nativeBuildInputs = [
@@ -27,17 +26,11 @@ stdenv.mkDerivation rec {
     pkg-config
     patchelf
   ];
-  buildInputs = [ libyaml libbsd ];
+  buildInputs = [ libyaml ];
 
   # Upstream's default is /usr/share/qcom, which nothing on NixOS populates; an
   # empty DSP search path makes the aDSP's sns_registry abort the whole ADSP.
-  configureFlags = [
-    "--with-config-base-dir=/var/lib/qcom"
-    "--sbindir=${placeholder "out"}/bin"
-    "--with-systemdsystemunitdir=${placeholder "out"}/lib/systemd/system"
-    "--with-udevrulesdir=${placeholder "out"}/lib/udev/rules.d"
-    "--with-sysusersdir=${placeholder "out"}/lib/sysusers.d"
-  ];
+  configureFlags = [ "--with-config-base-dir=/var/lib/qcom" ];
 
   postInstall = ''
     install -Dm755 src/adsprpcd "$out/bin/adsprpcd"

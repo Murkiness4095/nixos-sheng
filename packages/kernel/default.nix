@@ -148,8 +148,8 @@ let
   version = "7.3.0-sheng";
 
   baseConfig = fetchurl {
-    url = "https://raw.githubusercontent.com/ianchb/debian-sheng/1e2a85fb6d89acb8989c416c729696403744c7a7/sm8550.config";
-    hash = "sha256-4hPYqTPCriFY1D/xo9Eot0UD1QgWNkNQOOhccE1EJW0=";
+    url = "https://raw.githubusercontent.com/ianchb/debian-sheng/da1d2761dbc1ccaea0122f8b0c2dce2d52edaeb2/sm8550.config";
+    hash = "sha256-ZYg0G5l48cm/47BWrlAm/5LthBBLop9umcfRzkXI/Hg=";
   };
 
   ourConfigFragment = builtins.toFile "sheng-extra.config" ''
