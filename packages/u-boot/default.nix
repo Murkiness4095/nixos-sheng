@@ -29,6 +29,10 @@ in
 
   defconfig = "sm8550_defconfig";
 
+  # The built-in DT captures an 8 GiB tablet's RAM/firmware holes. ABL
+  # supplies the actual variant's ranges; use those for relocation and Linux.
+  patches = [ ./patches/prefer-abl-memory-layout.patch ];
+
   # The MDSS register sequencing is Zig. Passed as a make variable rather than
   # put on PATH, because nixpkgs' zig hook would replace buildPhase with `zig
   # build` and there is no build.zig here.
