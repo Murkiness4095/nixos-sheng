@@ -78,7 +78,7 @@ assert lib.assertMsg (builtins.match "[A-Za-z0-9_-]{1,36}" rootPartition != null
   } // lib.optionalAttrs (rootPartition != "userdata") {
     # Keep the existing single-system environment byte-for-byte unchanged.
     # Both normal/menu loading and the rescue path must select the same root.
-    postPatch = (old.postPatch or "") ''
+    postPatch = (old.postPatch or "") + ''
       substituteInPlace board/qualcomm/sheng.env \
         --replace-fail "part number scsi 0 userdata partnum" "part number scsi 0 ${rootPartition} partnum" \
         --replace-fail "root=PARTLABEL=userdata" "root=PARTLABEL=${rootPartition}"
