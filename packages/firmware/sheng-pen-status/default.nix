@@ -1,8 +1,16 @@
 # Qt tray utility + CLI showing Focus Pen stylus battery/pairing status via
 # qcom_battmgr sysfs, auto-pairs the stylus over BlueZ.
 # Source: https://github.com/ianchb/xiaomi-pen-status
-{ lib, stdenv, fetchFromGitHub, qt6, pkg-config }:
+{ lib, stdenv, fetchFromGitHub, fetchurl, qt6, pkg-config }:
 
+let
+  # Upstream removed the standalone CLI from the current GUI tree. Keep the
+  # existing command available while updating the GUI and pen support.
+  cliSrc = fetchurl {
+    url = "https://raw.githubusercontent.com/ianchb/xiaomi-pen-status/8b0ff3eb143b84541cc1e55ea9cdd3a723256021/xiaomi-pen-status-cli.cpp";
+    hash = "sha256-zFPlpKdObUruxYDGWoGAb0n/4qL/SFn/bwrczrQ+nZA=";
+  };
+in
 stdenv.mkDerivation {
   pname = "sheng-pen-status";
   version = "0.2.3";
@@ -24,7 +32,7 @@ stdenv.mkDerivation {
     make
 
     $CXX -std=c++17 -O2 -Wall -Wextra -pedantic \
-      xiaomi-pen-status-cli.cpp -o xiaomi-pen-status-cli
+      ${cliSrc} -o xiaomi-pen-status-cli
 
     runHook postBuild
   '';
