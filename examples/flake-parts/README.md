@@ -1,5 +1,25 @@
 # flake-parts 个人配置样板
 
+## 先选择单系统或双系统
+
+**当前构造器默认单系统，根分区为 `userdata`。** 双系统个人配置可选一种方式：
+
+- 保留 `lib.shengSystem`，在 `node-sheng` 设置 `sheng.rootfs.partlabel = "linux";`。
+- 用以下定义替换原来的构造器，继承仓库双系统配置，不再重复声明分区：
+
+  ```nix
+  flake.nixosConfigurations.sheng =
+    inputs.nixos-sheng.nixosConfigurations.sheng-dual.extendModules {
+      modules = [ self.nixosModules.node-sheng ];
+    };
+  ```
+
+两种定义不能同时保留。继承方式会带入上游 `networking.hostName = "sheng-dual"`，
+样板已通过 `lib.mkForce "sheng"` 覆盖；不需要重新导入硬件模块。
+输出名和主机名不会自动选择分区。旧锁文件使用继承接口前先更新 `nixos-sheng` 输入。
+
+## 模块组织
+
 `modules/sheng.nix` 使用 `flake.nixosConfigurations` / `flake.nixosModules.node-sheng`，可以按现有 x86 配置的写法组织主机。本目录的 `modules/` 中每个文件都是 flake-parts 模块；入口用 import-tree 自动导入。
 
 `shengSystem` 已导入完整板级配置并配置硬件 overlay、允许专用固件包，默认使用硬件仓库锁定的 nixpkgs。不要仅把 `nixosModules.default` 塞进普通 `nixosSystem` 就假设两者等价：普通调用还需正确接好包集合和模块参数。
@@ -24,3 +44,13 @@ sudo reboot
 ```
 
 这里的最小样板与当前基础 CI 一样是命令行系统；桌面来自你自己导入的桌面模块。共享 x86/ARM flake 时，可以继续让 x86 使用个人 nixpkgs，sheng 先使用硬件输入自己的锁定版本；统一 nixpkgs 版本是另一项需要验证的升级。
+
+## 可选 tmpfs 与持久化边界
+
+默认仍是 ext4，不启用 tmpfs。参考 [专项说明](../../docs/initrd-tmpfs.md) 和
+[NixOS 样板](../tmpfs-root.nix)；后者是普通 NixOS 模块，不是 flake-parts 模块，
+不要直接放进自动扫描的 `modules/`。应由你的 `flake.nixosModules` 封装或显式导入。
+
+当前板级方案会持久保留整个 `/home`；preservation 样板还保留整个 `/var` 和 `/root`。
+它用于无搬移迁移，不是精细白名单，也不保证覆盖每个应用。用户身份和持久化策略
+属于用户端配置。精细 home 策略需先调整板级 `/home` 绑定，不能只删除用户目录清单。

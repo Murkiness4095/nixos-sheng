@@ -1,6 +1,9 @@
 # Optional NixOS module for an EXISTING sheng ext4 installation.
 # Import alongside the board module, supplying inputs via specialArgs or
 # adapting this function to your own flake's module structure.
+# Conservative migration example, NOT a minimal allowlist: the board binds
+# the ENTIRE /home, and this example also preserves all of /var and /root.
+# It cannot guarantee every additional application's state is covered.
 { inputs, ... }:
 {
   imports = [ inputs.preservation.nixosModules.default ];

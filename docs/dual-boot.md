@@ -30,6 +30,11 @@ sudo reboot
 
 双系统主机名为 `sheng-dual`，也支持 `nixos-rebuild --flake /etc/nixos` 按主机名选择配置。
 个人配置若使用 `lib.shengSystem`，应显式设置 `sheng.rootfs.partlabel = "linux";`。
+也可继承 `inputs.nixos-sheng.nixosConfigurations.sheng-dual.extendModules { modules = [ ... ]; }`，
+此时已继承分区设置，不需重复声明。它也会继承主机名 `sheng-dual`；如需改名，使用
+`networking.hostName = lib.mkForce "自定义名称";`。完整示例见
+[最小样板](../examples/minimal/README.md) 和 [flake-parts 样板](../examples/flake-parts/README.md)。
+启用 tmpfs 不改变分区选择的必要性，`linux` 此时是底层持久化分区。
 不要将双系统设备更新为默认的 `userdata` 根分区配置。
 
 ## 迁移顺序
