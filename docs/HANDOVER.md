@@ -78,6 +78,12 @@ OTA 自动化不是待交付事项。独立 `linux` 分区能保留 Linux 数据
 
 ## 维护路径
 
+可选 initrd 与 ext4 上的 tmpfs 根目录见 [专项说明](initrd-tmpfs.md)。默认镜像仍为传统
+ext4 根目录。2026-11-07 使用个人配置快照验证了 initrd 启动、tmpfs 两次启动、
+Niri 登录/触摸、临时文件清空、持久数据与机器身份保留，并重启回原直启 ext4 世代。
+收尾时设备运行 `/nix/store/v8njih6prk2f3b6cv5yvdsc0ghflp9ql-nixos-system-sheng-26.11.20261103.1d06008`，
+个人 nix-config 工作树未被本次候选覆盖，boot/recovery/Android 分区未刷写。
+
 `modules/internal-storage.nix` 为内部 UFS 的 modem、bluetooth、dsp A/B 分区及
 logfs、persist、metadata、rescue、qmcs 设置 `UDISKS_IGNORE=1`，避免桌面文件管理器显示辅助卷。
 规则同时匹配 UFS 控制器和 GPT 分区名，不改变分区、挂载或外接磁盘。

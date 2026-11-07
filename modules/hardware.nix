@@ -17,7 +17,14 @@
     # DisplayPort Playback, and one unresolvable link fails the whole card.
   };
 
-  boot.initrd.enable = false;
+  # Opt in to a standard NixOS stage 1 without changing existing images.
+  boot.initrd.enable = lib.mkDefault false;
+  # UFS, ext4 and the board's boot-critical drivers are built into shengKernel.
+  # Generic PC modules such as ahci are not present in this kernel.
+  boot.initrd.includeDefaultModules = lib.mkDefault false;
+  # This board has no supported TPM; systemd otherwise adds absent PC TPM
+  # modules even when includeDefaultModules is disabled.
+  boot.initrd.systemd.tpm2.enable = lib.mkDefault false;
 
   # console=tty0 pairs with fbcon=map:0 to put the log on the panel; fbcon
   # alone is not a printk target, and serial is not connected.
@@ -26,16 +33,18 @@
     "console=ttyMSM0,115200n8"
     "console=tty0"
     "fbcon=map:0"
+    "log_buf_len=8M"
+  ]
+  ++ lib.optionals (!config.boot.initrd.enable) [
     "root=PARTLABEL=${config.sheng.rootfs.partlabel}"
     "rw"
     "rootwait"
-    "log_buf_len=8M"
   ];
 
   fileSystems."/" = {
-    device = "/dev/disk/by-partlabel/${config.sheng.rootfs.partlabel}";
-    fsType = "ext4";
-    autoResize = true;
+    device = lib.mkDefault "/dev/disk/by-partlabel/${config.sheng.rootfs.partlabel}";
+    fsType = lib.mkDefault "ext4";
+    autoResize = lib.mkDefault true;
   };
 
   hardware.firmware = [ pkgs.shengPackages.sheng-firmware-blobs ];

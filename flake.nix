@@ -139,6 +139,18 @@
 
       nixosConfigurations.sheng = sheng;
       nixosConfigurations.sheng-dual = shengDual;
+      # Opt-in stage-1 validation target. The normal image outputs retain
+      # their known-good direct ext4 boot until hardware validation completes.
+      nixosConfigurations.sheng-dual-initrd = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [
+          {
+            sheng.rootfs.partlabel = "linux";
+            networking.hostName = "sheng-dual";
+            boot.initrd.enable = true;
+          }
+        ];
+      };
 
       packages = forHosts (
         hostPkgs:

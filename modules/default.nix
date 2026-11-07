@@ -10,6 +10,7 @@
     ./internal-storage.nix
     ./nix-bootstrap.nix
     ./serial-console.nix
+    ./tmpfs-root.nix
     ./virtual-keyboard.nix
   ];
 

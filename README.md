@@ -12,6 +12,7 @@ Xiaomi Pad 6S Pro（sheng）的标准 NixOS + U-Boot 移植，提供独立的单
 | 接替维护、让其他 agent 接手 | [维护交接](docs/HANDOVER.md)、[agent 工作约定](AGENTS.md) |
 | 安装单系统、了解项目实现 | [项目说明](docs/README.md) |
 | 安装/维护双系统、切换 Android | [双系统指南](docs/dual-boot.md) |
+| 可选 initrd、ext4 上的 tmpfs 根目录 | [启动与持久化说明](docs/initrd-tmpfs.md)、[preservation 样板](examples/tmpfs-root.nix) |
 | 查看功能实测范围、笔配对及指纹注意事项 | [外设验证](docs/peripheral-validation.md) |
 | 了解本轮移植过程、失败尝试和验证证据 | [2026-11-06～07 移植记录](docs/history/2026-11-06-07.md) |
 | 选择下一项工作 | [待办与验收标准](TODO.md) |

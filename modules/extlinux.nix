@@ -56,7 +56,7 @@ let
 
       # $1 = system path, $2 = tag, $3 = optional diagnostic parameters
       entry() {
-        local p k d label params
+        local p k d r label params
         p=$(readlink -f "$1")
         [ -e "$p/kernel" ] || return 0
         copyIn "$p/kernel"; k=$result
@@ -72,6 +72,10 @@ let
         fi
         printf '  LINUX ../nixos/%s\n' "$k"
         printf '  FDT ../nixos/%s/%s\n' "$d" '${cfg.dtbName}'
+        if [ -e "$p/initrd" ]; then
+          copyIn "$p/initrd"; r=$result
+          printf '  INITRD ../nixos/%s\n' "$r"
+        fi
         printf '  APPEND init=%s/init %s %s\n' "$p" "$params" "''${3:-}"
       }
 
