@@ -58,8 +58,16 @@ modules = [
 ```
 
 其中 `myConfiguredUser` 是个人配置中已定义的用户名变量，不是板级选项。
+若使用个人配置的 `_module.args.user`，应通过 `specialArgs` 提供 `inputs`，
+或在 flake-parts 外层捕获 `inputs` 后显式传给样板；不要用依赖 `_module.args` 的值选择 imports。
 它需要在个人 flake 添加 preservation 输入；不要与另一个持久化模块重复管理同一路径。
 用户可按需求替换持久化策略，尤其要保留自己的 SOPS 解密密钥和应用状态。
+
+样板覆盖当前板级服务的已知状态路径，但并不持久化整个 `/var` 或 `/root`。
+`/var/lib/private` 是 DynamicUser 服务的状态容器，必须保持 0700；
+蓝牙、指纹/TEE、NetworkManager 凭据目录与用户 `.ssh` 的权限在样板中单独指定。
+日志、缓存、浏览器配置、聊天记录、用户 keyring、手动 `nix profile` 安装记录等不默认保留。
+需要它们时添加各自的实际路径；服务启动成功不代表所有应用登录和数据体验都已验证。
 
 ### 增加自定义持久数据
 
@@ -113,3 +121,27 @@ preservation.preserveAt."/sysroot-storage".directories = [
 不是公共发布产物。测试日志保存在本机私有 `artifacts/sheng-debug/initrd-tmpfs/`。
 
 这不证明休眠、续航或每个外设在新布局下均已回归。
+
+## 精细 home 实测（2026-11-07）
+
+`f8fac9b` 增加 `persistHome` 选项（默认 false），`ba6ca29` 修正样板中的敏感目录权限。
+样板用户名通过个人配置传入；没有在板级模块中写入设备所有者用户名。
+
+- 配置求值验证：精细模式没有 `/home` 挂载，`persistHome = true` 时有完整 home bind。
+- 实机精细模式 `/`、`/home`、`/var` 位于 tmpfs；Pictures、Documents、网络、蓝牙、
+  指纹/TEE、传感器和动态用户服务状态按清单绑定到原 ext4。
+- 用户确认 Niri 登录、桌面及触摸正常；Niri 读回 120 Hz。
+- 再次重启后，根目录、home 和 `.cache` 中未声明的测试文件消失，Documents 中测试文件保留；
+  机器 ID、SSH 主机密钥校验一致，系统服务失败数为 0。
+- 测试发现 DynamicUser 服务要求 `/var/lib/private` 为 0700，已在样板声明并冷启动复验；
+  传感器初始化在隔离 bind mount 上验证能够更新内容而不删除挂载点。
+- 最后已重启回原直启 ext4 世代，持久测试文件在回退后仍存在；随后删除测试标记，
+  机器身份校验通过，失败服务为 0。个人 nix-config 工作树没有被候选覆盖。
+
+ARM CI：[单系统与两份个人样板](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42386594206)、
+[双系统及两种 home 策略](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42386592278)。
+
+精细候选：`/nix/store/4zyafwrr63x1n5vg2401hssahv155dmf-nixos-system-sheng-26.11.20261103.1d06008`。
+测试采用个人配置快照，源码和日志位于设备私有 `/persist/sheng-selective-test/`，
+本机摘要在 `artifacts/sheng-debug/selective-home/`；这些目录不是公开发布产物。
+这验证了所列操作，不等于所有应用数据都已覆盖，也没有重新测试指纹录入或快充功率。
