@@ -79,7 +79,7 @@ OTA 自动化不是待交付事项。独立 `linux` 分区能保留 Linux 数据
 ## 维护路径
 
 `modules/internal-storage.nix` 为内部 UFS 的 modem、bluetooth、dsp A/B 分区及
-logfs、persist、metadata 设置 `UDISKS_IGNORE=1`，避免桌面文件管理器显示辅助卷。
+logfs、persist、metadata、rescue、qmcs 设置 `UDISKS_IGNORE=1`，避免桌面文件管理器显示辅助卷。
 规则同时匹配 UFS 控制器和 GPT 分区名，不改变分区、挂载或外接磁盘。
 此规则已加入源码；桌面隐藏效果仍需更新后的实机验证。
 
