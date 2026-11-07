@@ -50,6 +50,37 @@
           }
         ];
       };
+      shengKde = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [ ./modules/desktop-kde.nix ];
+      };
+
+      shengGnome = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [ ./modules/desktop-gnome.nix ];
+      };
+
+      shengDualKde = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [
+          {
+            sheng.rootfs.partlabel = "linux";
+            networking.hostName = "sheng-dual";
+          }
+          ./modules/desktop-kde.nix
+        ];
+      };
+
+      shengDualGnome = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [
+          {
+            sheng.rootfs.partlabel = "linux";
+            networking.hostName = "sheng-dual";
+          }
+          ./modules/desktop-gnome.nix
+        ];
+      };
 
       mkScripts =
         hostPkgs:
@@ -139,6 +170,10 @@
 
       nixosConfigurations.sheng = sheng;
       nixosConfigurations.sheng-dual = shengDual;
+      nixosConfigurations.sheng-kde = shengKde;
+      nixosConfigurations.sheng-gnome = shengGnome;
+      nixosConfigurations.sheng-dual-kde = shengDualKde;
+      nixosConfigurations.sheng-dual-gnome = shengDualGnome;
       # Opt-in stage-1 validation target. The normal image outputs retain
       # their known-good direct ext4 boot until hardware validation completes.
       nixosConfigurations.sheng-dual-initrd = self.lib.shengSystem {
@@ -161,6 +196,10 @@
 
             nixos = sheng.config.system.build.shengImage;
             nixos-dual = shengDual.config.system.build.shengImage;
+            nixos-kde = shengKde.config.system.build.shengImage;
+            nixos-gnome = shengGnome.config.system.build.shengImage;
+            nixos-dual-kde = shengDualKde.config.system.build.shengImage;
+            nixos-dual-gnome = shengDualGnome.config.system.build.shengImage;
 
             u-boot = pkgs.callPackage ./packages/u-boot {
               src = u-boot-src;
