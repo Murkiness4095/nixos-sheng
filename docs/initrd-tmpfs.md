@@ -68,6 +68,9 @@ modules = [
 蓝牙、指纹/TEE、NetworkManager 凭据目录与用户 `.ssh` 的权限在样板中单独指定。
 日志、缓存、浏览器配置、聊天记录、用户 keyring、手动 `nix profile` 安装记录等不默认保留。
 需要它们时添加各自的实际路径；服务启动成功不代表所有应用登录和数据体验都已验证。
+若个人 nix-config checkout 放在 home 中，也必须将其实际目录列入用户清单；
+保留 `/etc/nixos` 不会自动保留 home 中另一份仓库。其他旧数据仍可从
+`/sysroot-storage/home` 找回，但应在首次正式启用前选好需要保留的目录。
 
 ### 增加自定义持久数据
 
