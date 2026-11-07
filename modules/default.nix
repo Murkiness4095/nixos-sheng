@@ -7,6 +7,7 @@
     ./firmware.nix
     ./hardware.nix
     ./image.nix
+    ./internal-storage.nix
     ./nix-bootstrap.nix
     ./serial-console.nix
     ./virtual-keyboard.nix

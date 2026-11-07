@@ -78,6 +78,11 @@ OTA 自动化不是待交付事项。独立 `linux` 分区能保留 Linux 数据
 
 ## 维护路径
 
+`modules/internal-storage.nix` 为内部 UFS 的 modem、bluetooth、dsp A/B 分区及
+logfs、persist、metadata 设置 `UDISKS_IGNORE=1`，避免桌面文件管理器显示辅助卷。
+规则同时匹配 UFS 控制器和 GPT 分区名，不改变分区、挂载或外接磁盘。
+此规则已加入源码；桌面隐藏效果仍需更新后的实机验证。
+
 1. 先只读检查 `hostname`、`findmnt /`、`cat /proc/cmdline`、`readlink -f /run/current-system`、`qbootctl`。
    Fastboot 中用 `fastboot getvar current-slot`。旧 DHCP 地址、槽位、世代号都可能变化。
 2. 对照 CI 的 `revision.txt`、`system-path.txt`、`kernel-path.txt`、`dtb-path.txt` 和 `flake.lock`。
