@@ -81,7 +81,11 @@ OTA 自动化不是待交付事项。独立 `linux` 分区能保留 Linux 数据
 `modules/internal-storage.nix` 为内部 UFS 的 modem、bluetooth、dsp A/B 分区及
 logfs、persist、metadata、rescue、qmcs 设置 `UDISKS_IGNORE=1`，避免桌面文件管理器显示辅助卷。
 规则同时匹配 UFS 控制器和 GPT 分区名，不改变分区、挂载或外接磁盘。
-此规则已加入源码；桌面隐藏效果仍需更新后的实机验证。
+
+2026-11-07 已在用户 Niri 系统 rebuild boot 后重启验证：辅助分区的
+`UDISKS_IGNORE=1` 和 UDisks `HintIgnore=true` 生效，根分区不受影响。
+用户配置已固定 Niri 内屏 3048×2032 @ 120 Hz，并验证重启后自动生效及笔压事件；
+这不改变命令行镜像的默认显示模式，也不构成续航优化已验收的结论。
 
 1. 先只读检查 `hostname`、`findmnt /`、`cat /proc/cmdline`、`readlink -f /run/current-system`、`qbootctl`。
    Fastboot 中用 `fastboot getvar current-slot`。旧 DHCP 地址、槽位、世代号都可能变化。
