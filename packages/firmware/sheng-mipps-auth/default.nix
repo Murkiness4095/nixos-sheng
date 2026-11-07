@@ -1,5 +1,4 @@
-# Xiaomi MiPPS charger authentication daemon. No source exists for this
-# anywhere -- upstream ships only a prebuilt ELF, as postmarketOS does too.
+# Xiaomi MiPPS charger authentication helper (upstream Python implementation).
 {
   lib,
   stdenvNoCC,
@@ -26,6 +25,9 @@ stdenvNoCC.mkDerivation {
     autoPatchelfHook
     makeWrapper
   ];
+  # A PC USB source has no authentication PDO. Reject it before requesting
+  # a host data role, whose synchronous sysfs write can exceed the unit timeout.
+  patches = [ ./skip-unsupported-before-role-swap.patch ];
   buildInputs = [ glib ];
 
   dontBuild = true;

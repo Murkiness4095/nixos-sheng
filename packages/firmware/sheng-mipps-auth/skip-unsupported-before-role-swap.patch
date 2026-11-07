@@ -1,0 +1,25 @@
+--- a/xiaomi-mipps-auth
++++ b/xiaomi-mipps-auth
+@@ -645,6 +645,11 @@
+         print(f"real_type={wait_real_type(root, args.timeout)}")
+         print(f"seed_index={seed_index}")
+ 
++        # Reject unsupported sources before attempting a Type-C role swap.
++        if should_skip_pdo2(root):
++            raise UnsupportedChargerError("pdo2 reports no source PDO for adapter authentication",
++                                          terminal=True)
++
+         if not args.no_data_role_swap:
+             ensure_typec_host(args.timeout)
+ 
+@@ -658,10 +663,6 @@
+                     "warning: adapter_svid is not Xiaomi; continuing because "
+                     "firmware may expose a stale SVID after detach",
+                     file=sys.stderr)
+-
+-        if should_skip_pdo2(root):
+-            raise UnsupportedChargerError("pdo2 reports no source PDO for adapter authentication",
+-                                          terminal=True)
+ 
+         enable_battery_auth(root)
+ 
