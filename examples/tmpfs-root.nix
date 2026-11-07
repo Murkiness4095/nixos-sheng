@@ -21,19 +21,40 @@
         "/var/lib/nixos"
         "/var/lib/AccountsService"
         "/var/lib/NetworkManager"
-        "/var/lib/bluetooth"
+        {
+          directory = "/var/lib/bluetooth";
+          mode = "0700";
+        }
         "/var/lib/systemd"
         "/var/lib/hjem"
         # DynamicUser services (e.g. mihomo) keep their state here.
-        "/var/lib/private"
+        {
+          directory = "/var/lib/private";
+          mode = "0700";
+        }
         # sheng sensor registry, fingerprint and trusted-service state.
         "/var/lib/qcom"
-        "/var/lib/fpc1553"
-        "/var/lib/fprint"
-        "/var/lib/qtee_supplicant"
-        "/var/lib/tee"
+        {
+          directory = "/var/lib/fpc1553";
+          mode = "0700";
+        }
+        {
+          directory = "/var/lib/fprint";
+          mode = "0700";
+        }
+        {
+          directory = "/var/lib/qtee_supplicant";
+          mode = "0700";
+        }
+        {
+          directory = "/var/lib/tee";
+          mode = "0700";
+        }
         "/etc/ssh"
-        "/etc/NetworkManager/system-connections"
+        {
+          directory = "/etc/NetworkManager/system-connections";
+          mode = "0700";
+        }
         "/etc/nixos"
       ];
       files = [
@@ -46,7 +67,10 @@
         directories = [
           "Documents"
           "Pictures"
-          ".ssh"
+          {
+            directory = ".ssh";
+            mode = "0700";
+          }
           # Add actual per-application data paths here. Do not persist all
           # of .config/.local/.cache merely to avoid auditing applications.
         ];
