@@ -129,6 +129,27 @@ jobs:
           test "$(nix eval --raw .#nixosConfigurations.sheng.config.sheng.rootfs.partlabel)" = userdata
           test "$(nix eval --raw .#nixosConfigurations.sheng-dual.config.sheng.rootfs.partlabel)" = linux
 
+      - name: Build opt-in initrd candidate
+        run: |
+          set -euo pipefail
+          nix build -L .#nixosConfigurations.sheng-dual-initrd.config.system.build.toplevel -o result-initrd
+          test -s result-initrd/initrd
+          test "$(readlink -f result-initrd/kernel)" = "$(readlink -f result-system/kernel)"
+          mkdir -p initrd-artifacts
+          nix path-info -r ./result-initrd > initrd-artifacts/store-paths.txt
+          nix-store --export $(cat initrd-artifacts/store-paths.txt) | zstd -T0 -3 -o initrd-artifacts/sheng-initrd-closure.nar.zst
+          readlink -f result-initrd > initrd-artifacts/system-path.txt
+          git rev-parse HEAD > initrd-artifacts/revision.txt
+          cp flake.lock initrd-artifacts/flake.lock
+          (cd initrd-artifacts && sha256sum sheng-initrd-closure.nar.zst > SHA256SUMS)
+
+      - name: Upload opt-in initrd candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-dual-initrd-closure
+          if-no-files-found: error
+          path: initrd-artifacts/
+
       - name: Export system closure for installation without reflashing
         run: |
           set -euo pipefail
