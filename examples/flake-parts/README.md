@@ -51,6 +51,7 @@ sudo reboot
 [NixOS 样板](../tmpfs-root.nix)；后者是普通 NixOS 模块，不是 flake-parts 模块，
 不要直接放进自动扫描的 `modules/`。应由你的 `flake.nixosModules` 封装或显式导入。
 
-当前板级方案会持久保留整个 `/home`；preservation 样板还保留整个 `/var` 和 `/root`。
-它用于无搬移迁移，不是精细白名单，也不保证覆盖每个应用。用户身份和持久化策略
-属于用户端配置。精细 home 策略需先调整板级 `/home` 绑定，不能只删除用户目录清单。
+tmpfs 默认让 home 易失，样板按调用者提供的 `user` 保留选定目录，不绑定整个
+`/var` 或 `/root`。`user` 必须通过个人模块参数或显式调用传入，不是板级默认用户名。
+如需兼容初版的完整 home 模式，设置 `sheng.rootfs.tmpfsRoot.persistHome = true;`。
+用户身份和应用数据策略属于用户端配置；样板不是无遗漏的通用清单。

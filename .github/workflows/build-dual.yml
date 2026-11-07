@@ -143,6 +143,13 @@ jobs:
           ' -o result-tmpfs
           test -s result-tmpfs/initrd
           test "$(readlink -f result-tmpfs/kernel)" = "$(readlink -f result-system/kernel)"
+          nix build -L --impure --expr '
+            let f = builtins.getFlake ("git+file://" + toString ./.);
+            in (f.nixosConfigurations.sheng-dual.extendModules {
+              modules = [ { sheng.rootfs.tmpfsRoot = { enable = true; persistHome = true; }; } ];
+            }).config.system.build.toplevel
+          ' -o result-tmpfs-whole-home
+          test -s result-tmpfs-whole-home/initrd
           mkdir -p initrd-artifacts
           nix path-info -r ./result-initrd > initrd-artifacts/store-paths.txt
           nix-store --export $(cat initrd-artifacts/store-paths.txt) | zstd -T0 -3 -o initrd-artifacts/sheng-initrd-closure.nar.zst

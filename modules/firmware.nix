@@ -70,8 +70,10 @@ in
       script = ''
         src=${sp.sheng-sensors}/share/qcom
         if [ "$(cat /var/lib/qcom/.nix-source 2>/dev/null)" != "$src" ]; then
-          rm -rf /var/lib/qcom
           mkdir -p /var/lib/qcom
+          # The registry may itself be a persistence bind mount. Clear its
+          # contents without trying to remove the mount point (EBUSY).
+          find /var/lib/qcom -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
           cp -r --no-preserve=mode,ownership "$src"/. /var/lib/qcom/
           echo "$src" > /var/lib/qcom/.nix-source
         fi

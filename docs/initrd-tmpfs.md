@@ -17,14 +17,14 @@ stage 1 管理，不再沿用内核直接挂载 `root=PARTLABEL=...` 的参数�
 
 ## 可选 tmpfs 根目录
 
-**当前策略边界：板级模块会绑定整个 `/home`，样板还保留整个 `/var` 和 `/root`。**
-这是保留现有安装状态的迁移方案，不是精细的持久化白名单；用户缓存也可能一直保留。
-当前模块尚未提供关闭 `/home` 绑定的选项，不能仅删掉 preservation 的用户目录清单，
-就认为 home 已变成易失目录。精细用户目录持久化需要先调整板级挂载能力，再迁移选中的数据。
-样板不指定用户名；用户名和应用数据清单属于个人 nix-config，不能假定覆盖所有服务状态。
+`/home` 默认位于 tmpfs 根目录中，只有个人配置明确列出的用户数据会持久化。
+如需沿用初版的完整 home 行为，显式设置 `sheng.rootfs.tmpfsRoot.persistHome = true;`。
+初版用户升级前应选择策略并使用 boot 后重启；未列入清单的旧数据仍在原 ext4 的
+`/sysroot-storage/home`，不会自动删除，但不会自动出现在新的 home 中。
 
 ```nix
 sheng.rootfs.tmpfsRoot.enable = true;
+sheng.rootfs.tmpfsRoot.persistHome = false;
 # 上限，不是开机立即预留；默认 25%。
 sheng.rootfs.tmpfsRoot.size = "25%";
 # 双系统继续使用 linux；单系统默认 userdata。
@@ -37,15 +37,27 @@ sheng.rootfs.partlabel = "linux";
 | --- | --- |
 | `/` | tmpfs |
 | `/sysroot-storage` | 原有 ext4 分区 |
-| `/nix`、`/persist`、`/home`、`/boot` | 原 ext4 根目录下的同名目录，bind mount |
+| `/nix`、`/persist`、`/boot` | 原 ext4 根目录下的同名目录，bind mount |
+| `/home` | 默认易失；`persistHome = true` 时绑定整个原 home |
 
 模块只负责上述启动和挂载能力。它不自动决定哪些系统状态需要持久化，
-不搬移数据，不创建分区或格式化；首次使用前需确认这四个源目录存在。
+不搬移数据，不创建分区或格式化；首次使用前需确认三个源目录存在；完整 home 模式还需原 `/home` 存在。
 只设置 enable 而不配置持久化，可能丢失重启后的网络配置、机器身份等状态。
 
 现有 ext4 安装可参考 [preservation 样板](../examples/tmpfs-root.nix)：
-直接以 `/sysroot-storage` 为后端复用原有 `/var`、`/root`、SSH、NetworkManager、
-`/etc/nixos` 与 machine-id，不必把它们复制到新的 `/persist` 布局。
+以 `/sysroot-storage` 为后端，按清单复用网络、蓝牙、NixOS、指纹/TEE、传感器等状态，
+以及 SSH、`/etc/nixos` 与 machine-id；不绑定整个 `/var`、`/root` 或 home。
+用户清单仅演示 Documents、Pictures、.ssh，不默认保留浏览器、聊天软件或全部配置/缓存。
+样板参数 `user` 必须来自个人配置（specialArgs 或 `_module.args.user`），没有默认用户名。
+`inputs` 也由调用者提供。普通 NixOS 导入可写为：
+
+```nix
+modules = [
+  (import ./tmpfs-root.nix { inherit inputs; user = myConfiguredUser; })
+];
+```
+
+其中 `myConfiguredUser` 是个人配置中已定义的用户名变量，不是板级选项。
 它需要在个人 flake 添加 preservation 输入；不要与另一个持久化模块重复管理同一路径。
 用户可按需求替换持久化策略，尤其要保留自己的 SOPS 解密密钥和应用状态。
 
@@ -63,8 +75,9 @@ preservation.preserveAt."/sysroot-storage".directories = [
 模块系统会合并不同模块中的列表；不要在同一个属性集中重复定义相同属性。
 这个后端复用的是原 ext4 根中的同名路径。
 若改用 `/persist` 后端，源路径和现有数据位置也会改变，需先规划迁移，不能只改配置字符串。
-这与 `/home` 的策略是两件事：当前整个 home 已绑定，上述清单不会让其他 home 数据变易失。
-细分用户目录时应由个人配置传入用户名（如模块参数 `user`），板级模块不指定用户。
+用户数据在 `preservation.preserveAt."/sysroot-storage".users.${user}.directories` 中添加，
+路径相对于该用户 home。`files` 可用于单个文件；用户名由个人配置传入。
+只有 `persistHome = false` 时才是精细 home 策略；设为 true 后，整个 home 都会保留。
 还需按实际服务检查数据库、身份、凭据和缓存路径，不能把本样板当作无遗漏的通用清单。
 
 ## 部署与回退
@@ -76,7 +89,7 @@ preservation.preserveAt."/sysroot-storage".directories = [
 本方案不移动原 ext4 目录，故旧世代仍可挂载原分区作为 `/`；但世代回退不能撤销
 文件删除或应用数据库升级，也不会回滚持久数据。数据备份仍是独立事项。
 
-## 实机证据（2026-11-07）
+## 初版实机证据（2026-11-07，完整 home 模式）
 
 - initrd 候选复用原内核和 DTB，约 22 MB；成功运行 systemd stage 1 并挂载 ext4。
 - 已从 initrd 候选重启回原直启 ext4 世代。
