@@ -169,7 +169,37 @@ jobs:
           path: |
             artifacts/sheng-boot.img
             artifacts/sheng-rootfs.sparse.img.zst
+      - name: Build and upload KDE desktop rootfs
+        run: |
+          set -euo pipefail
+          nix build -L .#nixos-kde -o result-kde
+          img=result-kde/sheng-rootfs.sparse.img
+          test -f "$img"
+          mkdir -p kde-artifacts
+          cp result-uboot/boot.img kde-artifacts/sheng-boot.img
+          nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o kde-artifacts/sheng-rootfs-kde.sparse.img.zst
+      - name: Upload KDE desktop flashable
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-kde-flashable
+          if-no-files-found: error
+          path: kde-artifacts/
 
+      - name: Build and upload GNOME desktop rootfs
+        run: |
+          set -euo pipefail
+          nix build -L .#nixos-gnome -o result-gnome
+          img=result-gnome/sheng-rootfs.sparse.img
+          test -f "$img"
+          mkdir -p gnome-artifacts
+          cp result-uboot/boot.img gnome-artifacts/sheng-boot.img
+          nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o gnome-artifacts/sheng-rootfs-gnome.sparse.img.zst
+      - name: Upload GNOME desktop flashable
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-gnome-flashable
+          if-no-files-found: error
+          path: gnome-artifacts/
       - name: Save Nix store cache on failure
         if: failure()
         uses: nix-community/cache-nix-action/save@v7
