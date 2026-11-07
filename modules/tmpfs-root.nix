@@ -7,6 +7,16 @@ in
 {
   options.sheng.rootfs.tmpfsRoot = {
     enable = lib.mkEnableOption "an opt-in tmpfs root backed by the existing ext4 partition";
+    persistHome = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Bind the entire existing /home from ext4. Disabled for selective
+        persistence: /home then lives on the tmpfs root, and the caller
+        chooses individual user directories through preservation or similar.
+        Set true to retain the behavior of the initial tmpfs implementation.
+      '';
+    };
     size = lib.mkOption {
       type = lib.types.str;
       default = "25%";
@@ -34,13 +44,23 @@ in
         options = [ "noatime" ];
       };
     }
-    // lib.genAttrs [ "/nix" "/persist" "/home" "/boot" ] (mount: {
-      device = "${storage}${mount}";
-      fsType = "none";
-      options = [ "bind" ];
-      neededForBoot = true;
-      depends = [ storage ];
-    });
+    //
+      lib.genAttrs
+        (
+          [
+            "/nix"
+            "/persist"
+            "/boot"
+          ]
+          ++ lib.optional cfg.persistHome "/home"
+        )
+        (mount: {
+          device = "${storage}${mount}";
+          fsType = "none";
+          options = [ "bind" ];
+          neededForBoot = true;
+          depends = [ storage ];
+        });
 
     # Persistent system state is caller policy. A preservation/impermanence
     # module can use /sysroot-storage as its backing directory to reuse the

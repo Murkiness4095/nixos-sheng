@@ -54,5 +54,6 @@ CI 和本机 rebuild 都可以构建系统。普通内核、固件、服务更�
 默认是传统 ext4 根目录，不启用 initrd 或 tmpfs。需要时参阅
 [initrd/tmpfs 说明](../../docs/initrd-tmpfs.md) 和 [preservation 样板](../tmpfs-root.nix)。
 tmpfs 下仍需正确选择 `linux` 或 `userdata`，用于定位持久化 ext4。
-当前 tmpfs 方案绑定整个 `/home`，不是精细持久化白名单；用户名、凭据和应用数据策略
+tmpfs 默认不绑定整个 `/home`；preservation 样板通过调用者提供的 `user` 按目录保留数据。
+如需完整 home，显式设置 `persistHome = true`。用户名、凭据和应用数据策略
 由个人配置决定，样板不保证覆盖所有应用。不要直接复用 x86 的整盘 disko 格式化配置。

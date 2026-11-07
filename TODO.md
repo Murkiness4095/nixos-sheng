@@ -6,6 +6,7 @@
 ## 已完成的基础验收
 
 - [x] 可选 initrd 与 ext4-backed tmpfs 根目录：候选启动、Niri/触摸、重启清空/持久化及原 ext4 回退；默认镜像不变，详见 [专项记录](docs/initrd-tmpfs.md)。
+- [x] home 精细持久化：默认易失、完整 home 可选、样板用户名参数化；已验证声明目录保留、未声明 home/缓存清空、基础服务和 ext4 回退。
 
 - [x] U-Boot 内存来源修复、正常启动及返回真正 fastboot。
 - [x] 7.3.0 内核、当前锁定 Nixpkgs、两个个人配置样板完整 CI 构建。
