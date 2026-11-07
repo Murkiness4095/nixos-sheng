@@ -70,6 +70,8 @@ sheng.rootfs.partlabel = "linux";
 - tmpfs/preservation：`/nix/store/g7wp9y4jn6cqfg5hzhnzczkh1qjdlm6k-nixos-system-sheng-26.11.20261103.1d06008`。
 
 两者复用原内核 `/nix/store/0fjpqyxlnmk5sg18hwk09arzi3ivaj4d-linux-7.3.0-sheng/Image`。
+对应实现为 `5125330`（initrd）与 `6429675`（可选 tmpfs），ARM CI 为
+[42379410173](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42379410173)。
 候选在设备 `/root/sheng-initrd-test/` 中基于个人配置快照构建；该目录含个人配置，
 不是公共发布产物。测试日志保存在本机私有 `artifacts/sheng-debug/initrd-tmpfs/`。
 

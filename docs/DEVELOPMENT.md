@@ -8,6 +8,12 @@ This page retains low-level debugging recipes; historical measurements must be
 revalidated against the current source. For installation, use
 [README.md](README.md) or the [dual-system guide](dual-boot.md).
 
+For local evaluation, use `nix eval .#...` or an explicit `git+file://` flake
+reference. A `path:` input or `builtins.getFlake` on the workspace path can
+copy ignored private evidence under `artifacts/` into a store source snapshot.
+When transferring a source snapshot, select tracked working-tree files with
+`git ls-files`; never archive the whole workspace or upload debug backups.
+
 ---
 
 ## Repository layout
