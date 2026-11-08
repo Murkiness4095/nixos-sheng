@@ -61,7 +61,7 @@ OTA 自动化不是待交付事项。独立 `linux` 分区能保留 Linux 数据
 - 合并后的运行代码基线为 `3cb45bc49b4b6993391d4102d563060114011b3b`。
 - [单系统主分支 CI](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42241360584) 和
   [双系统主分支 CI](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42241360706) 均通过。
-- KDE/GNOME 最小桌面镜像已在 [单系统 CI run 42396410220](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42396410220) 构建通过，产物为 `sheng-kde-flashable` 和 `sheng-gnome-flashable`；仅证明构建，不代表桌面/触控/旋转等实机验收。
+- KDE/GNOME 最小桌面镜像已在 [单系统 CI run 42396410220](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42396410220) 和 [双系统 CI run 42433351759](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42433351759) 构建通过，产物为 `sheng-kde-flashable`、`sheng-gnome-flashable`、`sheng-dual-kde-flashable`、`sheng-dual-gnome-flashable`；仅证明构建，不代表桌面/触控/旋转等实机验收。
 
 | 实测对象 | 标识 |
 | --- | --- |
