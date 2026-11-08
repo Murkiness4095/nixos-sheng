@@ -169,6 +169,9 @@ jobs:
           path: |
             artifacts/sheng-boot.img
             artifacts/sheng-rootfs.sparse.img.zst
+      - name: Verify desktop image accounts and audio defaults
+        run: nix eval --json --impure --expr 'import ./tests/desktop-images.nix { flake = builtins.getFlake ("git+file://" + toString ./.); }'
+
       - name: Build and upload KDE desktop rootfs
         run: |
           set -euo pipefail

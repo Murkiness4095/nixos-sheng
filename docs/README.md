@@ -447,3 +447,27 @@ software.
 
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** — the scripts, the three diagnostic side channels,
   how to opt into debug builds, and the hazards worth knowing before you change anything.
+
+## KDE / GNOME desktop image accounts
+
+Desktop images use the regular user **`nixos`**, initial password **`nixos`**, and
+GUI autologin. Change the password after installation (`passwd`) and configure
+login policy for your own use. CLI images retain their existing root console;
+importing the board module into a personal configuration does not create this user.
+
+PipeWire deliberately skips root sessions (`ConditionUser=!root`). A root desktop
+showing “Connection to the Sound Service Lost” must be replaced by a regular-user
+session; removing that condition is not the fix. On an existing installation,
+declare a normal user in your NixOS configuration, rebuild, then log out and select
+that user. Reflashing the root filesystem is unnecessary.
+
+Desktop image hostnames match their flake configuration names: `sheng-kde`,
+`sheng-gnome`, `sheng-dual-kde`, and `sheng-dual-gnome`. Keep the corresponding
+configuration when rebuilding; selecting `#sheng` or `#sheng-dual` selects the CLI
+variant. Older images require an explicit desktop configuration selector.
+
+The root-session failure was confirmed from a KDE user's systemd logs on
+2026-11-08. The account correction does not establish physical speaker playback
+or full GNOME/KDE hardware compatibility; desktop routing, rotation, suspend and
+on-screen keyboard still require device testing. The previously measured ALSA
+speaker result is documented separately in `peripheral-validation.md`.
