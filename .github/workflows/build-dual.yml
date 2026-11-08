@@ -210,6 +210,37 @@ jobs:
             artifacts/sheng-boot-dual.img
             artifacts/sheng-rootfs-dual.sparse.img.zst
 
+      - name: Build and upload dual-system KDE desktop rootfs
+        run: |
+          set -euo pipefail
+          nix build -L .#nixos-dual-kde -o result-dual-kde
+          img=result-dual-kde/sheng-rootfs.sparse.img
+          test -f "$img"
+          mkdir -p dual-kde-artifacts
+          cp result-uboot/boot.img dual-kde-artifacts/sheng-boot-dual.img
+          nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o dual-kde-artifacts/sheng-rootfs-dual-kde.sparse.img.zst
+      - name: Upload dual-system KDE desktop flashable
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-dual-kde-flashable
+          if-no-files-found: error
+          path: dual-kde-artifacts/
+
+      - name: Build and upload dual-system GNOME desktop rootfs
+        run: |
+          set -euo pipefail
+          nix build -L .#nixos-dual-gnome -o result-dual-gnome
+          img=result-dual-gnome/sheng-rootfs.sparse.img
+          test -f "$img"
+          mkdir -p dual-gnome-artifacts
+          cp result-uboot/boot.img dual-gnome-artifacts/sheng-boot-dual.img
+          nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o dual-gnome-artifacts/sheng-rootfs-dual-gnome.sparse.img.zst
+      - name: Upload dual-system GNOME desktop flashable
+        uses: actions/upload-artifact@v4
+        with:
+          name: sheng-dual-gnome-flashable
+          if-no-files-found: error
+          path: dual-gnome-artifacts/
       - name: Save Nix store cache on failure
         if: failure()
         uses: nix-community/cache-nix-action/save@v7

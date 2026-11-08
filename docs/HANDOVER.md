@@ -154,9 +154,9 @@ nix-env -p /nix/var/nix/profiles/system --set "$candidate"
 | 工作流 | 镜像 artifact | 系统闭包 artifact | 目标 |
 | --- | --- | --- | --- |
 | `build` | `sheng-flashable` (+ `sheng-kde-flashable`, `sheng-gnome-flashable`) | `sheng-system-closure` | `nixos`、`u-boot`、配置 `sheng` |
-| `build-dual` | `sheng-dual-flashable` | `sheng-dual-system-closure` | `nixos-dual`、`u-boot-dual`、配置 `sheng-dual` |
+| `build-dual` | `sheng-dual-flashable` (+ `sheng-dual-kde-flashable`, `sheng-dual-gnome-flashable`) | `sheng-dual-system-closure` | `nixos-dual`、`u-boot-dual`、配置 `sheng-dual` |
 
-`build` 工作流还额外导出 `sheng-kde-flashable` 和 `sheng-gnome-flashable`；
+`build` 和 `build-dual` 工作流都额外导出各自的 KDE/GNOME 桌面镜像；
 它们复用同一 U-Boot，仅替换 rootfs，桌面支持目前仅完成配置求值，尚未做实机桌面验收。
 
 镜像/内核/U-Boot 输出面向 `aarch64-linux`，上述构建命令应在 ARM CI 或已配置远程 ARM builder 的环境执行。
