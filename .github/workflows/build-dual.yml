@@ -210,6 +210,9 @@ jobs:
             artifacts/sheng-boot-dual.img
             artifacts/sheng-rootfs-dual.sparse.img.zst
 
+      - name: Verify desktop image accounts and audio defaults
+        run: nix eval --json --impure --expr 'import ./tests/desktop-images.nix { flake = builtins.getFlake ("git+file://" + toString ./.); }'
+
       - name: Build and upload dual-system KDE desktop rootfs
         run: |
           set -euo pipefail

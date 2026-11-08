@@ -218,3 +218,15 @@ USB tty 权限不足的临时 udev 方法，以及主机脚本的 macOS 假设�
 
 归档包含私钥、网络配置等敏感内容，只供设备所有者私下使用。指纹测试只记录状态，没有导出指纹模板。
 旧 `linux` 的 Mobile NixOS 残留当次经用户确认可覆盖；该授权不能外推为今后可随时擦除新 `linux` 数据。
+
+## 2026-11-08：桌面镜像 root 会话音频问题
+
+KDE 用户日志明确显示 `/run/user/0/pipewire-0`，且 `pipewire.socket` 因
+`ConditionUser=!root` 被跳过；这证明该次声音服务连接失败来自 root 会话。
+GNOME/KDE 镜像现增加独立的 `desktop-image.nix`：普通用户 `nixos`、初始密码
+`nixos`、桌面自动登录、PipeWire/Pulse/WirePlumber 和 rtkit。该模块只用于四种
+桌面镜像，不加入板级模块、CLI 或个人配置构造器。
+四种镜像主机名也与对应 flake 输出一致，避免默认 rebuild 误选 CLI。
+两条 ARM 镜像工作流增加 `tests/desktop-images.nix` 配置回归检查。
+本地检查只做配置求值，不编译内核；修复后的实际 KDE/GNOME 扬声器播放仍待验收。
+默认账户及已有安装处理见 [桌面镜像账户说明](README.md#kde--gnome-desktop-image-accounts)。

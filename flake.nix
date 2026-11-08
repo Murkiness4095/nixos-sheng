@@ -52,12 +52,20 @@
       };
       shengKde = self.lib.shengSystem {
         inherit nixpkgs;
-        modules = [ ./modules/desktop-kde.nix ];
+        modules = [
+          { networking.hostName = "sheng-kde"; }
+          ./modules/desktop-image.nix
+          ./modules/desktop-kde.nix
+        ];
       };
 
       shengGnome = self.lib.shengSystem {
         inherit nixpkgs;
-        modules = [ ./modules/desktop-gnome.nix ];
+        modules = [
+          { networking.hostName = "sheng-gnome"; }
+          ./modules/desktop-image.nix
+          ./modules/desktop-gnome.nix
+        ];
       };
 
       shengDualKde = self.lib.shengSystem {
@@ -65,8 +73,9 @@
         modules = [
           {
             sheng.rootfs.partlabel = "linux";
-            networking.hostName = "sheng-dual";
+            networking.hostName = "sheng-dual-kde";
           }
+          ./modules/desktop-image.nix
           ./modules/desktop-kde.nix
         ];
       };
@@ -76,8 +85,9 @@
         modules = [
           {
             sheng.rootfs.partlabel = "linux";
-            networking.hostName = "sheng-dual";
+            networking.hostName = "sheng-dual-gnome";
           }
+          ./modules/desktop-image.nix
           ./modules/desktop-gnome.nix
         ];
       };
