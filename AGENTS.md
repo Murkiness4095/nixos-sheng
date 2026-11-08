@@ -2,6 +2,8 @@
 
 ## Start here
 
+- For the 2026-11-08 agent transition, read `docs/OMP-HANDOVER.md` for pending PR/CI, the device snapshot and the maintenance workflow; re-check live state before acting.
+
 - Read `docs/HANDOVER.md` for the verified baseline, layout, evidence, and maintenance workflow.
 - Read `TODO.md` for open tasks and their acceptance criteria; consult `docs/peripheral-validation.md` before making hardware claims.
 - Read `docs/history/2026-11-06-07.md` when investigating the original boot failure, upgrade, or dual-system migration.

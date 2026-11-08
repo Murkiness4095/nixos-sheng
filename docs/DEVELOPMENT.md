@@ -4,6 +4,7 @@ Working on `nixos-sheng`: the layout, the scripts, how to get diagnostics off a 
 with no serial port, and the things that have already cost someone a recovery.
 
 Start with the [current handover](HANDOVER.md) and [task list](../TODO.md).
+The current step-by-step maintenance workflow is in [the OMP handover](OMP-HANDOVER.md).
 This page retains low-level debugging recipes; historical measurements must be
 revalidated against the current source. For installation, use
 [README.md](README.md) or the [dual-system guide](dual-boot.md).
