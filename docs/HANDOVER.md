@@ -230,3 +230,12 @@ GNOME/KDE 镜像现增加独立的 `desktop-image.nix`：普通用户 `nixos`、
 两条 ARM 镜像工作流增加 `tests/desktop-images.nix` 配置回归检查。
 本地检查只做配置求值，不编译内核；修复后的实际 KDE/GNOME 扬声器播放仍待验收。
 默认账户及已有安装处理见 [桌面镜像账户说明](README.md#kde--gnome-desktop-image-accounts)。
+
+修复提交 `b7716e8` 经 [PR #4](https://github.com/Murkiness4095/nixos-sheng/pull/4)
+合并为 `e672b08`。以下 ARM CI 均通过，四种桌面产物均已上传：
+
+- [单系统 42485695425](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42485695425)：`sheng-kde-flashable`、`sheng-gnome-flashable`。
+- [双系统 42485695380](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42485695380)：`sheng-dual-kde-flashable`、`sheng-dual-gnome-flashable`。
+
+上述为 PR 测试提交的产物与日志；主分支合并后的构建需另查 Actions，不能把它们混写成主分支产物。
+CI 内五项配置检查均通过（四种桌面及 CLI 账户保持不变），不替代实机验收。
