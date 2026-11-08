@@ -20,7 +20,7 @@
 
 ## 当前交接优先事项
 
-- [ ] 收尾 [PR #5](https://github.com/Murkiness4095/nixos-sheng/pull/5)：桌面构建用户名可配置，TTY 保留 root；核对单/双系统 CI、合并并更新构建证据。
+- [x] 收尾 [PR #5](https://github.com/Murkiness4095/nixos-sheng/pull/5)：桌面构建用户名可配置，TTY 保留 root；核对单/双系统 CI、合并并更新构建证据。
 - [ ] 新版 KDE/GNOME 镜像真实登录及扬声器实听；已有 Niri PipeWire 实听和镜像解包结果不能替代该验收。
 - [x] 当前个人 tmpfs 系统的基础 SSH / 网络 / 蓝牙 / 机器身份持久化核对；应用数据继续按需声明。
 

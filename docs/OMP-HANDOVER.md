@@ -13,8 +13,12 @@
 | initrd / tmpfs | 可选 initrd、ext4 后端、声明目录持久化、未声明文件重启清空、传统 ext4 回退通过 | 默认镜像仍为传统 ext4；应用数据须按需声明 |
 | 当前个人系统 | tmpfs 根、选择性持久化、Niri/触摸正常；SSH、网络、蓝牙、机器身份等持久化已核对 | 不等于每个应用的登录状态、存档都已覆盖 |
 | 桌面音频修复 | PR #4 已合并；root 会话导致 ConditionUser=!root 跳过 PipeWire 的根因明确 | KDE/GNOME 新镜像仍需真实登录和扬声器实听 |
-| 普通用户镜像 | 四种桌面镜像加入普通用户、自动登录和音频服务；主机名匹配 flake 输出 | 用户要求构建时可自定义用户名，见 PR #5 |
-| 用户名自定义 | PR #5 已推送；本地默认、自定义 tablet、四种完整配置求值通过；输入校验通过 | 本快照时两条 ARM CI 仍在运行，尚未合并 |
+| 普通用户镜像 | 四种桌面镜像加入普通用户、自动登录和音频服务；主机名匹配 flake 输出 | PR #5 已合并：构建时可通过 `desktop_username` 或 `sheng.desktop.userName` 自定义用户名，默认 `nixos`
+- 用户名自定义：PR #5 已合并，合并提交 `4d1fa36d66a1cb8cf42f6b3bbb6093f6503b9048`；
+  单系统 CI [42505507706](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42505507706)、
+  双系统 CI [42505507751](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42505507751) 均为 success。
+  PR 分支 CI [42495329443](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42495329443)、
+  [42495329344](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42495329344) 也为 success。
 
 TTY 镜像保持 root 命令行自动登录，默认 root 密码 `password`；不新增桌面用户。
 桌面镜像初始密码为 `nixos`；PR #5 将用户名做成可配置项，默认值为 `nixos`。
