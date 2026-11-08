@@ -450,8 +450,8 @@ software.
 
 ## KDE / GNOME desktop image accounts
 
-Desktop images use the regular user **`nixos`**, initial password **`nixos`**, and
-GUI autologin. Change the password after installation (`passwd`) and configure
+Desktop images use a configurable regular user (default **`nixos`**), initial
+password **`nixos`**, and GUI autologin. Change the password after installation (`passwd`) and configure
 login policy for your own use. CLI images retain their existing root console;
 importing the board module into a personal configuration does not create this user.
 
@@ -471,3 +471,31 @@ The root-session failure was confirmed from a KDE user's systemd logs on
 or full GNOME/KDE hardware compatibility; desktop routing, rotation, suspend and
 on-screen keyboard still require device testing. The previously measured ALSA
 speaker result is documented separately in `peripheral-validation.md`.
+
+### Customize the desktop image username
+
+In Actions → `build` (single) or `build-dual` → Run workflow, set
+`desktop_username`. It applies to both KDE and GNOME outputs of that run; CLI
+images keep their existing root console. Push/PR builds use `nixos` by default.
+Use 1–31 lowercase letters, digits, `_` or `-`, starting with a letter or `_`;
+`root` is forbidden. Existing system account names may also conflict and must
+not be reused.
+
+For a local image build, edit the tracked `image-settings.nix` before building:
+
+```nix
+{
+  userName = "tablet";
+}
+```
+
+Then build the desired existing output, for example `nix build .#nixos-kde` or
+`nix build .#nixos-dual-gnome`. Actions writes the same settings file, which is
+included in the image's `/etc/nixos` source. This keeps the chosen username on
+later rebuilds. In an extended desktop configuration, the NixOS option
+`sheng.desktop.userName = "tablet";` can override the default as well.
+The initial password remains `nixos`; change it after installation. Do not put
+private passwords or password hashes into public Actions inputs.
+
+Changing this setting is intended for building a new image; renaming an existing
+installed account requires separately migrating its home and ownership.

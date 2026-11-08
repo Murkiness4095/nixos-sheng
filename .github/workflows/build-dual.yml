@@ -8,6 +8,12 @@ on:
       - "docs/**"
   pull_request:
   workflow_dispatch:
+    inputs:
+      desktop_username:
+        description: "Desktop login username (initial password remains nixos)"
+        required: false
+        default: nixos
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -24,6 +30,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configure desktop image username
+        env:
+          DESKTOP_USERNAME: ${{ inputs.desktop_username || 'nixos' }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$DESKTOP_USERNAME" =~ ^[a-z_][a-z0-9_-]{0,30}$ || "$DESKTOP_USERNAME" == root ]]; then
+            echo "Invalid desktop username: use 1-31 lowercase letters, digits, _ or -, starting with a letter or _. root is not allowed." >&2
+            exit 1
+          fi
+          printf '{ userName = "%s"; }\n' "$DESKTOP_USERNAME" > image-settings.nix
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
