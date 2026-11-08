@@ -239,3 +239,15 @@ GNOME/KDE 镜像现增加独立的 `desktop-image.nix`：普通用户 `nixos`、
 
 上述为 PR 测试提交的产物与日志；主分支合并后的构建需另查 Actions，不能把它们混写成主分支产物。
 CI 内五项配置检查均通过（四种桌面及 CLI 账户保持不变），不替代实机验收。
+
+
+主分支合并提交 `e672b08` 的 [单系统 CI 42489562055](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42489562055)
+和 [双系统 CI 42489561948](https://github.com/Murkiness4095/nixos-sheng/actions/runs/42489561948)
+现均已成功；四种桌面镜像已上传。PR 双系统 KDE/GNOME 产物均作只读解包核验，
+普通账户、SDDM/GDM 自动登录和 PipeWire socket 已打包，根分区仍为 linux。
+个人 Niri 系统的 PipeWire 播放已由用户实听确认，详见外设矩阵；没有刷写桌面镜像。
+
+桌面用户名进一步改为 `sheng.desktop.userName` 选项，由 `image-settings.nix` 提供
+默认值。两条工作流的 `desktop_username` 输入在构建前写入该文件，随镜像源码保存，
+使后续 rebuild 保留账户名；TTY 镜像不创建普通用户。默认值仍为 nixos，初始密码
+仍为 nixos。该后续修改的 CI 证据需单独记录，不与上述已完成构建混同。

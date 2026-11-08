@@ -99,3 +99,33 @@ Android 与 NixOS 的配对数据库各自独立，本轮没有实现两边配�
 
 这些项目按 [TODO](../TODO.md) 的验收标准推进。Android OTA 自动化已按用户决定排除，
 后续采用 [选择性重刷 Android](dual-boot.md#android-维护策略选择性重刷)。
+
+## 2026-11-08：普通用户 PipeWire 补测与桌面镜像边界
+
+个人 Niri 系统 `/nix/store/v6sdp26sdgnffxcrk2pgdriapf9syd10-nixos-system-sheng-26.11.20261103.1d06008`
+中，普通用户的 PipeWire 1.6.9、pipewire-pulse、WirePlumber 0.5.19 均为 active。
+默认输出为 `alsa_output.platform-sound.playback.0.0`（Speakers，FL/FR）；
+通过 `pw-play` 播放约两秒轻提示音成功，用户确认听到。没有采集或保存用户音频。
+此项补充了此前仅 ALSA 直放的证据，仍不代表蓝牙音频、所有输入/输出路由均已验证。
+
+另一个用户的旧 KDE 镜像日志显示 `/run/user/0` 和 `ConditionUser=!root`，
+确认该次声音服务连接失败来自 root 会话。PR #4 为四种桌面镜像增加普通用户
+`nixos`；ARM CI 构建通过。双系统 KDE CI 产物经本地只读解包检查，SDDM 配置为
+`User=nixos`、`Session=plasma.desktop`，用户声明为非系统用户，两个 PipeWire socket
+均加入 `sockets.target.wants`，root 条件未被绕过。
+该镜像的内核、DTB 和 PipeWire store 路径与上述已运行的版本一致，但此检查没有
+启动该 KDE 镜像，不能替代其桌面登录及扬声器实听。GNOME 镜像也未作实机验收。
+
+反馈桌面无声音时，在桌面内以普通用户执行（不要加 sudo），并提供镜像/CI 版本、
+单/双系统模式及以下输出：
+
+```sh
+whoami
+readlink -f /run/current-system
+systemctl --user status pipewire pipewire.socket pipewire-pulse wireplumber --no-pager -l
+journalctl --user -u pipewire -u pipewire-pulse -u wireplumber -b --no-pager -n 100
+wpctl status
+```
+
+应分别区分“无法连接声音服务”“没有检测到输出设备”“已有输出但播放无声”。
+不要仅凭音量图标判断内核声卡或扬声器驱动损坏；公开日志前检查并隐去个人信息。
