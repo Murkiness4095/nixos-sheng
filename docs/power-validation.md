@@ -157,3 +157,22 @@ boot.kernelParams = [ "mem_sleep_default=s2idle" ];
 参数求值和 dry-build 通过；x86 主机预览因缺少 ARM 缓存列出内核与大量应用派生项，
 没有开始实际构建。部署前应核对实机缓存或使用 ARM CI，保留原 deep 可用世代并验证
 新世代启动/回退及更长时间待机。仓库通用镜像默认未改，不能将该候选写成已激活修复。
+
+### 2026-11-09：s2idle 候选部署与验证
+
+s2idle 候选已部署到设备（提交 `78eecc9`，设备端 nix-config 仓库，已推送远程）：
+
+- 设备端真实配置：`/home/fall_dust/Documents/nixconf`（非 `/etc/nixos/nixconf`，后者为过时副本已删除）
+- 构建方式：设备本地 nix store 已有 7.3.0 内核缓存，`nixos-rebuild boot` 直接构建，未编译内核
+- 新世代：`/nix/store/4wh251jyy5a3fm9h7cngdpc2rjrk4abx-nixos-system-sheng-26.11.20261103.1d06008`，旧世代保留可回退
+- 重启后验证：`/sys/power/mem_sleep` 显示 `[s2idle] deep`，失败服务 0，kernel cmdline 含 `mem_sleep_default=s2idle`
+- 30 秒挂起/唤醒：通过（USB 供电）
+- 5 分钟挂起/唤醒：通过（USB 供电）
+
+**拔线挂起测试被阻塞：** 设备断开 USB/拓展坞供电后尝试 s2idle 挂起，DWC3 USB 控制器
+`__dwc3_set_mode` 工作队列卡死（125s+），`events_freezable` 无法冻结，内核拒绝 suspend。
+重启后也立即复现，断开蓝牙笔无效。这是内核级 bug（M02 上游补丁范畴），与 s2idle 候选无关。
+用户手动触发挂起导致桌面冻结，需长按电源重启恢复。
+
+**结论：** s2idle 候选稳定性和唤醒已验证（两次 USB 供电测试通过），可作为长期默认。
+拔线耗电数据因 DWC3 问题无法采集。仓库通用镜像默认未改。
