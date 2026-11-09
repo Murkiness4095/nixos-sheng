@@ -20,7 +20,9 @@ let
     assert c.users.users.${user}.isNormalUser;
     assert c.services.pipewire.enable && c.services.pipewire.pulse.enable;
     assert c.services.pipewire.wireplumber.enable && c.security.rtkit.enable;
-    assert browsers != [ ];
+    assert c.programs.firefox.enable;
+    assert builtins.elem "firefox" browsers;
+    assert !(builtins.elem "epiphany" browsers);
     assert c.networking.hostName == name;
     assert c.sheng.rootfs.partlabel == root;
     {

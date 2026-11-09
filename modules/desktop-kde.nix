@@ -23,6 +23,4 @@
   # The board's touchscreen and pen are already handled by the base modules.
   services.libinput.enable = lib.mkDefault true;
 
-  # Unlike GNOME (Epiphany), Plasma does not supply a browser by default.
-  programs.firefox.enable = lib.mkDefault true;
 }

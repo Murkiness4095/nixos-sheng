@@ -13,6 +13,8 @@ in
   };
 
   config = {
+    programs.firefox.enable = lib.mkDefault true;
+
     users.users.${cfg.userName} = {
       isNormalUser = true;
       description = "NixOS desktop user";
