@@ -1,8 +1,19 @@
 # OMP 接手清单与维护流程
 
-更新日期：2026-11-08（北京时间）。这是本次会话交接快照，状态会变化，执行前重新核对。
+更新日期：2026-11-09（北京时间）。这是本次会话交接快照，状态会变化，执行前重新核对。
 先读 [AGENTS.md](../AGENTS.md)、[维护交接](HANDOVER.md)、[TODO](../TODO.md)、
 [外设实测矩阵](peripheral-validation.md)。历史记录不能覆盖当前源码和实机结果。
+
+## 2026-11-09 最新接续点
+
+PR #5 已合并，两路主分支构建通过；用户不在个人平板切换 KDE/GNOME，相关实机验收
+交给社区。当前重点 D01：现有 Niri 功耗与挂起到内存（suspend）稳定性；不是需要
+swap 的休眠到磁盘（hibernate）。完整去重清单在 [TODO](../TODO.md)，共 18 组。
+
+已完成屏亮/熄屏基线与一次拔线 deep 自动唤醒；后续 USB 两轮提前唤醒，需按实际
+BOOTTIME−MONOTONIC 增量判断，不能只看 success 计数。详见 [专项记录](power-validation.md)。
+拔线 poweroff 正常，USB 关机进入已确认的 U-Boot charging 等待，未改 bootloader。
+以下早期快照中的“PR #5 待收尾/CI 运行中”已过时，保留为历史上下文。
 
 ## 当前进度
 

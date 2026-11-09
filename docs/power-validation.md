@@ -3,6 +3,9 @@
 2026-11-09 开始。用户继续使用现有 Niri，不在其平板安装、刷入或切换 KDE/GNOME。
 桌面镜像实机验收保留为社区待测，不阻塞这台平板的维护。
 
+这里的 deep / s2idle 都是**挂起到内存（suspend）**，不需要 swap。
+写入磁盘的休眠（hibernate）是另一条功能，未在本轮配置或测试。
+
 ## 目标与顺序
 
 1. 固定现有系统、刷新率和亮度，拔线记录两分钟屏亮空闲读数。
@@ -100,3 +103,57 @@ poweroff，也不能仅关闭背光便宣称完成低功耗关机充电。
 EFI 不是关机或离线充电的前置条件。后续对 bootloader 的任何修改仍需原启动路径、
 临时启动/恢复以及单/双系统回归。原厂快充充电器场景、本轮正常登录后从桌面菜单
 发起的关机、长期关闭状态耗电仍未单独验收。
+
+
+## 后续 USB 挂起恢复与模式对照
+
+同一 7.3.0 / Niri / tmpfs 系统，连接电脑 USB：
+
+| 测试 | 实际挂起时间（BOOTTIME 与 MONOTONIC 增量之差） | 结果 |
+| --- | --- | --- |
+| deep 恢复检查第 1 轮 | 0.930 秒 | 提前唤醒，未等到 35 秒定时器 |
+| deep 恢复检查第 2 轮 | 2.580 秒 | 提前唤醒，未等到 35 秒定时器 |
+| deep 独立事件跟踪 | 3.830 秒 | 提前唤醒；记录了电池管理消息链路 |
+| 临时 s2idle 对照 | 35.547 秒 | 等到定时器恢复；同一 boot ID |
+
+所有测试均有计数增加且 fail 为 0，但前三项**不算稳定待机通过**。
+前两轮恢复后 NetworkManager / Bluetooth 与用户 PipeWire / Pulse / WirePlumber
+均 active，默认 Speakers 保留；蓝牙已连接设备数前后为 1，不等于笔压感或蓝牙
+音频已经复验。s2idle 唤醒后的屏幕、触摸与两秒 PipeWire 提示音由用户确认正常。
+
+跟踪使用独立 tracefs instance（power suspend/resume、wakeup source、IRQ entry），
+没有覆盖全局跟踪设置；采集完成后删除实例。machine_suspend 返回后，首先观察到
+`ipcc_0`（该次 IRQ 13）、`glink-smem`（该次 IRQ 240），随后是
+`qcom-battmgr-bat` wakeup_source_activate。IRQ 编号不能写成跨启动固定值。
+该顺序指向电池/充电消息相关链路，但不单凭事件先后宣称完整根因已修复。
+锁定源码 `drivers/mailbox/qcom-ipcc.c` 使用 IRQF_NO_SUSPEND；
+`drivers/power/supply/qcom_battmgr.c` 处理 PMIC GLINK 电池通知。
+
+没有停用电池、传感器、蓝牙或屏蔽 IRQ。s2idle 只作运行时单变量对照，trap 已恢复
+原 deep；没有更改个人配置、仓库默认、swap、内核或 bootloader。
+下一步是电池供电下更长的 s2idle 对照和功耗口径校准；之后才评估个人主机的候选
+默认模式，不能由短测结果直接更改所有 sheng 镜像。
+
+`charge_counter` 是相对电荷计数，按 Linux ABI 应为 µAh，不要求与 charge_full
+具有相同零点。读到约 5227、charge_full 为 9571000，**不能仅凭二者比例判断驱动错误**。
+需结合时间差和电流读数核对固件上报的实际单位/精度；本轮暂不由其计算精确续航。
+
+
+### 拔线 s2idle 三分钟与个人配置候选
+
+拔线（USB offline）后，同一 boot ID 下临时 s2idle 实际挂起约 180.577 秒，
+按定时器自动恢复；success 4→5、fail 保持 0。用户确认解锁、Niri 桌面、触摸正常。
+capacity 前后均 55，charge_counter 前后均 5223，温度均约 21.6°C。
+读数不变可能受精度或更新周期影响，不能据此宣称零耗电或给出精确待机续航。
+恢复后 SSH 可用、失败服务为 0，已恢复运行时 deep，测试定时器和独立跟踪均已清理。
+
+个人 `nix-config` 仅在 sheng 主机增加候选参数：
+
+```nix
+boot.kernelParams = [ "mem_sleep_default=s2idle" ];
+```
+
+本地提交 `78eecc9`（fix(hosts/sheng): select s2idle for suspend），未推送、未部署。
+参数求值和 dry-build 通过；x86 主机预览因缺少 ARM 缓存列出内核与大量应用派生项，
+没有开始实际构建。部署前应核对实机缓存或使用 ARM CI，保留原 deep 可用世代并验证
+新世代启动/回退及更长时间待机。仓库通用镜像默认未改，不能将该候选写成已激活修复。
