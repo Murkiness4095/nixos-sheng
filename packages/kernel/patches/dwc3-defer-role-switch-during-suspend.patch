@@ -1,0 +1,43 @@
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index fd5c2cd36..9499893da 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -16,6 +16,8 @@
+ #include <linux/spinlock.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
++#include <linux/freezer.h>
++#include <linux/workqueue.h>
+ #include <linux/interrupt.h>
+ #include <linux/ioport.h>
+ #include <linux/io.h>
+@@ -298,6 +300,9 @@ void dwc3_set_mode(struct dwc3 *dwc, u32 mode)
+ 	dwc->desired_dr_role = mode;
+ 	spin_unlock_irqrestore(&dwc->lock, flags);
+ 
++	if (pm_freezing)
++		return;
++
+ 	queue_work(system_freezable_wq, &dwc->drd_work);
+ }
+ 
+@@ -2687,6 +2692,19 @@ static int dwc3_resume_common(struct dwc3 *dwc, pm_message_t msg)
+ 		dwc3_enable_susphy(dwc, dwc->susphy_state);
+ 	}
+ 
++	if (!PMSG_IS_AUTO(msg) && dwc->dr_mode == USB_DR_MODE_OTG) {
++		unsigned long flags;
++		u32 desired_dr_role;
++
++		spin_lock_irqsave(&dwc->lock, flags);
++		desired_dr_role = dwc->desired_dr_role;
++		spin_unlock_irqrestore(&dwc->lock, flags);
++
++		if (desired_dr_role && desired_dr_role != dwc->current_dr_role &&
++		    !work_pending(&dwc->drd_work))
++			queue_work(system_freezable_wq, &dwc->drd_work);
++	}
++
+ 	return 0;
+ }
+ 

@@ -40,6 +40,8 @@ let
     dontBuild = true;
     nativeBuildInputs = [ perl ];
     postPatch = ''
+      patch -p1 < ${./patches/dwc3-defer-role-switch-during-suspend.patch}
+
       perl -0777 -pi -e '
         s/(#include <linux\/interrupt\.h>\n)/$1#include <linux\/ktime.h>\n/;
 
