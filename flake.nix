@@ -102,6 +102,7 @@
               text = builtins.readFile (./scripts + "/${name}");
             };
           find-sheng = mk "find-sheng" [
+            hostPkgs.coreutils
             hostPkgs.openssh
             hostPkgs.netcat
           ];

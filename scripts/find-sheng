@@ -7,11 +7,15 @@ sheng_root() {
   local dir="$PWD"
   local _
   for _ in 1 2 3 4; do
-    [ -e "$dir/sheng-devkey" ] && { echo "$dir"; return 0; }
+    if [ -e "$dir/sheng-devkey" ]; then
+      echo "$dir"
+      return 0
+    fi
     dir="$(dirname "$dir")"
   done
   echo "$PWD"
 }
+
 ROOT="$(sheng_root)"
 readonly ROOT
 readonly IP_CACHE="${SHENG_IP_CACHE:-$ROOT/.sheng-ip}"
@@ -44,10 +48,13 @@ sweep() {
   local -r prefix="${1%.*}"
   local -r hits="$(mktemp)"
   local host i
-  local -a candidates
+  local -a candidates=()
 
-  for i in $(seq 2 254); do
-    ( nc -z -G 1 -w 1 "$prefix.$i" 22 >/dev/null 2>&1 && echo "$prefix.$i" >>"$hits" ) &
+  for i in {2..254}; do
+    (
+      nc -z -w 1 "$prefix.$i" 22 >/dev/null 2>&1 &&
+        printf '%s\n' "$prefix.$i" >>"$hits"
+    ) &
   done
   wait
 
@@ -55,6 +62,7 @@ sweep() {
   rm -f "$hits"
 
   for host in "${candidates[@]}"; do
+    [ -n "$host" ] || continue
     is_sheng "$host" || continue
     echo "$host" >"$IP_CACHE"
     echo "$host"
@@ -66,7 +74,9 @@ sweep() {
 
 host_ip() {
   if command -v ip >/dev/null 2>&1; then
-    ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.*src \([0-9.]*\).*/\1/p' | head -n 1
+    ip -4 route get 1.1.1.1 2>/dev/null |
+      sed -n 's/.*src \([0-9.]*\).*/\1/p' |
+      head -n 1
   elif command -v ipconfig >/dev/null 2>&1; then
     ipconfig getifaddr en0 2>/dev/null
   else
