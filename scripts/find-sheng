@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Print the sheng's IP. Tries the cached address, then sweeps the /24.
 # The device takes a new DHCP lease every boot, so the cache goes stale.
 
@@ -63,5 +64,15 @@ sweep() {
   return 1
 }
 
+host_ip() {
+  if command -v ip >/dev/null 2>&1; then
+    ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.*src \([0-9.]*\).*/\1/p' | head -n 1
+  elif command -v ipconfig >/dev/null 2>&1; then
+    ipconfig getifaddr en0 2>/dev/null
+  else
+    echo 192.168.2.1
+  fi
+}
+
 try_cache && exit 0
-sweep "$(ipconfig getifaddr en0 2>/dev/null || echo 192.168.2.1)"
+sweep "$(host_ip)"
