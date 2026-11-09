@@ -499,3 +499,19 @@ private passwords or password hashes into public Actions inputs.
 
 Changing this setting is intended for building a new image; renaming an existing
 installed account requires separately migrating its home and ownership.
+
+
+### Desktop image applications
+
+These are basic desktop images, separate from the maintainer's personal Niri
+configuration. Both GNOME and KDE include Firefox; GNOME's default Epiphany
+browser is excluded to keep browser selection consistent.
+Both single- and dual-system variants use the same desktop profiles. CLI images
+keep their console-oriented package selection and do not enable Firefox.
+Additional applications belong in your own NixOS configuration and can be added
+through a normal rebuild without reflashing the root filesystem.
+
+Browser inclusion is configuration-checked; launching Firefox, video playback and
+hardware acceleration in these desktop images still need device testing. See
+[the peripheral validation matrix](peripheral-validation.md) for the measured
+hardware scope; successful image builds do not establish full desktop support.
