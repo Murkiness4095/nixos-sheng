@@ -39,11 +39,11 @@
         "u-boot-src": "u-boot-src"
       },
       "locked": {
-        "lastModified": 1794065194,
-        "narHash": "sha256-KXahW3Bnt2YmU3j8DgDNBbFun8Ggoiy5NYdY6PBwwWc=",
+        "lastModified": 1794196668,
+        "narHash": "sha256-yazC8OmAgrAeHaVvOTe7aGkXUjOD65TKQNrYYIgdy+U=",
         "owner": "Murkiness4095",
         "repo": "nixos-sheng",
-        "rev": "ba6ca292f604404bd0faaa3d5f710e639f813510",
+        "rev": "ced9f04bd9bc43a8b7064bab6efd4df56ad31a3c",
         "type": "github"
       },
       "original": {
