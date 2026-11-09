@@ -264,3 +264,12 @@ CI 内五项配置检查均通过（四种桌面及 CLI 账户保持不变），
 OMP 的 host 工具提交 `4dc3e12` 仍在 `codex/find-sheng-linux-compat` 独立分支；
 当前 main 的 `4c4b34f` 只覆盖此前 Linux 地址发现改动，仍含 nc -G。
 后续可单独收尾该兼容性修复，但不要用 P3 工具整理替代用户明确反馈的日常体验问题。
+
+
+2026-11-09 关机对照补充：同一系统拔线 `systemctl poweroff` 后保持关闭，用户长按
+电源开机；接电脑 USB 后进入 U-Boot charging / Press POWER 等待，用户确认该提示。
+源码 `sheng_charger_boot_poweroff()` 已有这条路径，设备 boot_b 的 boot.img 内容范围
+与已检查 CI 产物哈希一致。不是 A/B 启动失败保护，不需要重置槽位。
+当前缺口改为低功耗离线充电及其他供电/桌面入口的验证，不能把 U-Boot 等待当作
+已经完成低功耗关机。原“关机尚未重现”的快照已由 [对照记录](power-validation.md) 更新。
+平板已回到原 NixOS 登录界面，USB 已连接，SSH 可用，失败服务为 0；未刷写分区。
