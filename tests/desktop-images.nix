@@ -6,6 +6,13 @@ let
     let
       c = flake.nixosConfigurations.${name}.config;
       user = c.services.displayManager.autoLogin.user;
+      browsers = builtins.filter (
+        name:
+        builtins.elem name [
+          "firefox"
+          "epiphany"
+        ]
+      ) (builtins.map (p: p.pname or p.name) c.environment.systemPackages);
     in
     assert c.services.displayManager.autoLogin.enable;
     assert user != "root";
@@ -13,10 +20,11 @@ let
     assert c.users.users.${user}.isNormalUser;
     assert c.services.pipewire.enable && c.services.pipewire.pulse.enable;
     assert c.services.pipewire.wireplumber.enable && c.security.rtkit.enable;
+    assert browsers != [ ];
     assert c.networking.hostName == name;
     assert c.sheng.rootfs.partlabel == root;
     {
-      inherit user;
+      inherit user browsers;
       hostname = c.networking.hostName;
       root = c.sheng.rootfs.partlabel;
     };
@@ -41,5 +49,7 @@ in
   cliUnchanged =
     assert !(flake.nixosConfigurations.sheng.config.users.users ? nixos);
     assert !(flake.nixosConfigurations.sheng-dual.config.users.users ? nixos);
+    assert !flake.nixosConfigurations.sheng.config.programs.firefox.enable;
+    assert !flake.nixosConfigurations.sheng-dual.config.programs.firefox.enable;
     true;
 }
