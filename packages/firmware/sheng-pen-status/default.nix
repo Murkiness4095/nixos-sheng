@@ -25,6 +25,21 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ qt6.qmake qt6.wrapQtAppsHook pkg-config ];
   buildInputs = [ qt6.qtbase qt6.qtsvg ];
 
+  # Upstream guards a single system-wide instance with a fixed /tmp lock and an
+  # unqualified abstract socket. On a multi-user machine the second user's
+  # launch silently exits. Scope both to the user: uid in the socket name and
+  # the lock under XDG_RUNTIME_DIR.
+  postPatch = ''
+    substituteInPlace main.cpp \
+      --replace-fail '#include <QFile>' '#include <QFile>
+#include <unistd.h>' \
+      --replace-fail 'const QString serverName = QStringLiteral("xiaomi-pen-status");' \
+        'const QString serverName = QStringLiteral("xiaomi-pen-status-") + QString::number(static_cast<qulonglong>(::getuid()));' \
+      --replace-fail 'QLockFile lockFile(QDir::temp().absoluteFilePath(QStringLiteral("xiaomi-pen-status.lock")));' \
+        'const QString lockDir = qEnvironmentVariable("XDG_RUNTIME_DIR", QDir::tempPath());
+	QLockFile lockFile(QDir(lockDir).absoluteFilePath(QStringLiteral("xiaomi-pen-status.lock")));'
+  '';
+
   buildPhase = ''
     runHook preBuild
 
