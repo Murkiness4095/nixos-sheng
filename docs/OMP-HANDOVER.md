@@ -1,5 +1,7 @@
 # OMP 接手清单与维护流程
 
+[English](./OMP-HANDOVER.en.md) · 简体中文
+
 更新日期：2026-11-09（北京时间）。这是本次会话交接快照，状态会变化，执行前重新核对。
 先读 [AGENTS.md](../AGENTS.md)、[维护交接](HANDOVER.md)、[TODO](../TODO.md)、
 [外设实测矩阵](peripheral-validation.md)。历史记录不能覆盖当前源码和实机结果。

@@ -1,5 +1,7 @@
 # 历史排障笔记
 
+[English](./bringup-notes.en.md) · 简体中文
+
 保留本轮整理前的底层故障、推理和调试线索；它不是当前任务清单。
 部分内容来自旧内核/旧桌面会话，不能直接外推到当前 THP、桌面或所有设备变体。
 当前状态见 [实测矩阵](peripheral-validation.md)，待办见 [TODO](../TODO.md)。

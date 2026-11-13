@@ -1,5 +1,9 @@
 # nixos-sheng
 
+[English](./README.en.md) · 简体中文
+
+[中文文档索引](docs/index.md)
+
 Xiaomi Pad 6S Pro（sheng）的标准 NixOS + U-Boot 移植，提供独立的单系统与 Android/NixOS 双系统产物。
 设备支持优先参考 [debian-sheng](https://github.com/ianchb/debian-sheng)，使用 Nix 包和 NixOS 模块集成。
 
@@ -20,23 +24,13 @@ Xiaomi Pad 6S Pro（sheng）的标准 NixOS + U-Boot 移植，提供独立的单
 | 核对 Debian 方案与版本选择 | [Debian 参考策略](docs/debian-reference.md) |
 
 Actions 中 `build` 构建单系统，`build-dual` 构建双系统；修改代码推送到 `main` 会分别触发两条工作流，
-手动运行时选择对应工作流。仅文档变更会跳过 push 构建。
+手动运行时先选择单系统或双系统工作流，再用 `image` 选择 `tty`、`kde` 或 `gnome`。
+默认 `none` 只生成更新用闭包。普通提交和 PR 跑检查并导出闭包，跳过安装镜像。
+已安装的设备通过 `nixos-rebuild boot` 更新世代。详见[更新与回退](docs/HANDOVER.md#标准更新与回退)。
 
 刷写前先确认模式：现有 `fastboot-flash`、`flash-uboot` 会写两个 boot 槽，`flash-rootfs` 会擦写
 `userdata`，均不能直接用于保留 Android 的双系统安装。双系统请按独立指南操作。
 
 ## 赞助
 
-### 币安 USDT · Solana（SOL）
-
-<img src="docs/assets/sponsor-binance-usdt-sol.png" alt="币安 USDT 收款二维码，仅限 Solana（SOL）网络" width="360" height="360">
-
-币安 USDT 收款地址（可复制）：
-
-```text
-7u2gWHozu2FQwAN7yEmhToC9vKJvhqrz64X3BvXnG8Ji
-```
-
-**仅限 Solana（SOL）网络的 USDT。** 转账前请核对币种、网络和完整地址，不要通过 ERC20、TRC20、BEP20 等其他网络转入，也不要发送 NFT。
-
-赞助不改变问题优先级，也不代表硬件采购或功能承诺。
+[查看赞助方式](docs/sponsor.md)

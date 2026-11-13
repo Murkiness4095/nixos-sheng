@@ -1,5 +1,7 @@
 # 可选 initrd 与 ext4 上的 tmpfs 根目录
 
+[English](./initrd-tmpfs.en.md) · 简体中文
+
 默认单系统、双系统镜像保持 ext4 根目录直启。以下功能需要用户显式启用，
 不要求 EFI、Btrfs 或 disko，不刷写 boot/recovery，也不重建 GPT。
 
