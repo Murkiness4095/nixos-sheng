@@ -47,3 +47,10 @@ B 槽用 fastboot boot 临时启动，未刷写。SSH 确认 EFI 与原世代
 `panel_novatek_nt36532e.noinit=1` 与 `panel_novatek_nt36532e.noreset=1`，
 而临时加载器条目的 options 行不含这两项。因此本次无法单独归因于 DTB；
 面板日志为 `noinit=1 noreset=1 ret=-61 val=0xaa`。
+
+复查发现，实际条目是分区根目录的 `/loader/entries/sheng-efi-probe.conf`
+（从 NixOS 访问为 `/sysroot-storage/loader/entries/sheng-efi-probe.conf`）。
+额外参数来自该旧条目。`/boot/loader/entries` 下的副本没有被读取。
+在实际条目中移除两个面板参数并加入 `sheng.efi_control=explicit-dtb` 后，
+用同一镜像再次临时启动。用户仍观察到闪烁后黑屏。主机看到 USB 串口节点，
+但 SSH 和串口未返回运行时命令行，故未确认标记是否进入内核。
