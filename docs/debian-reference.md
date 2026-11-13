@@ -4,11 +4,11 @@
 已有方案先核对其实际构建脚本、release 包内容、服务和桌面集成，再移植为 Nix 包和模块。
 Debian 没有覆盖的功能或已实测的问题，才增加独立实现或修复。
 
-本轮参考提交：`da1d2761dbc1ccaea0122f8b0c2dce2d52edaeb2`。
+本轮参考提交：`a93aaa1eff77a2bf0552b8dafaa35c1e0880317f`。
 
 | 组件 | 选择及差异 |
 | --- | --- |
-| 内核 | `sheng-7.3.0`，使用上述 Debian 提交的 `sm8550.config`，保留本项目的 NixOS/调试配置片段。 |
+| 内核 | `sheng-7.3.4`，使用上述 Debian 提交的 `sm8550.config`，保留本项目的 NixOS/调试配置片段。 |
 | FastRPC | 与 Debian 一致使用 1.0.2；NixOS 将可写传感器注册表放在 `/var/lib/qcom`，并修复相应搜索路径。 |
 | libssc | 固定 Debian 所跟踪上游当前提交，版本 0.4.4，保留 QMI 服务等待补丁。 |
 | iio-sensor-proxy | 与 Debian 一致使用 3.9 的上游 SSC 支持；保留 sheng 的设备发现、早期客户端声明和可用性通知修复。 |
