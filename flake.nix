@@ -3,7 +3,7 @@
 
   inputs = {
     u-boot-efi-src = {
-      url = "github:Murkiness4095/u-boot/62edc2e44970d93bac1255d51c90c3f6a9ab6860";
+      url = "github:Murkiness4095/u-boot/b475d738c174c50c44b0363c2fa4c84082876746";
       flake = false;
     };
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
