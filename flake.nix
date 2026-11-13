@@ -228,6 +228,12 @@
               rootPartition = "linux";
             };
 
+            u-boot-efi-probe-single = pkgs.callPackage ./packages/u-boot {
+              src = u-boot-efi-src;
+              version = u-boot-efi-src.shortRev;
+              efiProbe = true;
+            };
+
             u-boot-efi-probe = pkgs.callPackage ./packages/u-boot {
               src = u-boot-efi-src;
               version = u-boot-efi-src.shortRev;
