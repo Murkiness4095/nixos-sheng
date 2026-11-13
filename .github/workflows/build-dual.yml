@@ -9,6 +9,11 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      image:
+        description: Build one install image, or only export update closures
+        type: choice
+        default: none
+        options: [none, tty, kde, gnome]
       desktop_username:
         description: "Desktop login username (initial password remains nixos)"
         required: false
@@ -203,9 +208,11 @@ jobs:
           path: system-artifacts/
 
       - name: Build rootfs image
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'tty'
         run: nix build -L .#nixos-dual -o result-image
 
       - name: Verify and compress rootfs image
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'tty'
         run: |
           set -euo pipefail
           img=result-image/sheng-rootfs.sparse.img
@@ -219,6 +226,7 @@ jobs:
           ls -lh artifacts
 
       - name: Upload artifacts
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'tty'
         uses: actions/upload-artifact@v4
         with:
           name: sheng-dual-flashable
@@ -231,6 +239,7 @@ jobs:
         run: nix eval --json --impure --expr 'import ./tests/desktop-images.nix { flake = builtins.getFlake ("git+file://" + toString ./.); }'
 
       - name: Build and upload dual-system KDE desktop rootfs
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'kde'
         run: |
           set -euo pipefail
           nix build -L .#nixos-dual-kde -o result-dual-kde
@@ -240,6 +249,7 @@ jobs:
           cp result-uboot/boot.img dual-kde-artifacts/sheng-boot-dual.img
           nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o dual-kde-artifacts/sheng-rootfs-dual-kde.sparse.img.zst
       - name: Upload dual-system KDE desktop flashable
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'kde'
         uses: actions/upload-artifact@v4
         with:
           name: sheng-dual-kde-flashable
@@ -247,6 +257,7 @@ jobs:
           path: dual-kde-artifacts/
 
       - name: Build and upload dual-system GNOME desktop rootfs
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'gnome'
         run: |
           set -euo pipefail
           nix build -L .#nixos-dual-gnome -o result-dual-gnome
@@ -256,6 +267,7 @@ jobs:
           cp result-uboot/boot.img dual-gnome-artifacts/sheng-boot-dual.img
           nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o dual-gnome-artifacts/sheng-rootfs-dual-gnome.sparse.img.zst
       - name: Upload dual-system GNOME desktop flashable
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'gnome'
         uses: actions/upload-artifact@v4
         with:
           name: sheng-dual-gnome-flashable
