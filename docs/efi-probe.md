@@ -109,3 +109,45 @@ HiFi、Speaker 和 Mic3 初始化成功，WirePlumber 枚举内置扬声器和�
 用户照片确认内屏显示 tty1，面板读取 `ret=0 val=0x9e`，UCM 服务为 active。
 仍有音频驱动告警，单系统扬声器与录音未实测。普通重启后经串口确认回到
 `linux` 上的原第 18 世代 extlinux。测试 NixOS 保留在 `userdata`。
+
+## 下一轮：NixOS 世代安装与回退
+
+先保留现有 extlinux 救援入口。用 GitHub ARM CI 构建单系统 EFI 探针和候选闭包，
+沿用已实测的 U-Boot 从 userdata ext4 读取 systemd-boot 的路径。测试条目与文件单独暂存，
+备份现有探针文件后，通过 ABL fastboot 临时启动。核对两个条目的内核、initrd、DTB、
+根 PARTLABEL 与 init 路径，依次启动新旧世代，最后普通重启确认恢复 extlinux。
+
+标准 NixOS systemd-boot 安装器可先在 ARM CI 的 GPT/FAT 镜像中验证。
+实机 ext4 探针验证的是世代条目与启动回退，正式 ESP 布局仍待单独确定。
+
+单系统探针和 TTY 根镜像的实际 CI 源均为
+`ec6c3b439d5be30821c8150a196c5cb2a44dabf8`，改写后对应
+`0975f4748d5aa1c3624032ec058aaad8075f9829`。
+
+### 2026-11-14：测试 ESP 安装预检
+
+SSH 确认平板从 B 槽以 extlinux 启动第 18 世代，tmpfs 根的 ext4 后端
+PARTLABEL 为 `linux`。内置存储未发现 ESP 类型的分区。
+
+在平板的临时文件中建立 256 MiB GPT 镜像，经 loop 挂载 FAT32 ESP。
+systemd 262 的 `bootctl --no-variables install` 成功安装 ARM64 fallback 文件，
+`bootctl is-installed` 返回 `yes`。`EFI/BOOT/BOOTAA64.EFI` SHA256 为
+`76a5bba20322d4929f35c608199f21f80317ae006805315ca215382cdef4c75b`。
+卸载后删除了临时镜像。下一项是在现有 userdata ext4 探针上验证两个世代的启动和回退。
+
+### 2026-11-14：单系统探针复测
+
+[ARM CI 43509366497](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43509366497)
+从 `5022490a33cdcff8d074829fd7ec5a46238d2e67` 构建成功。下载产物的
+boot.img SHA256 与 43453660713 的已验镜像一致，实机临时加载了后者。
+B 槽 ABL fastboot 接受镜像，USB 串口确认 EFI、`root=PARTLABEL=userdata`、
+`sheng.efi_probe=single` 和 UCM active。实测系统为
+`/nix/store/w1fyfyk9dgjghlfgri3kk5fmhmlk6cf4-nixos-system-sheng-26.11.20261103.1d06008`。
+用户确认内屏进入 tty，期间有日志输出，未采集这些日志的具体内容。
+从串口正常重启后，确认回到 `linux` 的 extlinux 第 18 世代。
+本轮复测覆盖单系统启动与恢复，`userdata` 目前只有一个测试世代。
+
+照片中的四条日志为 `wcd938x_codec audio-codec: Impedance detect ramp error, c1=3, x1=0x0`。
+同一次复测返回 extlinux 第 18 世代后，`7.3.4-sm8550` 的当次内核日志也记录了四条
+相同报错，UCM 仍为 active。该报错出现在两种启动路径；单系统内置扬声器、
+录音和耳机功能仍需实测。

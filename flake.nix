@@ -185,6 +185,15 @@
       overlays.default = import ./overlay.nix;
 
       nixosConfigurations.sheng = sheng;
+      nixosConfigurations.sheng-efi-tty = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [
+          ({ lib, ... }: {
+            users.users.nixos.isNormalUser = true;
+            services.getty.autologinUser = lib.mkForce "nixos";
+          })
+        ];
+      };
       nixosConfigurations.sheng-dual = shengDual;
       nixosConfigurations.sheng-kde = shengKde;
       nixosConfigurations.sheng-gnome = shengGnome;

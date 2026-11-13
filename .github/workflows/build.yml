@@ -13,6 +13,10 @@ on:
         description: Build only the temporary single-system EFI probe
         type: boolean
         default: false
+      efi_tty_candidate:
+        description: Export the single-system EFI test closure with a regular TTY user
+        type: boolean
+        default: false
       image:
         description: Build one install image, or only export update closures
         type: choice
@@ -151,6 +155,12 @@ jobs:
               --no-write-lock-file --override-input nixos-sheng "git+file://$(pwd)" -o "result-$template"
             test "$(readlink -f "result-$template")" = "$(readlink -f result-system)"
           done
+
+      - name: Build single-system EFI TTY candidate
+        if: ${{ inputs.efi_tty_candidate }}
+        run: |
+          test "$(nix eval --raw .#nixosConfigurations.sheng-efi-tty.config.services.getty.autologinUser)" = nixos
+          nix build -L .#nixosConfigurations.sheng-efi-tty.config.system.build.toplevel -o result-system
 
       - name: Export system closure for installation without reflashing
         run: |
