@@ -24,3 +24,7 @@ Actions 中 `build` 构建单系统，`build-dual` 构建双系统；修改代�
 
 刷写前先确认模式：现有 `fastboot-flash`、`flash-uboot` 会写两个 boot 槽，`flash-rootfs` 会擦写
 `userdata`，均不能直接用于保留 Android 的双系统安装。双系统请按独立指南操作。
+
+## 赞助
+
+[查看赞助方式](docs/sponsor.md)
