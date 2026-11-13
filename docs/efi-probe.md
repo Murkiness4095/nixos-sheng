@@ -65,3 +65,12 @@ SSH 确认 EFI、第 18 世代及实际命令行，两个面板跳过参数均�
 
 下一轮仅在 systemd-boot 探测路径的 EFI ExitBootServices 调用 sheng 的
 `board_preboot_os()`，复用 extlinux 的显示清理，验证黑屏是否来自显示交接。
+
+## EFI 显示交接复用 extlinux 清理
+
+U-Boot `5d7445dfb05`，nixos-sheng `80c172e`，ARM CI `43449167013`。
+镜像 SHA256 为 `7b3069a632fc382426601847a50c43a2e10f1023d208310a2b939233ee392bc5`。
+B 槽临时启动，第 18 世代通过 EFI 进入桌面，用户确认内屏可见。
+面板读取恢复为 `ret=0 val=0x9e`。这组对照支持复用 sheng 显示清理可恢复内屏。
+音频声卡已枚举，但 UCM 导入仍返回 -2，同一时间内核记录 qcom-apm 命令超时。
+测试后还原 EFI 条目和探测 DTB，再重启回 extlinux。
