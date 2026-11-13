@@ -97,5 +97,12 @@ HiFi、Speaker 和 Mic3 初始化成功，WirePlumber 枚举内置扬声器和�
 单系统用户在 Actions 手动运行 `build` 并启用 `efi_probe`，
 下载 `sheng-efi-probe-single`。它读取 `userdata` 上的 NixOS 文件；
 双系统探针仍由 `build-dual` 生成并读取 `linux`。
-单系统实机启动待验证。请使用已有 NixOS ext4 的单系统设备进行临时启动，
+单系统 TTY 已实机验证。请使用已有 NixOS ext4 的单系统设备进行临时启动，
 双系统设备的 Android `userdata` 不适用于此测试。
+
+实测使用单系统探针 CI `43453660713` 和 TTY 根镜像 CI `43454075043`。
+探针 SHA256 为 `29c4a0b8b8013ee43d08bc192fac8d955caa7e7fa43ea27676b03c503397f13e`。
+在 B 槽临时启动，串口确认 EFI、`userdata` 根分区和 `7.3.4-sm8550`。
+用户照片确认内屏显示 tty1，面板读取 `ret=0 val=0x9e`，UCM 服务为 active。
+仍有音频驱动告警，单系统扬声器与录音未实测。普通重启后经串口确认回到
+`linux` 上的原第 18 世代 extlinux。测试 NixOS 保留在 `userdata`。
