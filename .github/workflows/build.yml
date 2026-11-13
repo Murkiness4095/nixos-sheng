@@ -13,6 +13,10 @@ on:
         description: Build only the temporary single-system EFI probe
         type: boolean
         default: false
+      efi_auto_boot:
+        description: Automatically boot systemd-boot in the temporary single-system probe
+        type: boolean
+        default: false
       efi_tty_candidate:
         description: Export the single-system EFI test closure with a regular TTY user
         type: boolean
@@ -272,12 +276,15 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: experimental-features = nix-command flakes
-      - run: nix build -L  .#u-boot-efi-probe-single -o result-probe
+      - run: nix build -L  .#${{ inputs.efi_auto_boot && 'u-boot-efi-auto-single' || 'u-boot-efi-probe-single' }} -o result-probe
       - name: Check the probe image
         run: |
           test "$(stat -Lc %s result-probe/boot.img)" -lt $((192 * 1024 * 1024))
           strings result-probe/u-boot.bin | grep -F 'Test EFI hello'
           strings result-probe/u-boot.bin | grep -F "part number scsi 0 userdata partnum"
+          if [[ "${{ inputs.efi_auto_boot }}" == true ]]; then
+            strings result-probe/u-boot.bin | grep -Fx "bootcmd=run efi_probe_systemd; reset"
+          fi
           sha256sum result-probe/boot.img
       - uses: actions/upload-artifact@v4
         with:
