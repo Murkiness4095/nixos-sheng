@@ -1,5 +1,7 @@
 # Debian-sheng 适配参考
 
+[English](./debian-reference.en.md) · 简体中文
+
 设备功能优先参考 [ianchb/debian-sheng](https://github.com/ianchb/debian-sheng)。
 已有方案先核对其实际构建脚本、release 包内容、服务和桌面集成，再移植为 Nix 包和模块。
 Debian 没有覆盖的功能或已实测的问题，才增加独立实现或修复。

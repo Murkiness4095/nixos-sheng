@@ -1,5 +1,7 @@
 # Android / NixOS 双系统构建
 
+[English](./dual-boot.en.md) · 简体中文
+
 参考 [debian-sheng](https://github.com/ianchb/debian-sheng#flashing-to-your-device)
 使用独立 `linux` 分区，并通过 A/B 启动槽选择系统。第一阶段不在 U-Boot 内直接加载安卓。
 

@@ -1,5 +1,9 @@
 # nixos-sheng
 
+[English](./README.en.md) · 简体中文
+
+[中文文档索引](docs/index.md)
+
 Xiaomi Pad 6S Pro（sheng）的标准 NixOS + U-Boot 移植，提供独立的单系统与 Android/NixOS 双系统产物。
 设备支持优先参考 [debian-sheng](https://github.com/ianchb/debian-sheng)，使用 Nix 包和 NixOS 模块集成。
 

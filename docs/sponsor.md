@@ -1,5 +1,7 @@
 ## 币安 USDT · Solana（SOL）
 
+[English](sponsor.en.md) · 简体中文
+
 <img src="assets/sponsor-binance-usdt-sol.png" alt="币安 USDT 收款二维码，仅限 Solana（SOL）网络" width="360" height="360">
 
 币安 USDT 收款地址（可复制）：
