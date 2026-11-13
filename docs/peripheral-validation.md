@@ -1,5 +1,7 @@
 # sheng 外设实机验证
 
+[English](./peripheral-validation.en.md) · 简体中文
+
 测试环境：独立 `linux` 根分区、B 槽 NixOS、内核 7.3.0、NixOS 26.11，
 硬件模块与单系统共用。以下是实际验证范围，不代表所有桌面应用已经测试。
 

@@ -1,5 +1,7 @@
 # Development
 
+English · [简体中文](./DEVELOPMENT.zh-CN.md)
+
 Working on `nixos-sheng`: the layout, the scripts, how to get diagnostics off a device
 with no serial port, and the things that have already cost someone a recovery.
 
