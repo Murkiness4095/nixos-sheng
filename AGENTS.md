@@ -1,5 +1,7 @@
 # Working on nixos-sheng
 
+English · [简体中文](./AGENTS.zh-CN.md)
+
 ## Start here
 
 - For the 2026-11-08 agent transition, read `docs/OMP-HANDOVER.md` for pending PR/CI, the device snapshot and the maintenance workflow; re-check live state before acting.

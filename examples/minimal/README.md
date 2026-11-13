@@ -1,5 +1,7 @@
 # sheng 最小个人配置
 
+[English](./README.en.md) · 简体中文
+
 ## 先选择单系统或双系统
 
 **本样板默认单系统：`lib.shengSystem` 使用 `userdata`。** 它不会因为设备已有 Android、

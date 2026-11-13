@@ -1,5 +1,7 @@
 # nixos-sheng
 
+English · [简体中文](./README.zh-CN.md)
+
 NixOS and a U-Boot port for the **Xiaomi Pad 6S Pro 12.4** (`sheng`, Snapdragon 8 Gen 2 / SM8550).
 
 > **Project Status**

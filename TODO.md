@@ -1,5 +1,7 @@
 # 待办与验收标准
 
+[English](./TODO.en.md) · 简体中文
+
 截至 2026-11-09（北京时间）。先读 [交接入口](docs/HANDOVER.md) 和
 [实测矩阵](docs/peripheral-validation.md)，再决定下一步；不要重新把已验收的启动问题当作未完成事项。
 

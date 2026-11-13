@@ -1,5 +1,7 @@
 # 维护交接
 
+[English](./HANDOVER.en.md) · 简体中文
+
 这份文档是接手入口，记录截至 2026-11-07（北京时间）的验证基线，不承诺这些版本永远是上游最新。
 当前源码与实机状态发生变化后，请同时更新相应证据和状态，避免让会话记忆成为唯一依据。
 
@@ -155,6 +157,7 @@ nix-env -p /nix/var/nix/profiles/system --set "$candidate"
 | --- | --- | --- | --- |
 | `build` | `sheng-flashable` (+ `sheng-kde-flashable`, `sheng-gnome-flashable`) | `sheng-system-closure` | `nixos`、`u-boot`、配置 `sheng` |
 | `build-dual` | `sheng-dual-flashable` (+ `sheng-dual-kde-flashable`, `sheng-dual-gnome-flashable`) | `sheng-dual-system-closure` | `nixos-dual`、`u-boot-dual`、配置 `sheng-dual` |
+自动运行导出更新闭包。需要安装镜像时，在对应工作流的 **Run workflow** 中选择 `image=tty`、`kde` 或 `gnome`，只构建并上传所选镜像。默认 `none`。
 
 `build` 和 `build-dual` 工作流都额外导出各自的 KDE/GNOME 桌面镜像；
 它们复用同一 U-Boot，仅替换 rootfs，桌面支持目前仅完成配置求值，尚未做实机桌面验收。

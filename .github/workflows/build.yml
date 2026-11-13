@@ -9,6 +9,11 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      image:
+        description: Build one install image, or only export update closures
+        type: choice
+        default: none
+        options: [none, tty, kde, gnome]
       desktop_username:
         description: "Desktop login username (initial password remains nixos)"
         required: false
@@ -90,8 +95,8 @@ jobs:
           v=$(nix eval --raw '.#nixosConfigurations.sheng.config.boot.kernelPackages.kernel.version')
           m=$(nix eval --raw '.#nixosConfigurations.sheng.config.boot.kernelPackages.kernel.modDirVersion')
           echo "kernel.version=$v modDirVersion=$m"
-          test "$v" = "7.3.0-sheng"
-          test "$m" = "7.3.0-sm8550"
+          test "$v" = "7.3.4-sheng"
+          test "$m" = "7.3.4-sm8550"
 
       - name: Restore kernel closure from a successful build
         env:
@@ -138,7 +143,7 @@ jobs:
           nix build -L .#nixosConfigurations.sheng.config.system.build.toplevel -o result-system
           for template in minimal flake-parts; do
             nix build -L "./examples/$template#nixosConfigurations.sheng.config.system.build.toplevel" \
-              --no-update-lock-file -o "result-$template"
+              --no-write-lock-file --override-input nixos-sheng "git+file://$(pwd)" -o "result-$template"
             test "$(readlink -f "result-$template")" = "$(readlink -f result-system)"
           done
 
@@ -163,9 +168,11 @@ jobs:
           path: system-artifacts/
 
       - name: Build rootfs image
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'tty'
         run: nix build -L .#nixos -o result-image
 
       - name: Verify and compress rootfs image
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'tty'
         run: |
           set -euo pipefail
           img=result-image/sheng-rootfs.sparse.img
@@ -179,6 +186,7 @@ jobs:
           ls -lh artifacts
 
       - name: Upload artifacts
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'tty'
         uses: actions/upload-artifact@v4
         with:
           name: sheng-flashable
@@ -190,6 +198,7 @@ jobs:
         run: nix eval --json --impure --expr 'import ./tests/desktop-images.nix { flake = builtins.getFlake ("git+file://" + toString ./.); }'
 
       - name: Build and upload KDE desktop rootfs
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'kde'
         run: |
           set -euo pipefail
           nix build -L .#nixos-kde -o result-kde
@@ -199,6 +208,7 @@ jobs:
           cp result-uboot/boot.img kde-artifacts/sheng-boot.img
           nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o kde-artifacts/sheng-rootfs-kde.sparse.img.zst
       - name: Upload KDE desktop flashable
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'kde'
         uses: actions/upload-artifact@v4
         with:
           name: sheng-kde-flashable
@@ -206,6 +216,7 @@ jobs:
           path: kde-artifacts/
 
       - name: Build and upload GNOME desktop rootfs
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'gnome'
         run: |
           set -euo pipefail
           nix build -L .#nixos-gnome -o result-gnome
@@ -215,6 +226,7 @@ jobs:
           cp result-uboot/boot.img gnome-artifacts/sheng-boot.img
           nix shell nixpkgs#zstd -c zstd -T0 --long=27 -3 -f "$img" -o gnome-artifacts/sheng-rootfs-gnome.sparse.img.zst
       - name: Upload GNOME desktop flashable
+        if: github.event_name == 'workflow_dispatch' && inputs.image == 'gnome'
         uses: actions/upload-artifact@v4
         with:
           name: sheng-gnome-flashable
