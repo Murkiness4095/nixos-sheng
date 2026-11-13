@@ -53,7 +53,7 @@ OTA 自动化不是待交付事项。独立 `linux` 分区能保留 Linux 数据
 | 内核配置 | Debian-sheng 提交 `da1d2761dbc1ccaea0122f8b0c2dce2d52edaeb2` 的根目录 `sm8550.config`，叠加本项目片段 |
 | Nixpkgs | `1d060086d60cb76a40cf37109f979d88a5bd6396`，NixOS `26.11.20261103.1d06008` |
 | Nix | 设备端 `2.34.9` |
-| U-Boot | `SushyDev/u-boot` 的 `xiaomi-sheng` 分支，锁定 `7025b792e2884c5fb4747d891e30002ea029048a`，另加本仓库补丁 |
+| U-Boot | `Murkiness4095/u-boot` 的 `xiaomi-sheng` 分支，锁定 `7025b792e2884c5fb4747d891e30002ea029048a`，另加本仓库补丁 |
 | Zig | 0.15.2；不能直接换成 Nixpkgs 默认的较新 Zig，源码语法存在兼容性要求 |
 | FastRPC / libssc / IIO | 1.0.2 / 0.4.4 / iio-sensor-proxy 3.9，沿用 Debian 方案并保留本地发现/通知修复 |
 | THP / 笔状态 | 0.3.9 / 0.2.3，笔状态保留兼容 CLI |

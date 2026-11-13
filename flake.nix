@@ -7,7 +7,7 @@
     # Not a flake; buildUBoot just needs the tree. Override to iterate
     # without pushing: nix build .#u-boot --override-input u-boot-src ../u-boot
     u-boot-src = {
-      url = "github:SushyDev/u-boot/xiaomi-sheng";
+      url = "github:Murkiness4095/u-boot/xiaomi-sheng";
       flake = false;
     };
   };
