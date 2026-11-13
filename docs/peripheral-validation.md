@@ -24,9 +24,9 @@
 
 2026-11-13 社区反馈原装键盘背光：`/sys/class/leds/*kbd*/brightness` 为
 `root:root 0644`，`max_brightness=100`，root 写入 100 可以点亮。
-候选规则在 LED 注册时将 `brightness` 设为 `root:video 0664`。
-待实机重启后核对权限、验证 `video` 组用户写入，再用 `evtest` 检查背光键
-并验证桌面是否响应。
+临时加载同一 udev 规则并触发 LED add 后，确认 `brightness` 为 `root:video 0664`，
+带 `video` 组的非 root 进程写入 40 并读回同值。另一次 root 写入 70 时，用户确认键帽点亮。
+已恢复原亮度和权限。实体快捷键及桌面自动背光仍待验证。
 
 ## 焦点触控笔
 
