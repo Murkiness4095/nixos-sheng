@@ -113,9 +113,8 @@ in
       SUBSYSTEM=="misc", KERNEL=="nanosic_hinge*", ENV{keyboard_attached}=="1", TAG+="systemd", ENV{SYSTEMD_WANTS}+="xiaomi-sheng-keyboard-helper-angle.service"
       SUBSYSTEM=="input", ATTRS{name}=="Xiaomi Keyboard", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="xiaomi-sheng-keyboard-helper-micmute.service"
       SUBSYSTEM=="leds", KERNEL=="nanosic::micmute", MODE="0666"
-      # The keyboard exposes the backlight LED, but udev leaves brightness
-      # root-only; the desktop session cannot control it without this.
-      SUBSYSTEM=="leds", KERNEL=="nanosic*kbd_backlight", MODE="0666"
+      # brightness is a sysfs attribute. Grant access to the video group.
+      ACTION=="add", SUBSYSTEM=="leds", KERNEL=="nanosic:kbd_backlight|nanosic::kbd_backlight", RUN+="${pkgs.coreutils}/bin/chgrp video /sys%p/brightness", RUN+="${pkgs.coreutils}/bin/chmod 0664 /sys%p/brightness"
     '';
 
     environment.etc."xdg/autostart/xiaomi-pen-status.desktop".source =

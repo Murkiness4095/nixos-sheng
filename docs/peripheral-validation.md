@@ -21,9 +21,10 @@
 | 指纹 | 录入成功、同一手指匹配成功、未录入手指拒绝；测试指纹已删除，确认没有残留录入记录。 |
 
 2026-11-13 社区反馈原装键盘背光：`/sys/class/leds/*kbd*/brightness` 为
-`root:root 0644`，`max_brightness=100`；root 写入 100 可以点亮，普通用户会话
-无法控制。镜像已为 `nanosic*kbd_backlight` 增加 udev `MODE=0666`；背光键是否
-发送 `KEY_KBDILLUM*` 仍待实机反馈，未在本项目测试设备上复验。
+`root:root 0644`，`max_brightness=100`，root 写入 100 可以点亮。
+候选规则在 LED 注册时将 `brightness` 设为 `root:video 0664`。
+待实机重启后核对权限、验证 `video` 组用户写入，再用 `evtest` 检查背光键
+并验证桌面是否响应。
 
 ## 焦点触控笔
 
