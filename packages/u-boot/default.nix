@@ -8,6 +8,7 @@
   src,
   version ? "sheng",
   rootPartition ? "userdata",
+  efiProbe ? false,
 }:
 
 let
@@ -31,6 +32,14 @@ assert lib.assertMsg (builtins.match "[A-Za-z0-9_-]{1,36}" rootPartition != null
   inherit src version;
 
   defconfig = "sm8550_defconfig";
+  extraConfig = lib.optionalString efiProbe ''
+    CONFIG_EFI_LOADER=y
+    CONFIG_CMD_BOOTEFI=y
+    CONFIG_CMD_BOOTEFI_HELLO=y
+    CONFIG_EFI_VARIABLE_NO_STORE=y
+    # CONFIG_EFI_CAPSULE_ON_DISK is not set
+    # CONFIG_EFI_RUNTIME_UPDATE_CAPSULE is not set
+  '';
 
   # The built-in DT captures an 8 GiB tablet's RAM/firmware holes. ABL
   # supplies the actual variant's ranges; use those for relocation and Linux.

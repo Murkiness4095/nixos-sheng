@@ -19,7 +19,25 @@
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
+        "u-boot-efi-src": "u-boot-efi-src",
         "u-boot-src": "u-boot-src"
+      }
+    },
+    "u-boot-efi-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794544514,
+        "narHash": "sha256-0Cx0fIdl0ENAm3TE5kv+l+mJFHT5IyEEyEePIFF39Nc=",
+        "owner": "Murkiness4095",
+        "repo": "u-boot",
+        "rev": "4265b4c0982aa1125811acc62fc91c98738721e6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Murkiness4095",
+        "repo": "u-boot",
+        "rev": "4265b4c0982aa1125811acc62fc91c98738721e6",
+        "type": "github"
       }
     },
     "u-boot-src": {
