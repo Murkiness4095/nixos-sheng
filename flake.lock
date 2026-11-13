@@ -26,17 +26,17 @@
     "u-boot-efi-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1794565159,
-        "narHash": "sha256-RlOxyd4OYopr3Z0FpBXNVNvr2kwByz4eV+AywYXVs3o=",
+        "lastModified": 1794582309,
+        "narHash": "sha256-cEo0v9jV5k7AvpRNHCLOMAvAWfOlYrUaJEVoknJl3qY=",
         "owner": "Murkiness4095",
         "repo": "u-boot",
-        "rev": "069e0e13e1437bab09cb5cf2998cf293c626930e",
+        "rev": "5d7445dfb0551aec8a3e2ad23367cabe5695351a",
         "type": "github"
       },
       "original": {
         "owner": "Murkiness4095",
         "repo": "u-boot",
-        "rev": "069e0e13e1437bab09cb5cf2998cf293c626930e",
+        "rev": "5d7445dfb0551aec8a3e2ad23367cabe5695351a",
         "type": "github"
       }
     },

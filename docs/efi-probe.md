@@ -54,3 +54,14 @@ B 槽用 fastboot boot 临时启动，未刷写。SSH 确认 EFI 与原世代
 在实际条目中移除两个面板参数并加入 `sheng.efi_control=explicit-dtb` 后，
 用同一镜像再次临时启动。用户仍观察到闪烁后黑屏。主机看到 USB 串口节点，
 但 SSH 和串口未返回运行时命令行，故未确认标记是否进入内核。
+
+## 第 18 世代对照（Linux 7.3.4）
+
+在修复后的 ext4 上，从第 18 世代 extlinux 条目生成 EFI 条目，复用其内核、
+initrd、DTB 和面板参数。使用 CI 43402463772 的显式 DTB 探针，B 槽临时启动。
+SSH 确认 EFI、第 18 世代及实际命令行，两个面板跳过参数均未启用。
+内屏黑屏，面板状态读取 `ret=-61 val=0xaa`，UCM 服务失败。
+还原条目和 DTB 后重启，确认 extlinux 和 SSH 恢复，面板读取 `ret=0 val=0x9e`。
+
+下一轮仅在 systemd-boot 探测路径的 EFI ExitBootServices 调用 sheng 的
+`board_preboot_os()`，复用 extlinux 的显示清理，验证黑屏是否来自显示交接。
