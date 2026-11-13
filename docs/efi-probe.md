@@ -151,3 +151,28 @@ B 槽 ABL fastboot 接受镜像，USB 串口确认 EFI、`root=PARTLABEL=userdat
 同一次复测返回 extlinux 第 18 世代后，`7.3.4-sm8550` 的当次内核日志也记录了四条
 相同报错，UCM 仍为 active。该报错出现在两种启动路径；单系统内置扬声器、
 录音和耳机功能仍需实测。
+
+### 自动启动探针首轮
+
+[ARM CI 43512681130](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43512681130)
+从 `5a9702d2f0b578f566434461e6f68f42141737de` 构建成功。
+临时 boot.img SHA256 为 `cbdce45ececdb8db5729dee082261f3631e0c98d33160c79429e225cd81c5483`。
+ABL B 槽接受 `fastboot boot`，之后主机未发现 fastboot 或 Linux ACM，
+原 SSH 地址也未恢复。尚无证据确认 systemd-boot 或 NixOS 已运行。
+下次先记录屏幕状态并确认能恢复 extlinux，再对照原菜单路径与直接执行 bootcmd
+的差异。此轮未刷写启动分区。
+
+用户随后确认内屏已进入 root TTY，并看到数条错误日志。首轮启动条目默认仍为
+`sheng-single.conf`（原 root 世代），普通用户候选为独立条目
+`sheng-single-tty.conf`。本轮没有串口或 SSH 证据，EFI 状态和实际条目待从本机核对。
+
+### 自动启动普通用户候选
+
+在 extlinux 第 18 世代通过 SSH 将 `userdata` 上的 systemd-boot 默认条目切为
+`sheng-single-tty.conf`，保留旧条目及 loader.conf 备份。使用同一 CI 43512681130
+探针从 B 槽 ABL 临时启动，无需菜单输入。串口确认 EFI、根分区 `userdata`，
+启动系统为 `/nix/store/1gxbjwz5qm5s6s442fdvj1slcgszviiq-nixos-system-sheng-26.11.20261103.1d06008`
+（ARM CI 43510277632，源码 `d52c1f003c91845f95ed3748fd4a45b70b0bc4b6`）。
+`loginctl` 确认 tty1 和 ttyGS0 均自动登录 UID 1000 的 `nixos`，UCM 最终 active。
+普通用户的串口重启需要管理员认证。通过本地串口发起重启，
+随后经串口确认恢复到 linux 分区的 extlinux 第 18 世代。
