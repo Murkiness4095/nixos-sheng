@@ -1,8 +1,11 @@
+> 文中的原始 nixos-sheng SHA 对应当时的 CI 或实机记录。括号内的 SHA 对应改写后的 Git 历史。
+> CI run ID、U-Boot 源 SHA 和镜像校验值仍采用原始记录。
+
 # sheng EFI 探针
 
 2026-11-13，B 槽设备通过 `fastboot boot` 临时加载第二版探针。
 U-Boot 提交 `62edc2e44970d93bac1255d51c90c3f6a9ab6860`，
-nixos-sheng 提交 `5fd1c2a`。镜像 SHA256 为
+nixos-sheng 提交 `5fd1c2a`（改写后 `f2a0ce5d69e4`）。镜像 SHA256 为
 `961934daa03a858bda4ef838a0d8cb028bc50d868613c33a0fe1e018dcc119ee`。
 
 第一版把两条 bootcmd 写进原始环境，正常菜单覆盖了测试入口。
@@ -18,7 +21,7 @@ Das U-Boot 和 Have device tree，程序随后返回 U-Boot 提示符。
 
 ## systemd-boot 实机结果
 
-探针源 b475d738c17，nixos-sheng 1bafec0，boot.img SHA256
+探针源 b475d738c17，nixos-sheng `1bafec0`（改写后 `1cb9b2138584`），boot.img SHA256
 `53cbc918e712db9c81a7e91254b0c76bab8e2060793be423c8e120b6cafb3781`。
 通过 fastboot boot 临时加载。systemd-boot 从现有 linux ext4 读取测试条目，
 加载当前世代的内核、initrd 和 DTB。SSH 验证了 /sys/firmware/efi 和
@@ -38,7 +41,7 @@ extlinux 对照为 `ret=0 val=0x9e`。音频 UCM 失败也仍存在。
 
 ## 显式传入 U-Boot DTB
 
-U-Boot `cb343cefc72`，nixos-sheng `200555b`，ARM CI `43402463772`。
+U-Boot `cb343cefc72`，nixos-sheng `200555b`（改写后 `956cd752fef6`），ARM CI `43402463772`。
 boot.img SHA256 为
 `f03a40e368d3f96b6c4993dab45b8c8afaba4a43737ccfdc4a4f0a74b19a7339`。
 B 槽用 fastboot boot 临时启动，未刷写。SSH 确认 EFI 与原世代
@@ -68,7 +71,7 @@ SSH 确认 EFI、第 18 世代及实际命令行，两个面板跳过参数均�
 
 ## EFI 显示交接复用 extlinux 清理
 
-U-Boot `5d7445dfb05`，nixos-sheng `80c172e`，ARM CI `43449167013`。
+U-Boot `5d7445dfb05`，nixos-sheng `80c172e`（改写后 `a159eb1b40ea`），ARM CI `43449167013`。
 镜像 SHA256 为 `7b3069a632fc382426601847a50c43a2e10f1023d208310a2b939233ee392bc5`。
 B 槽临时启动，第 18 世代通过 EFI 进入桌面，用户确认内屏可见。
 面板读取恢复为 `ret=0 val=0x9e`。这组对照支持复用 sheng 显示清理可恢复内屏。
