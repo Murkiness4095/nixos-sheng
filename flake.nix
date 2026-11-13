@@ -42,11 +42,23 @@
         config.allowUnfree = true;
       };
 
-      sheng = self.lib.shengSystem { inherit nixpkgs; };
+      ttyAccount = name: { lib, ... }: {
+        config = lib.mkIf (name != "root") {
+          users.users.${name}.isNormalUser = true;
+          services.getty.autologinUser = lib.mkForce name;
+        };
+      };
+      ttyUser = (import ./image-settings.nix).ttyUserName or "root";
+
+      sheng = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [ (ttyAccount ttyUser) ];
+      };
 
       shengDual = self.lib.shengSystem {
         inherit nixpkgs;
         modules = [
+          (ttyAccount ttyUser)
           {
             sheng.rootfs.partlabel = "linux";
             # nixos-rebuild --flake /etc/nixos selects this configuration by
@@ -187,12 +199,7 @@
       nixosConfigurations.sheng = sheng;
       nixosConfigurations.sheng-efi-tty = self.lib.shengSystem {
         inherit nixpkgs;
-        modules = [
-          ({ lib, ... }: {
-            users.users.nixos.isNormalUser = true;
-            services.getty.autologinUser = lib.mkForce "nixos";
-          })
-        ];
+        modules = [ (ttyAccount "nixos") ];
       };
       nixosConfigurations.sheng-dual = shengDual;
       nixosConfigurations.sheng-kde = shengKde;

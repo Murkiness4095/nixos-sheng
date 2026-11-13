@@ -18,6 +18,10 @@ on:
         description: Build only the temporary EFI probe
         type: boolean
         default: false
+      tty_username:
+        description: TTY autologin username for TTY install images
+        default: root
+        type: string
       desktop_username:
         description: "Desktop login username (initial password remains nixos)"
         required: false
@@ -41,8 +45,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure desktop image username
+      - name: Configure image usernames
         env:
+          TTY_USERNAME: ${{ inputs.image == 'tty' && inputs.tty_username || 'root' }}
           DESKTOP_USERNAME: ${{ inputs.desktop_username || 'nixos' }}
         run: |
           set -euo pipefail
@@ -50,7 +55,11 @@ jobs:
             echo "Invalid desktop username: use 1-31 lowercase letters, digits, _ or -, starting with a letter or _. root is not allowed." >&2
             exit 1
           fi
-          printf '{ userName = "%s"; }\n' "$DESKTOP_USERNAME" > image-settings.nix
+          if [[ ! "$TTY_USERNAME" =~ ^[a-z_][a-z0-9_-]{0,30}$ ]]; then
+            echo "Invalid TTY username: use 1-31 lowercase letters, digits, _ or -, starting with a letter or _." >&2
+            exit 1
+          fi
+          printf '{ userName = "%s"; ttyUserName = "%s"; }\n' "$DESKTOP_USERNAME" "$TTY_USERNAME" > image-settings.nix
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
