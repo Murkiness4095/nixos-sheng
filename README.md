@@ -25,6 +25,7 @@ Xiaomi Pad 6S Pro（sheng）的标准 NixOS + U-Boot 移植，提供独立的单
 
 Actions 中 `build` 构建单系统，`build-dual` 构建双系统；修改代码推送到 `main` 会分别触发两条工作流，
 手动运行时先选择单系统或双系统工作流，再用 `image` 选择 `tty`、`kde` 或 `gnome`。
+构建 `tty` 时可填写 `tty_username`。默认 `root`，填写其他用户名会创建普通用户并自动登录。
 默认 `none` 只生成更新用闭包。普通提交和 PR 跑检查并导出闭包，跳过安装镜像。
 已安装的设备通过 `nixos-rebuild boot` 更新世代。详见[更新与回退](docs/HANDOVER.md#标准更新与回退)。
 

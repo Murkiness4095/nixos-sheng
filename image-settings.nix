@@ -2,4 +2,5 @@
 # its value is included in the image's /etc/nixos source for later rebuilds.
 {
   userName = "nixos";
+  ttyUserName = "root";
 }
