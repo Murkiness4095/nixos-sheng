@@ -11,4 +11,5 @@ English · [简体中文](index.md)
 | Maintenance | [Handover](HANDOVER.en.md), [OMP snapshot](OMP-HANDOVER.en.md), [agent instructions](../AGENTS.md), [roadmap](../TODO.en.md) |
 | Validation and upstream reference | [Peripherals](peripheral-validation.en.md), [power](power-validation.en.md), [Debian-sheng](debian-reference.en.md) |
 | Historical evidence | [Porting history](history/2026-11-06-07.en.md), [bring-up notes](bringup-notes.en.md) |
+| EFI experiment | [U-Boot and systemd-boot](efi-probe.md) |
 | Support | [Sponsor](sponsor.en.md) |

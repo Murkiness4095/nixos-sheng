@@ -11,4 +11,5 @@
 | 维护 | [交接](HANDOVER.md)、[OMP 快照](OMP-HANDOVER.md)、[协作约定](../AGENTS.zh-CN.md)、[待办](../TODO.md) |
 | 验证与上游参考 | [外设](peripheral-validation.md)、[功耗](power-validation.md)、[Debian-sheng](debian-reference.md) |
 | 历史证据 | [移植记录](history/2026-11-06-07.md)、[排障笔记](bringup-notes.md) |
+| EFI 实验 | [U-Boot 与 systemd-boot](efi-probe.md) |
 | 支持项目 | [赞助](sponsor.md) |

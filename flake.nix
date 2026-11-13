@@ -2,6 +2,10 @@
   description = "NixOS and U-Boot for the Xiaomi Pad 6S Pro 12.4 (sheng, SM8550)";
 
   inputs = {
+    u-boot-efi-src = {
+      url = "github:Murkiness4095/u-boot/5d7445dfb0551aec8a3e2ad23367cabe5695351a";
+      flake = false;
+    };
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     # Not a flake; buildUBoot just needs the tree. Override to iterate
@@ -17,6 +21,7 @@
       self,
       nixpkgs,
       u-boot-src,
+      u-boot-efi-src,
     }:
     let
       # Building for this on anything else needs a remote builder.
@@ -221,6 +226,13 @@
               src = u-boot-src;
               version = u-boot-src.shortRev or "dirty";
               rootPartition = "linux";
+            };
+
+            u-boot-efi-probe = pkgs.callPackage ./packages/u-boot {
+              src = u-boot-efi-src;
+              version = u-boot-efi-src.shortRev;
+              rootPartition = "linux";
+              efiProbe = true;
             };
 
             kernel = pkgs.shengKernel;
