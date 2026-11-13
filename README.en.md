@@ -2,7 +2,7 @@
 
 English · [简体中文](./README.md)
 
-Standard NixOS with U-Boot for the Xiaomi Pad 6S Pro (sheng). Hardware integration follows [Debian-sheng](https://github.com/ianchb/debian-sheng). The documented hardware baseline is Linux 7.3.0 and NixOS 26.11. The tested dual-system layout uses Android in slot A with `userdata` and NixOS in slot B with `linux`.
+Standard NixOS with U-Boot for the Xiaomi Pad 6S Pro (sheng). Hardware integration follows [Debian-sheng](https://github.com/ianchb/debian-sheng). The current kernel is Linux 7.3.4, boot-tested with NixOS 26.11. The tested dual-system layout uses Android in slot A with `userdata` and NixOS in slot B with `linux`.
 
 [English documentation index](docs/index.en.md) · [Sponsor](docs/sponsor.en.md)
 

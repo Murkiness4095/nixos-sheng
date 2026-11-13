@@ -7,7 +7,7 @@
 Xiaomi Pad 6S Pro（sheng）的标准 NixOS + U-Boot 移植，提供独立的单系统与 Android/NixOS 双系统产物。
 设备支持优先参考 [debian-sheng](https://github.com/ianchb/debian-sheng)，使用 Nix 包和 NixOS 模块集成。
 
-当前验证基线：内核 7.3.0，NixOS 26.11。双系统采用 Android A 槽 / `userdata`、NixOS B 槽 / `linux`。
+当前内核：7.3.4（第 16 世代已验证启动），NixOS 26.11。双系统采用 Android A 槽 / `userdata`、NixOS B 槽 / `linux`。
 启动、标准 rebuild、世代回退、双向切换及多项外设已实测；桌面体验、长期待机等仍需验证。
 “能构建”“设备被识别”“实际交互成功”在文档中分别记录，不宣称全部功能已对齐 Debian。
 
