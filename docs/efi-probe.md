@@ -28,3 +28,10 @@ sheng.efi_probe=1，原 ext4 后端已挂载。用户报告内屏黑屏。DRM DS
 
 采集日志后通过 SSH 重启，已验证回到 extlinux，失败服务数为零。
 临时 EFI 测试文件保留供复测，启动分区及分区表未写入。
+
+## efifb 对照
+
+同一探针和世代仅增加 `video=efifb:off`。SSH 确认参数生效且无 efifb
+注册日志。用户观察到闪烁后仍黑屏。面板状态读取仍为 `ret=-61`，
+extlinux 对照为 `ret=0 val=0x9e`。音频 UCM 失败也仍存在。
+关闭 efifb 不足以恢复显示。采集日志后移除临时参数，重启恢复。
