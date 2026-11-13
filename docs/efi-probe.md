@@ -35,3 +35,15 @@ sheng.efi_probe=1，原 ext4 后端已挂载。用户报告内屏黑屏。DRM DS
 注册日志。用户观察到闪烁后仍黑屏。面板状态读取仍为 `ret=-61`，
 extlinux 对照为 `ret=0 val=0x9e`。音频 UCM 失败也仍存在。
 关闭 efifb 不足以恢复显示。采集日志后移除临时参数，重启恢复。
+
+## 显式传入 U-Boot DTB
+
+U-Boot `cb343cefc72`，nixos-sheng `200555b`，ARM CI `43402463772`。
+boot.img SHA256 为
+`f03a40e368d3f96b6c4993dab45b8c8afaba4a43737ccfdc4a4f0a74b19a7339`。
+B 槽用 fastboot boot 临时启动，未刷写。SSH 确认 EFI 与原世代
+`ndzcvh286al8vbfmmxf0ayc8srzzyxcv-nixos-system-sheng-26.11.20261103.1d06008`。
+内屏闪烁后黑屏，UCM 服务仍失败。实际内核命令行额外带有
+`panel_novatek_nt36532e.noinit=1` 与 `panel_novatek_nt36532e.noreset=1`，
+而临时加载器条目的 options 行不含这两项。因此本次无法单独归因于 DTB；
+面板日志为 `noinit=1 noreset=1 ret=-61 val=0xaa`。
