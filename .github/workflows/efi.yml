@@ -1,6 +1,10 @@
 name: EFI experiments
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/efi.yml"
+      - "scripts/test-systemd-boot-generations"
   workflow_dispatch:
     inputs:
       task:
@@ -15,7 +19,7 @@ permissions:
 
 jobs:
   efi-probe:
-    if: ${{ inputs.task != 'generations' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task != 'generations' }}
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 40
     steps:
@@ -39,7 +43,7 @@ jobs:
           path: result-probe/boot.img
           if-no-files-found: error
   efi-generations:
-    if: ${{ inputs.task == 'generations' }}
+    if: ${{ github.event_name == 'pull_request' || inputs.task == 'generations' }}
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
     steps:
