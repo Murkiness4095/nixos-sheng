@@ -396,3 +396,8 @@ OrangeFox 离线预检确认 `linux` 未挂载，GPT 已备份。按本机所有
 `resize2fs` 1.45.4 在只读最小容量查询时报告 ext4 特性不受支持。
 后续应使用带新版 e2fsprogs 的临时救援环境，在确认 `linux` 未挂载后复核；
 此轮没有缩容或写入 GPT。重建配置可以恢复声明式系统，本机状态取决于各自的数据备份。
+
+通过已验证的临时 EFI 探针启动 `userdata` 上的 NixOS，确认
+`linux`（259:14）未挂载。e2fsprogs 1.47.4 的 `resize2fs -P`
+成功读取其最小尺寸，`e2fsck -fn` 完成五遍检查。
+因此可以使用该临时 NixOS 环境进行离线操作，OrangeFox 可继续保留。
