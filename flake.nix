@@ -197,6 +197,26 @@
       overlays.default = import ./overlay.nix;
 
       nixosConfigurations.sheng = sheng;
+      nixosConfigurations.sheng-efi-generations = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [
+          ({ lib, pkgs, ... }: {
+            # The kernel already has CONFIG_EFI_STUB=y. Advertise it to systemd-boot.
+            boot.kernelPackages = lib.mkForce (pkgs.linuxPackagesFor (pkgs.shengKernel // {
+              features = (pkgs.shengKernel.features or { }) // { efiBootStub = true; };
+            }));
+            boot.loader.systemd-boot.enable = true;
+            boot.initrd.enable = true;
+            boot.loader.systemd-boot.installDeviceTree = true;
+            boot.loader.efi.canTouchEfiVariables = false;
+            boot.loader.efi.efiSysMountPoint = "/efi";
+            assertions = [ {
+              assertion = pkgs.shengKernel.config.isYes "EFI_STUB";
+              message = "The sheng EFI test kernel must enable CONFIG_EFI_STUB.";
+            } ];
+          })
+        ];
+      };
       nixosConfigurations.sheng-efi-tty = self.lib.shengSystem {
         inherit nixpkgs;
         modules = [ (ttyAccount "nixos") ];
@@ -218,6 +238,10 @@
           }
         ];
       };
+
+      checks = forHosts (hostPkgs: nixpkgs.lib.optionalAttrs hostPkgs.stdenv.hostPlatform.isLinux {
+        systemd-boot-generations = hostPkgs.testers.runNixOSTest (import ./tests/systemd-boot-generations.nix);
+      });
 
       packages = forHosts (
         hostPkgs:

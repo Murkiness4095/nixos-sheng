@@ -1,0 +1,55 @@
+name: EFI experiments
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/efi.yml"
+      - "tests/systemd-boot-generations.nix"
+  workflow_dispatch:
+    inputs:
+      task:
+        description: EFI experiment to run
+        type: choice
+        required: true
+        default: single-menu
+        options: [single-menu, single-auto, dual, generations]
+
+permissions:
+  contents: read
+
+jobs:
+  efi-probe:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task != 'generations' }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+      - run: nix build -L  .#${{ inputs.task == 'single-auto' && 'u-boot-efi-auto-single' || inputs.task == 'dual' && 'u-boot-efi-probe' || 'u-boot-efi-probe-single' }} -o result-probe
+      - name: Check the probe image
+        run: |
+          test "$(stat -Lc %s result-probe/boot.img)" -lt $((192 * 1024 * 1024))
+          strings result-probe/u-boot.bin | grep -F 'Test EFI hello'
+          strings result-probe/u-boot.bin | grep -F "part number scsi 0 ${{ inputs.task == 'dual' && 'linux' || 'userdata' }} partnum"
+          if [[ "${{ inputs.task == 'single-auto' }}" == true ]]; then
+            strings result-probe/u-boot.bin | grep -Fx "bootcmd=run efi_probe_systemd; reset"
+          fi
+          sha256sum result-probe/boot.img
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.task == 'dual' && 'sheng-efi-probe' || 'sheng-efi-probe-single' }}
+          path: result-probe/boot.img
+          if-no-files-found: error
+  efi-generations:
+    if: ${{ github.event_name == 'pull_request' || inputs.task == 'generations' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+      - name: Verify NixOS systemd-boot update and rollback
+        run: nix build -L .#checks.x86_64-linux.systemd-boot-generations
