@@ -312,3 +312,18 @@ EFI 文件合计约 346 KiB。按三代加一套写入余量估算约 252 MiB，
 其 SHA256 仍为 `76a5bba20322d4929f35c608199f21f80317ae006805315ca215382cdef4c75b`。
 临时镜像已清理。此轮覆盖分区几何、文件系统及安装器，真实 UFS 分区没有调整，
 仍需验证 U-Boot 能从内置 FAT ESP 加载 fallback 并交接 DTB。
+
+### RAM FAT 上的 ARM64 fallback 实测
+
+首轮 ARM CI 43570919587 的脚本调用了 blkmap，但镜像缺少该命令。
+补上 `CONFIG_BLKMAP` 并在 CI 检查命令后，
+[43571479431](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43571479431)
+构建成功。源码 `034559021da74476feab326b912b42fc628bfeb9`，
+boot.img SHA256 `4f672d7c8af1c17f9ca17cdc3b032e9f7bed9d6342ee5ab401eac4acccafb2f7`。
+8 MiB FAT16 镜像 SHA256 为
+`b2d743b73633189dd3aacb9e43db939f84da3d76923431490743986d61b4e2cf`。
+
+B 槽 ABL 临时启动后，用户看到 `sheng FAT probe - systemd-boot reached`。
+这确认 U-Boot 从 RAM 映射的 FAT 文件系统加载 ARM64 fallback，
+systemd-boot 可以读取同一 FAT 上的条目。此测试只含菜单，未加载 Linux，
+内置 UFS ESP 和完整 DTB 交接仍待实测。
