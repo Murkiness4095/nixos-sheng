@@ -36,6 +36,7 @@ assert !efiAutoBoot || (efiProbe && rootPartition == "userdata");
   defconfig = "sm8550_defconfig";
   extraConfig = lib.optionalString efiProbe ''
     CONFIG_EFI_LOADER=y
+    CONFIG_CMD_BLKMAP=y
     CONFIG_CMD_BOOTEFI=y
     CONFIG_CMD_BOOTEFI_HELLO=y
     CONFIG_EFI_VARIABLE_NO_STORE=y
@@ -89,6 +90,8 @@ assert !efiAutoBoot || (efiProbe && rootPartition == "userdata");
     postPatch = (old.postPatch or "") + lib.optionalString efiAutoBoot ''
       substituteInPlace board/qualcomm/sheng.env \
         --replace-fail "bootcmd=bootmenu 10" "bootcmd=run efi_probe_systemd; reset"
+      substituteInPlace board/qualcomm/sheng.env \
+        --replace-fail "bootcmd=run efi_probe_systemd; reset" "bootcmd=scsi scan && part number scsi 0 userdata partnum && ext4load scsi 0:\''${partnum} \''${fdt_addr_r} /boot/efi-probe/board.dtb && ext4load scsi 0:\''${partnum} \''${ramdisk_addr_r} /boot/efi-probe/fat-test.img 800000 && test \''${filesize} = 800000 && blkmap create shengesp && blkmap map shengesp 0 4000 mem \''${ramdisk_addr_r} preserve && blkmap get shengesp dev espdev && fatload blkmap \''${espdev}:0 \''${kernel_addr_r} /EFI/BOOT/BOOTAA64.EFI && setenv sheng_efi_display_teardown yes && bootefi \''${kernel_addr_r} \''${fdt_addr_r}; reset"
     '';
   } // lib.optionalAttrs (rootPartition != "userdata") {
     # Keep the existing single-system environment byte-for-byte unchanged.

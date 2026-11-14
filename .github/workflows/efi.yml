@@ -12,7 +12,7 @@ on:
         type: choice
         required: true
         default: single
-        options: [single, dual, generations]
+        options: [single, dual, generations, fat-test]
 
 permissions:
   contents: read
@@ -27,7 +27,7 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: experimental-features = nix-command flakes
-      - run: nix build -L  .#${{ inputs.task == 'dual' && 'u-boot-efi-probe' || 'u-boot-efi-probe-single' }} -o result-probe
+      - run: nix build -L  .#${{ inputs.task == 'dual' && 'u-boot-efi-probe' || inputs.task == 'fat-test' && 'u-boot-efi-auto-single' || 'u-boot-efi-probe-single' }} -o result-probe
       - name: Check the probe image
         run: |
           test "$(stat -Lc %s result-probe/boot.img)" -lt $((192 * 1024 * 1024))
