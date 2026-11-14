@@ -1,0 +1,55 @@
+--- a/systemd-boot-builder.py
++++ b/systemd-boot-builder.py
+@@ -44,7 +44,7 @@
+ @dataclass(frozen=True)
+ class BootSpec:
+     init: Path
+-    initrd: Path
++    initrd: Path | None
+     extraInitrdPaths: list[Path]
+     kernel: Path
+     kernelParams: list[str]  # noqa: N815
+@@ -360,6 +360,7 @@
+         devicetree = Path(devicetree)
+ 
+     main_json = bootspec_json["org.nixos.bootspec.v1"]
++    main_json.setdefault("initrd", None)
+     for attr in ("kernel", "initrd", "toplevel"):
+         if attr in main_json:
+             main_json[attr] = Path(main_json[attr])
+@@ -392,6 +393,7 @@
+     if specialisation:
+         bootspec = bootspec.specialisations[specialisation]
+     kernel = BootFile.from_source(bootspec.kernel)
++    assert bootspec.initrd is not None
+     initrd = BootFile.from_initrd(
+         generation,
+         bootspec.initrd,
+@@ -561,7 +563,7 @@
+ 
+     for gen in gens:
+         bootspec = get_bootspec(gen.profile, gen.generation)
+-        if bootspec is None:
++        if bootspec is None or bootspec.initrd is None:
+             continue
+         is_default = Path(bootspec.init).parent == default_config
+         new_boot_files, new_bootctl_id = boot_file(*gen, machine_id, bootspec)
+@@ -570,6 +572,8 @@
+             default_entry_id = new_bootctl_id
+             critical_paths.update(bf.path for bf in new_boot_files)
+         for specialisation_name, specialisation in bootspec.specialisations.items():
++            if specialisation.initrd is None:
++                continue
+             is_default = Path(specialisation.init).parent == default_config
+             new_boot_files, new_bootctl_id = boot_file(
+                 gen.profile,
+@@ -583,6 +587,9 @@
+                 default_entry_id = new_bootctl_id
+                 critical_paths.update(bf.path for bf in new_boot_files)
+ 
++    if default_entry_id is None:
++        sys.exit("The requested system has no bootable EFI generation")
++
+     # Garbage-collect stale kernels/initrds/entries before re-populating extra
+     # files, so that user-supplied extraEntries (which may also live under
+     # loader/entries and start with `nixos-`) are not removed again.

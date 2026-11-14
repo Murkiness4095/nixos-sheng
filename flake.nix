@@ -198,6 +198,7 @@
 
       nixosConfigurations.sheng = sheng;
       nixosConfigurations.sheng-efi-generations = self.lib.shengSystem {
+        overlays = [ (import ./modules/systemd-boot-mixed-generations.nix) ];
         inherit nixpkgs;
         modules = [
           ({ lib, pkgs, ... }: {
