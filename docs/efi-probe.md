@@ -451,3 +451,15 @@ profile 兼容问题仍待解决；本次隔离 profile 是验证环境。未刷
 `/nix/store/3m6fwj53d2ghx1398s66i3qp6wba9f7n-nixos-system-sheng-dual-26.11.20261103.1d06008`。
 本轮未刷写 boot 或 recovery，也未更改 Android 槽。
 最终通过 USB 串口确认恢复到 `linux` 后端的 extlinux 第 18 世代。
+
+### 单系统混合 profile 迁移实测
+
+[ARM CI 43589385331](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43589385331)
+源码 `8fcd116b99a5d94a74faf3803a598f809936b2b2`，闭包 SHA256
+`7cd79e787b0bc467cd17680f2a941b3fbb6acfee700fc8e37f8c42c3226ac2a7`。
+在 `userdata` 的原系统 profile 上保留无 initrd 的第 1 代，
+用修补后的安装器将两代 EFI 候选写入真实 `sheng-esp`，旧世代链接保持可解析。
+串口确认第二个 EFI 候选 `j2lzkv0lda9m` 启动。
+回滚 profile 后第一次运行安装器因 `/efi` 未挂载而退出；手动挂载
+`sheng-esp` 后安装成功，临时启动验证回到第一个 EFI 候选 `d21qw61lmxi6`。
+此次未刷写启动分区。自动挂载和双系统混合 profile 仍待验收。
