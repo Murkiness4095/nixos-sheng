@@ -343,3 +343,14 @@ USB 串口确认 EFI、根 PARTLABEL `userdata`、系统路径前缀 `36x6gg4wfl
 此轮未改真实 GPT 或刷写启动分区；内置 UFS ESP 上的持久加载仍待实测。
 通过串口发起正常重启后，再次通过串口确认恢复到
 `linux` 后端的 extlinux 第 18 世代。
+
+### 内置 UFS ESP 探针的缺失分区回退
+
+[ARM CI 43581826960](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43581826960)
+在 `codex/efi-ufs-probe` 构建临时探针，源码为
+`52283818f007e43a39a81f31e55ac2fff3a0fcd0`，boot.img SHA256 为
+`034d2397f12a475f998fcbc5faf7a0dcad4f93f8d9b440daa90818eb363e64d7`。
+B 槽 ABL 接受 `fastboot boot`。设备没有 `sheng-esp`，探针返回后，
+SSH 确认恢复原 extlinux 第 18 世代及 `linux` 根后端。
+本轮只验证了缺失 ESP 时的恢复路径。实际 FAT 文件加载和 EFI 启动
+需要已准备的内置 ESP；未调整实际 GPT 或刷写启动分区。
