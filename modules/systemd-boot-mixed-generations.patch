@@ -9,14 +9,14 @@
      extraInitrdPaths: list[Path]
      kernel: Path
      kernelParams: list[str]  # noqa: N815
-@@ -360,6 +360,7 @@
-         devicetree = Path(devicetree)
- 
-     main_json = bootspec_json["org.nixos.bootspec.v1"]
-+    main_json.setdefault("initrd", None)
+@@ -363,6 +363,7 @@
      for attr in ("kernel", "initrd", "toplevel"):
          if attr in main_json:
              main_json[attr] = Path(main_json[attr])
++    main_json.setdefault("initrd", None)
+     return BootSpec(
+         **main_json,
+         specialisations=specialisations,
 @@ -392,6 +393,7 @@
      if specialisation:
          bootspec = bootspec.specialisations[specialisation]
