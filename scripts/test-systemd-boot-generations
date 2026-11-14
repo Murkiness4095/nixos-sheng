@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+first=$(readlink -f result-first)
+second=$(readlink -f result-second)
+installer=$(readlink -f result-installer)
+# The installer output may point directly at its executable.
+if [[ -d $installer ]]; then installer=$installer/bin/systemd-boot; fi
+
+work=$(mktemp -d)
+loop=
+cleanup() {
+  if mountpoint -q /efi; then umount /efi; fi
+  if [[ -n $loop ]]; then losetup -d "$loop"; fi
+  if mountpoint -q /nix/var/nix/profiles; then umount /nix/var/nix/profiles; fi
+}
+trap cleanup EXIT
+! mountpoint -q /efi
+mkdir -p /efi "$work/profiles"
+mount --bind "$work/profiles" /nix/var/nix/profiles
+truncate -s 256M "$work/esp.img"
+printf 'label: gpt\nstart=2048, type=c12a7328-f81f-11d2-ba4b-00a0c93ec93b\n' | sfdisk "$work/esp.img"
+loop=$(losetup --find --show --partscan "$work/esp.img")
+mkfs.vfat -F 32 "${loop}p1"
+mount -o umask=0077 "${loop}p1" /efi
+profile=/nix/var/nix/profiles/system
+nix-env --profile "$profile" --set "$first"
+NIXOS_INSTALL_BOOTLOADER=1 "$installer" "$first"
+nix-env --profile "$profile" --set "$second"
+"$installer" "$second"
+test -s /efi/EFI/BOOT/BOOTAA64.EFI
+first_entry=$(grep -Fl "init=$first/init" /efi/loader/entries/*.conf)
+second_entry=$(grep -Fl "init=$second/init" /efi/loader/entries/*.conf)
+for entry in "$first_entry" "$second_entry"; do
+  grep -q '^options .*init=' "$entry"
+  for key in linux initrd devicetree; do
+    path=$(awk -v key="$key" '$1 == key { print $2 }' "$entry")
+    test -n "$path" && test -s "/efi$path"
+  done
+done
+grep -Fx "default ${second_entry##*/}" /efi/loader/loader.conf
+nix-env --profile "$profile" --rollback
+"$installer" "$first"
+grep -Fx "default ${first_entry##*/}" /efi/loader/loader.conf
+sha256sum /efi/EFI/BOOT/BOOTAA64.EFI

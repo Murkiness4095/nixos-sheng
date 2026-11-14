@@ -91,15 +91,15 @@ HiFi、Speaker 和 Mic3 初始化成功，WirePlumber 枚举内置扬声器和�
 第 18 世代的 PipeWire 测试音已由用户确认从内置扬声器听到。
 
 正式安装镜像仍使用 extlinux。已有设备可以通过原有 NixOS 世代流程更新。
-在 Actions 手动运行 build-dual 并启用 efi_probe 可构建单独的实验镜像，
+在 Actions 手动运行 `EFI experiments` 并选择 `dual` 可构建单独的实验镜像，
 供双系统设备使用 fastboot boot 临时启动。合并代码不会改写设备的 boot 分区。
 永久采用 EFI 还需要独立验证 ESP 布局、世代更新和救援。
 
 ## 单系统探针
 
-单系统用户在 Actions 手动运行 `build` 并启用 `efi_probe`，
+单系统用户在 Actions 手动运行 `EFI experiments` 并选择 `single-menu`，
 下载 `sheng-efi-probe-single`。它读取 `userdata` 上的 NixOS 文件；
-双系统探针仍由 `build-dual` 生成并读取 `linux`。
+双系统探针由同一工作流的 `dual` 任务生成并读取 `linux`。
 单系统 TTY 已实机验证。请使用已有 NixOS ext4 的单系统设备进行临时启动，
 双系统设备的 Android `userdata` 不适用于此测试。
 

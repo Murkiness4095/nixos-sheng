@@ -207,8 +207,8 @@ in
   config = {
     sheng.boot.installer = installer;
 
-    system.build.installBootLoader = lib.getExe installer;
-    system.boot.loader.id = "sheng-extlinux";
+    system.build.installBootLoader = lib.mkIf (!config.boot.loader.systemd-boot.enable) (lib.getExe installer);
+    system.boot.loader.id = lib.mkIf (!config.boot.loader.systemd-boot.enable) "sheng-extlinux";
 
     # Cannot be used here -- see the header.
     boot.loader.generic-extlinux-compatible.enable = false;

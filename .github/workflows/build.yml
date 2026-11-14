@@ -9,18 +9,6 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
-      efi_probe:
-        description: Build only the temporary single-system EFI probe
-        type: boolean
-        default: false
-      efi_auto_boot:
-        description: Automatically boot systemd-boot in the temporary single-system probe
-        type: boolean
-        default: false
-      efi_tty_candidate:
-        description: Export the single-system EFI test closure with a regular TTY user
-        type: boolean
-        default: false
       image:
         description: Build one install image, or only export update closures
         type: choice
@@ -46,7 +34,6 @@ permissions:
 
 jobs:
   build:
-    if: ${{ !inputs.efi_probe }}
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 180
     steps:
@@ -170,12 +157,6 @@ jobs:
             test "$(readlink -f "result-$template")" = "$(readlink -f result-system)"
           done
 
-      - name: Build single-system EFI TTY candidate
-        if: ${{ inputs.efi_tty_candidate }}
-        run: |
-          test "$(nix eval --raw .#nixosConfigurations.sheng-efi-tty.config.services.getty.autologinUser)" = nixos
-          nix build -L .#nixosConfigurations.sheng-efi-tty.config.system.build.toplevel -o result-system
-
       - name: Export system closure for installation without reflashing
         run: |
           set -euo pipefail
@@ -267,27 +248,3 @@ jobs:
         with:
           primary-key: nix-aarch64-${{ runner.os }}-${{ hashFiles('flake.lock', '**/*.nix') }}
           gc-max-store-size-linux: 8G
-  efi-probe:
-    if: ${{ inputs.efi_probe }}
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: experimental-features = nix-command flakes
-      - run: nix build -L  .#${{ inputs.efi_auto_boot && 'u-boot-efi-auto-single' || 'u-boot-efi-probe-single' }} -o result-probe
-      - name: Check the probe image
-        run: |
-          test "$(stat -Lc %s result-probe/boot.img)" -lt $((192 * 1024 * 1024))
-          strings result-probe/u-boot.bin | grep -F 'Test EFI hello'
-          strings result-probe/u-boot.bin | grep -F "part number scsi 0 userdata partnum"
-          if [[ "${{ inputs.efi_auto_boot }}" == true ]]; then
-            strings result-probe/u-boot.bin | grep -Fx "bootcmd=run efi_probe_systemd; reset"
-          fi
-          sha256sum result-probe/boot.img
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sheng-efi-probe-single
-          path: result-probe/boot.img
-          if-no-files-found: error

@@ -197,6 +197,18 @@
       overlays.default = import ./overlay.nix;
 
       nixosConfigurations.sheng = sheng;
+      nixosConfigurations.sheng-efi-generations = self.lib.shengSystem {
+        inherit nixpkgs;
+        modules = [
+          {
+            boot.loader.systemd-boot.enable = true;
+            boot.initrd.enable = true;
+            boot.loader.systemd-boot.installDeviceTree = true;
+            boot.loader.efi.canTouchEfiVariables = false;
+            boot.loader.efi.efiSysMountPoint = "/efi";
+          }
+        ];
+      };
       nixosConfigurations.sheng-efi-tty = self.lib.shengSystem {
         inherit nixpkgs;
         modules = [ (ttyAccount "nixos") ];
