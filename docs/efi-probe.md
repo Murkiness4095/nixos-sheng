@@ -176,3 +176,17 @@ ABL B 槽接受 `fastboot boot`，之后主机未发现 fastboot 或 Linux ACM�
 `loginctl` 确认 tty1 和 ttyGS0 均自动登录 UID 1000 的 `nixos`，UCM 最终 active。
 普通用户的串口重启需要管理员认证。通过本地串口发起重启，
 随后经串口确认恢复到 linux 分区的 extlinux 第 18 世代。
+
+## 分支维护
+
+NixOS 的临时自动探针由 PR #13 集成，保留独立的探针构建选项。
+U-Boot 仓库的 `xiaomi-sheng` 是日常 extlinux 来源；EFI 试验使用
+`codex/sheng-efi-display-control` 上已实测的固定 SHA
+`5d7445dfb0551aec8a3e2ad23367cabe5695351a`。较早的
+`codex/sheng-efi-probe` 留作对照。后续准备正式集成时，从
+`xiaomi-sheng` 提取所需改动并独立验证 extlinux 和 EFI，
+避免把历史探针菜单与临时调试改动一并带入日常分支。
+
+旧 EFI 条目仍保留在 `userdata`。下一次用相同临时探针选择
+`sheng-single.conf`，从运行时核对 EFI、根 PARTLABEL 和旧系统路径，
+再重启恢复 extlinux。测试前先确认主机 USB 可用。
