@@ -217,6 +217,12 @@
           })
         ];
       };
+      nixosConfigurations.sheng-dual-efi-generations = self.nixosConfigurations.sheng-efi-generations.extendModules {
+        modules = [ {
+          sheng.rootfs.partlabel = "linux";
+          networking.hostName = "sheng-dual";
+        } ];
+      };
       nixosConfigurations.sheng-efi-tty = self.lib.shengSystem {
         inherit nixpkgs;
         modules = [ (ttyAccount "nixos") ];
@@ -276,6 +282,10 @@
 
             u-boot-efi-auto-single = self.packages.${target}.u-boot-efi-probe-single.override {
               efiAutoBoot = true;
+            };
+
+            u-boot-efi-ufs-dual = self.packages.${target}.u-boot-efi-auto-single.override {
+              rootPartition = "linux";
             };
 
             u-boot-efi-probe = pkgs.callPackage ./packages/u-boot {

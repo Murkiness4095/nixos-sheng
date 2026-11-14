@@ -12,7 +12,7 @@ on:
         type: choice
         required: true
         default: single
-        options: [single, dual, generations]
+        options: [single, dual, generations, ufs-test, sheng-generations]
 
 permissions:
   contents: read
@@ -27,12 +27,15 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: experimental-features = nix-command flakes
-      - run: nix build -L  .#${{ inputs.task == 'dual' && 'u-boot-efi-probe' || 'u-boot-efi-probe-single' }} -o result-probe
+      - run: nix build -L  .#${{ inputs.task == 'dual' && 'u-boot-efi-probe' || inputs.task == 'ufs-test' && 'u-boot-efi-ufs-dual' || 'u-boot-efi-probe-single' }} -o result-probe
       - name: Check the probe image
         run: |
           test "$(stat -Lc %s result-probe/boot.img)" -lt $((192 * 1024 * 1024))
           strings result-probe/u-boot.bin | grep -F 'Test EFI hello'
-          strings result-probe/u-boot.bin | grep -F "part number scsi 0 ${{ inputs.task == 'dual' && 'linux' || 'userdata' }} partnum"
+          strings result-probe/u-boot.bin | grep -F "part number scsi 0 ${{ (inputs.task == 'dual' || inputs.task == 'ufs-test') && 'linux' || 'userdata' }} partnum"
+          if [[ "${{ inputs.task }}" == ufs-test ]]; then
+            strings result-probe/u-boot.bin | grep -F "part type <interface> <dev>:<part>"
+          fi
           sha256sum result-probe/boot.img
       - uses: actions/upload-artifact@v4
         with:
@@ -50,3 +53,29 @@ jobs:
           extra_nix_config: experimental-features = nix-command flakes
       - name: Verify NixOS systemd-boot update and rollback
         run: nix build -L .#checks.x86_64-linux.systemd-boot-generations
+  sheng-generations:
+    if: ${{ inputs.task == 'sheng-generations' }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+      - name: Export sheng EFI candidate
+        run: |
+          set -euo pipefail
+          nix build -L .#nixosConfigurations.sheng-dual-efi-generations.config.system.build.toplevel
+          mkdir evidence
+          nix build --impure --expr '((builtins.getFlake (toString ./.)).nixosConfigurations.sheng-dual-efi-generations.extendModules { modules = [ { system.nixos.label = "efi-generation-2"; } ]; }).config.system.build.toplevel' -o result-second
+          readlink -f result-second > evidence/second-system-path.txt
+          readlink -f result > evidence/system-path.txt
+          git rev-parse HEAD > evidence/revision.txt
+          cp flake.lock evidence/
+          nix-store --export $(nix path-info -r ./result ./result-second | sort -u) | zstd -T0 -3 > evidence/closure.nar.zst
+          (cd evidence && sha256sum closure.nar.zst > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sheng-efi-generation-closure
+          path: evidence/
+          if-no-files-found: error

@@ -29,13 +29,14 @@ let
 in
 assert lib.assertMsg (builtins.match "[A-Za-z0-9_-]{1,36}" rootPartition != null)
   "U-Boot rootPartition must be a simple GPT partition label";
-assert !efiAutoBoot || (efiProbe && rootPartition == "userdata");
+assert !efiAutoBoot || efiProbe;
 (buildUBoot {
   inherit src version;
 
   defconfig = "sm8550_defconfig";
   extraConfig = lib.optionalString efiProbe ''
     CONFIG_EFI_LOADER=y
+    CONFIG_PARTITION_TYPE_GUID=y
     CONFIG_CMD_BOOTEFI=y
     CONFIG_CMD_BOOTEFI_HELLO=y
     CONFIG_EFI_VARIABLE_NO_STORE=y
@@ -89,11 +90,9 @@ assert !efiAutoBoot || (efiProbe && rootPartition == "userdata");
     postPatch = (old.postPatch or "") + lib.optionalString efiAutoBoot ''
       substituteInPlace board/qualcomm/sheng.env \
         --replace-fail "bootcmd=bootmenu 10" "bootcmd=run efi_probe_systemd; reset"
-    '';
-  } // lib.optionalAttrs (rootPartition != "userdata") {
-    # Keep the existing single-system environment byte-for-byte unchanged.
-    # Both normal/menu loading and the rescue path must select the same root.
-    postPatch = (old.postPatch or "") + ''
+      substituteInPlace board/qualcomm/sheng.env \
+        --replace-fail "bootcmd=run efi_probe_systemd; reset" "bootcmd=scsi scan && part number scsi 0 sheng-esp espnum && part type scsi 0:\''${espnum} esptype && test \''${esptype} = c12a7328-f81f-11d2-ba4b-00a0c93ec93b && part number scsi 0 userdata partnum && ext4load scsi 0:\''${partnum} \''${fdt_addr_r} /boot/efi-probe/board.dtb && fatload scsi 0:\''${espnum} \''${kernel_addr_r} /EFI/BOOT/BOOTAA64.EFI && setenv sheng_efi_display_teardown yes && bootefi \''${kernel_addr_r} \''${fdt_addr_r}; reset"
+    '' + lib.optionalString (rootPartition != "userdata") ''
       substituteInPlace board/qualcomm/sheng.env \
         --replace-fail "part number scsi 0 userdata partnum" "part number scsi 0 ${rootPartition} partnum" \
         --replace-fail "root=PARTLABEL=userdata" "root=PARTLABEL=${rootPartition}"
