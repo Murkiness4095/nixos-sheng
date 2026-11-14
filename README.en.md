@@ -17,6 +17,7 @@ The project has verified boot, standard NixOS rebuilds, generation rollback, swi
 | Check hardware coverage or choose the next task | [Hardware validation](docs/peripheral-validation.en.md), [roadmap](TODO.en.md) |
 
 GitHub Actions runs `build` for single-system configurations and `build-dual` for dual-system configurations. Pushes and pull requests run checks and export update closures. To build an installation image, run the matching workflow manually and select `tty`, `kde`, or `gnome` in the `image` field. The default `none` exports update closures only. Installed systems can use `nixos-rebuild boot` to add a generation.
+Temporary EFI probes and the VM check are under **EFI experiments**. [Workflow options](docs/efi-probe.md#actions-里选哪个)
 For a `tty` image, set `tty_username` to create and automatically log in as a regular user. The default is `root`.
 
 Confirm the installation mode before flashing. The `fastboot-flash` and `flash-uboot` scripts write both boot slots. `flash-rootfs` overwrites `userdata`. Follow the dual-boot guide when preserving Android.

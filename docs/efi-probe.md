@@ -132,7 +132,8 @@ HiFi、Speaker 和 Mic3 初始化成功，WirePlumber 枚举内置扬声器和�
 备份现有探针文件后，通过 ABL fastboot 临时启动。核对两个条目的内核、initrd、DTB、
 根 PARTLABEL 与 init 路径，依次启动新旧世代，最后普通重启确认恢复 extlinux。
 
-标准 NixOS systemd-boot 安装器可先在 ARM CI 的 GPT/FAT 镜像中验证。
+标准 NixOS systemd-boot 安装器已在 [x86 VM CI 43563738497](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43563738497) 验证两代更新、重启和回滚。
+[ARM CI 43564930147](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43564930147) 用于构建 sheng 专用候选闭包。
 实机 ext4 探针验证的是世代条目与启动回退，正式 ESP 布局仍待单独确定。
 
 单系统探针和 TTY 根镜像的实际 CI 源均为
