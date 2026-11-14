@@ -9,6 +9,7 @@
   version ? "sheng",
   rootPartition ? "userdata",
   efiProbe ? false,
+  efiAutoBoot ? false,
 }:
 
 let
@@ -28,6 +29,7 @@ let
 in
 assert lib.assertMsg (builtins.match "[A-Za-z0-9_-]{1,36}" rootPartition != null)
   "U-Boot rootPartition must be a simple GPT partition label";
+assert !efiAutoBoot || (efiProbe && rootPartition == "userdata");
 (buildUBoot {
   inherit src version;
 
@@ -83,6 +85,10 @@ assert lib.assertMsg (builtins.match "[A-Za-z0-9_-]{1,36}" rootPartition != null
 
     postInstall = ''
       mkbootimg ${lib.concatStringsSep " " mkbootimgArgs} -o "$out/boot.img"
+    '';
+    postPatch = (old.postPatch or "") + lib.optionalString efiAutoBoot ''
+      substituteInPlace board/qualcomm/sheng.env \
+        --replace-fail "bootcmd=bootmenu 10" "bootcmd=run efi_probe_systemd; reset"
     '';
   } // lib.optionalAttrs (rootPartition != "userdata") {
     # Keep the existing single-system environment byte-for-byte unchanged.

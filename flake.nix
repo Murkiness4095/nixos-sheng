@@ -250,6 +250,10 @@
               efiProbe = true;
             };
 
+            u-boot-efi-auto-single = self.packages.${target}.u-boot-efi-probe-single.override {
+              efiAutoBoot = true;
+            };
+
             u-boot-efi-probe = pkgs.callPackage ./packages/u-boot {
               src = u-boot-efi-src;
               version = u-boot-efi-src.shortRev;
