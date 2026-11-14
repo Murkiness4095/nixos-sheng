@@ -401,3 +401,19 @@ OrangeFox 离线预检确认 `linux` 未挂载，GPT 已备份。按本机所有
 `linux`（259:14）未挂载。e2fsprogs 1.47.4 的 `resize2fs -P`
 成功读取其最小尺寸，`e2fsck -fn` 完成五遍检查。
 因此可以使用该临时 NixOS 环境进行离线操作，OrangeFox 可继续保留。
+
+### 内置 UFS ESP 首次启动与旧世代兼容性
+
+已在临时 `userdata` NixOS 下离线缩小未挂载的 `linux`，缩容后
+`e2fsck -fn` 通过。主 UFS GPT 只缩短 `linux` 尾部并新增 512 MiB
+`sheng-esp`，保留 `linux` 起点及 PARTUUID。写表后
+`sfdisk --verify` 通过，extlinux 第 18 世代正常启动。此操作有数据
+丢失风险，GPT 备份仅能恢复分区表，完整数据镜像未保留。
+
+只格式化新 ESP，从 B 槽临时加载 ARM CI 43581826960 的探针。
+串口确认 systemd-boot 262 从 UFS ESP 启动 `userdata` 上的第一代
+ARM 候选，UCM active。尝试用标准安装器写入第二代时，历史 extlinux
+世代的 BootSpec 没有 initrd，导致安装器报错。已将 `userdata`
+系统 profile 和 ESP 默认条目恢复到测试前状态；第二代链接仍保留。
+启动分区和 recovery 未刷写。后续需要验证如何保留旧 extlinux
+世代并让标准安装器处理迁移后的 EFI 世代。
