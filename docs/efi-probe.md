@@ -266,3 +266,14 @@ SHA256 为 `7fd3c089988f00e36a2c4837edd9e3403cfc1dd59851af77804fe32bb05f9983`。
 确认第二代成为默认。执行 `nix-env --rollback` 后再次运行第一代安装器，
 确认 ESP 默认条目恢复到第一代。临时 ESP 测试未重启两代系统。
 主存储 LUN 无未分配空间，持久 ESP 布局仍待确定。
+
+### 第二代 ARM 候选临时启动
+
+导入 CI 43568095098 的第二代闭包到 `userdata` 的独立 Nix store。
+确认 kernel、initrd、DTB 和内核参数与第一代一致后，复用已验证的 EFI 文件，
+新增测试条目并改用第二代 init 路径。同一自动探针从 B 槽 ABL 临时启动后，
+串口确认 EFI、`userdata` 和 `6vnwrphxifgkx8j50xyx2rd3q93bq8bs` 系统。
+UCM 在取样时仍为 activating。随后串口确认恢复 `linux` 上的 extlinux
+第 18 世代，SSH 恢复后将测试默认条目还原为 `sheng-single.conf`。
+两代候选均已通过临时 EFI 启动。隔离 ESP 的安装器更新与回滚结果见上一节，
+持久 ESP 部署仍待确定。
