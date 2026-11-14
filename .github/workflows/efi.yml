@@ -12,7 +12,7 @@ on:
         type: choice
         required: true
         default: single
-        options: [single, dual, generations, fat-test]
+        options: [single, dual, generations, ufs-test]
 
 permissions:
   contents: read
@@ -27,14 +27,14 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: experimental-features = nix-command flakes
-      - run: nix build -L  .#${{ inputs.task == 'dual' && 'u-boot-efi-probe' || inputs.task == 'fat-test' && 'u-boot-efi-auto-single' || 'u-boot-efi-probe-single' }} -o result-probe
+      - run: nix build -L  .#${{ inputs.task == 'dual' && 'u-boot-efi-probe' || inputs.task == 'ufs-test' && 'u-boot-efi-auto-single' || 'u-boot-efi-probe-single' }} -o result-probe
       - name: Check the probe image
         run: |
           test "$(stat -Lc %s result-probe/boot.img)" -lt $((192 * 1024 * 1024))
           strings result-probe/u-boot.bin | grep -F 'Test EFI hello'
           strings result-probe/u-boot.bin | grep -F "part number scsi 0 ${{ inputs.task == 'dual' && 'linux' || 'userdata' }} partnum"
-          if [[ "${{ inputs.task }}" == fat-test ]]; then
-            strings result-probe/u-boot.bin | grep -F "blkmap create <label> - create device"
+          if [[ "${{ inputs.task }}" == ufs-test ]]; then
+            strings result-probe/u-boot.bin | grep -F "part type <interface> <dev>:<part>"
           fi
           sha256sum result-probe/boot.img
       - uses: actions/upload-artifact@v4
