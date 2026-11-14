@@ -430,3 +430,24 @@ ARM 候选，UCM active。尝试用标准安装器写入第二代时，历史 ex
 
 此流程验证了真实 ESP 上的安装、第二代启动及回滚启动。现有系统的混合
 profile 兼容问题仍待解决；本次隔离 profile 是验证环境。未刷写 U-Boot。
+
+### 双系统 Linux 根在真实 UFS ESP 上的更新与回滚
+
+源码 `4825cf2cb491eca0bbbafcaafa8f54e3375ba71f`。
+[U-Boot CI 43584307728](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43584307728)
+的 boot.img SHA256 为 `4de5c68dce250480ab76b2426bcf3a18bf177d5d1d405408d34e45c9232700fa`。
+此 run 的产物虽名为 `sheng-efi-probe-single`，下载后核对了二进制，
+实际探针从 `linux` 读取板级 DTB，再从 `sheng-esp` 加载 ARM64 fallback。
+[闭包 CI 43584311373](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43584311373)
+的闭包 SHA256 为 `c4dab5ec8941e4401ffffd126f04dea0833c8fb666c0892ea4f43f5ecaa77abb`。
+两代共用内核和 DTB（SHA256 同前），双系统 initrd SHA256 为
+`500479b79980ea3b345638654a54e98c7dbd276d1722f3521d12a2a486c5d110`。
+
+先用独立 profile 在真实 ESP 上生成两代条目。B 槽临时启动后，
+串口确认 EFI、`linux` 根分区、UCM active 和
+`/nix/store/0j87rixv2p0crdi1mxaxyj6m654r9bwq-nixos-system-sheng-dual-efi-generation-2`。
+在该 EFI 会话下使用隔离 profile 回滚，再运行标准安装器写回第一代默认项。
+再次经 B 槽临时启动后，串口确认 EFI、`linux` 根分区和
+`/nix/store/3m6fwj53d2ghx1398s66i3qp6wba9f7n-nixos-system-sheng-dual-26.11.20261103.1d06008`。
+本轮未刷写 boot 或 recovery，也未更改 Android 槽。
+最终通过 USB 串口确认恢复到 `linux` 后端的 extlinux 第 18 世代。
