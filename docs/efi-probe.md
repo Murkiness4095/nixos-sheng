@@ -3,6 +3,21 @@
 
 # sheng EFI 探针
 
+## Actions 里选哪个
+
+在 GitHub Actions 打开 **EFI experiments**，手动运行时按下表选择 `task`。
+
+| 选项 | 用途 | 产物 |
+| --- | --- | --- |
+| `single-menu` | 单系统 NixOS（根分区 `userdata`）。临时启动后，在 U-Boot 菜单选 **Test systemd-boot**。 | `sheng-efi-probe-single` |
+| `single-auto` | 单系统 NixOS（`userdata`）。自动进入 systemd-boot，并按已有 `loader.conf` 选择默认条目。 | `sheng-efi-probe-single` |
+| `dual` | Android/NixOS 双系统（NixOS 根分区 `linux`）。临时启动后，在 U-Boot 菜单选 **Test systemd-boot**。 | `sheng-efi-probe` |
+| `generations` | CI 在 x86 NixOS VM 中用虚拟 ESP 验证 systemd-boot 世代更新、重启和回滚。 | 查看 CI 日志，无平板镜像 |
+
+前三项要求目标分区已有 NixOS 和准备好的 EFI 文件及条目，下载的
+`boot.img` 用于 ABL 下的 `fastboot boot` 临时测试。正式安装镜像仍由
+`build`（单系统）或 `build-dual`（双系统）生成。
+
 2026-11-13，B 槽设备通过 `fastboot boot` 临时加载第二版探针。
 U-Boot 提交 `62edc2e44970d93bac1255d51c90c3f6a9ab6860`，
 nixos-sheng 提交 `5fd1c2a`（改写后 `f2a0ce5d69e4`）。镜像 SHA256 为
