@@ -253,3 +253,16 @@ boot 更新成功，并报告 EFI 二进制已是同一版本。条目使用 `ro
 上述候选系统路径及 UCM active。正常重启后经串口确认回到
 `linux` 上的 extlinux 第 18 世代。SSH 恢复后把测试默认条目还原为
 `sheng-single.conf`。此轮证明生成条目可上机启动，持久 ESP 与真机标准世代更新仍待验收。
+
+### 平板上的两代安装器更新与回滚
+
+[ARM CI 43568095098](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43568095098)
+从 `20c2873b977b8d133512198a0932821cb3a8427f` 导出两代闭包，
+SHA256 为 `7fd3c089988f00e36a2c4837edd9e3403cfc1dd59851af77804fe32bb05f9983`。
+第一代为前述 `36x6gg4wflr0rxbmrk28vr5w85a8fmq1` 系统，第二代为
+`/nix/store/6vnwrphxifgkx8j50xyx2rd3q93bq8bs-nixos-system-sheng-efi-generation-2`。
+两代使用相同 kernel、initrd、DTB，校验值同上。在平板 extlinux 下，
+用独立 profile 和临时 FAT ESP 执行 `switch-to-configuration boot`，
+确认第二代成为默认。执行 `nix-env --rollback` 后再次运行第一代安装器，
+确认 ESP 默认条目恢复到第一代。临时 ESP 测试未重启两代系统。
+主存储 LUN 无未分配空间，持久 ESP 布局仍待确定。
