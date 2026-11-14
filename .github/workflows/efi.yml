@@ -59,4 +59,4 @@ jobs:
           nix build --impure --expr "((builtins.getFlake (toString ./.)).nixosConfigurations.sheng-efi-generations.extendModules { modules = [ { system.nixos.label = \"efi-generation-2\"; } ]; }).config.system.build.toplevel" -o result-second
           nix build "${attr}.config.system.build.installBootLoader" -o result-installer
       - name: Install and roll back on an isolated ESP
-        run: sudo --preserve-env=PATH unshare --mount --propagation private bash scripts/test-systemd-boot-generations
+        run: sudo unshare --mount --propagation private bash scripts/test-systemd-boot-generations "$(command -v nix-env)"

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+nix_env=${1:?Pass the absolute path to nix-env}
 
 first=$(readlink -f result-first)
 second=$(readlink -f result-second)
@@ -24,9 +25,9 @@ loop=$(losetup --find --show --partscan "$work/esp.img")
 mkfs.vfat -F 32 "${loop}p1"
 mount -o umask=0077 "${loop}p1" /efi
 profile=/nix/var/nix/profiles/system
-nix-env --profile "$profile" --set "$first"
+"$nix_env" --profile "$profile" --set "$first"
 NIXOS_INSTALL_BOOTLOADER=1 "$installer" "$first"
-nix-env --profile "$profile" --set "$second"
+"$nix_env" --profile "$profile" --set "$second"
 "$installer" "$second"
 test -s /efi/EFI/BOOT/BOOTAA64.EFI
 first_entry=$(grep -Fl "init=$first/init" /efi/loader/entries/*.conf)
@@ -39,7 +40,7 @@ for entry in "$first_entry" "$second_entry"; do
   done
 done
 grep -Fx "default ${second_entry##*/}" /efi/loader/loader.conf
-nix-env --profile "$profile" --rollback
+"$nix_env" --profile "$profile" --rollback
 "$installer" "$first"
 grep -Fx "default ${first_entry##*/}" /efi/loader/loader.conf
 sha256sum /efi/EFI/BOOT/BOOTAA64.EFI
