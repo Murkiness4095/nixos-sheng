@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/efi.yml"
-      - "scripts/test-systemd-boot-generations"
+      - "tests/systemd-boot-generations.nix"
   workflow_dispatch:
     inputs:
       task:
@@ -51,12 +51,5 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: experimental-features = nix-command flakes
-      - name: Build the NixOS installer and two generations
-        run: |
-          set -euo pipefail
-          attr=.#nixosConfigurations.sheng-efi-generations
-          nix build "$attr.config.system.build.toplevel" -o result-first
-          nix build --impure --expr "((builtins.getFlake (toString ./.)).nixosConfigurations.sheng-efi-generations.extendModules { modules = [ { system.nixos.label = \"efi-generation-2\"; } ]; }).config.system.build.toplevel" -o result-second
-          nix build "${attr}.config.system.build.installBootLoader" -o result-installer
-      - name: Install and roll back on an isolated ESP
-        run: sudo unshare --mount --propagation private bash scripts/test-systemd-boot-generations "$(command -v nix-env)"
+      - name: Verify NixOS systemd-boot update and rollback
+        run: nix build -L .#checks.aarch64-linux.systemd-boot-generations

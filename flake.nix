@@ -239,6 +239,10 @@
         ];
       };
 
+      checks = forHosts (hostPkgs: nixpkgs.lib.optionalAttrs hostPkgs.stdenv.hostPlatform.isLinux {
+        systemd-boot-generations = hostPkgs.testers.runNixOSTest (import ./tests/systemd-boot-generations.nix);
+      });
+
       packages = forHosts (
         hostPkgs:
         mkScripts hostPkgs
