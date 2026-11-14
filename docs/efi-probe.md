@@ -190,3 +190,18 @@ U-Boot 仓库的 `xiaomi-sheng` 是日常 extlinux 来源；EFI 试验使用
 旧 EFI 条目仍保留在 `userdata`。下一次用相同临时探针选择
 `sheng-single.conf`，从运行时核对 EFI、根 PARTLABEL 和旧系统路径，
 再重启恢复 extlinux。测试前先确认主机 USB 可用。
+
+### 单系统旧 EFI 条目与串口恢复
+
+用同一自动探针（ARM CI 43512681130）把默认条目切回
+`sheng-single.conf`，经 B 槽 ABL 临时启动。USB 串口确认 EFI、根
+PARTLABEL `userdata`、`root` 自动登录及 UCM active。启动系统为
+`/nix/store/w1fyfyk9dgjghlfgri3kk5fmhmlk6cf4-nixos-system-sheng-26.11.20261103.1d06008`。
+正常重启后，SSH 确认回到 `linux` 上的 extlinux 第 18 世代，USB gadget
+为 configured，主机重新生成 `/dev/ttyACM0`。候选和旧 EFI 条目均已实测，
+切换时改的是探针的 loader.conf 默认条目。标准 NixOS systemd-boot
+世代安装流程仍待验证。
+
+此前 extlinux 重启期间，主机记录了一次 USB 断开。随后主机内核已重新枚举
+`ttyACM0`，但一度缺少对应的字符设备节点。按 sysfs 中的设备号临时补建节点后，
+串口可读。此后正常启动时恢复了自动创建节点。磁吸键盘套的影响未做单变量对照。
