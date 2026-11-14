@@ -221,3 +221,24 @@ PARTLABEL `userdata`、`root` 自动登录及 UCM active。启动系统为
 此前 extlinux 重启期间，主机记录了一次 USB 断开。随后主机内核已重新枚举
 `ttyACM0`，但一度缺少对应的字符设备节点。按 sysfs 中的设备号临时补建节点后，
 串口可读。此后正常启动时恢复了自动创建节点。磁吸键盘套的影响未做单变量对照。
+
+### sheng ARM 候选的标准安装器预检
+
+ARM CI 43564930147（`5b794fbdcc6f5efdf6345a1babbd3a7b64020227`）构建的系统
+为 `/nix/store/36x6gg4wflr0rxbmrk28vr5w85a8fmq1-nixos-system-sheng-26.11.20261103.1d06008`。
+闭包 SHA256 为 `a79dcced47e588fc853259b85fc3710dac9a76e18c05c580ec9b567f32e7d11a`。
+在平板 extlinux 第 18 世代运行期间，用独立挂载命名空间、临时系统 profile
+和 512 MiB GPT/FAT32 镜像执行候选的 `switch-to-configuration boot`。
+首次安装生成了 ARM64 fallback、第一世代条目、内核、initrd 和 DTB。再次执行
+boot 更新成功，并报告 EFI 二进制已是同一版本。条目使用 `root=fstab`，
+下一次启动前需核对 initrd 的根分区配置。
+
+| 文件 | SHA256 |
+| --- | --- |
+| Kernel | `87eb903bcbd374c9a93200ab8f6d2df33fa41374e27a59961f8f12380d990325` |
+| Initrd | `74e57528c4c76bf70b051709b8f09e2da2f71aede3758896638f298eb316de9e` |
+| DTB | `6882a55608692133d36555b6fc241b03a20528556fed57faa2678a7b9fe3d2bc` |
+| BOOTAA64.EFI | `76a5bba20322d4929f35c608199f21f80317ae006805315ca215382cdef4c75b` |
+
+临时镜像已卸载和删除。此轮验证的是 ARM 候选生成和更新启动文件，
+下一步才是通过临时探针实际启动这些条目。
