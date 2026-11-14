@@ -327,3 +327,19 @@ B 槽 ABL 临时启动后，用户看到 `sheng FAT probe - systemd-boot reached
 这确认 U-Boot 从 RAM 映射的 FAT 文件系统加载 ARM64 fallback，
 systemd-boot 可以读取同一 FAT 上的条目。此测试只含菜单，未加载 Linux，
 内置 UFS ESP 和完整 DTB 交接仍待实测。
+
+### RAM FAT32 完整启动
+
+ARM CI [43572104110](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43572104110)
+使用源码 `bf03f461d16795031116aef3d62383e6d2ec9ab9`。
+探针 boot.img SHA256 为 `790b74fd6c3223f9da6cd4f74cf30fe69165ad7449b7bc54ef6de737b7f10065`，
+128 MiB FAT32 镜像 SHA256 为 `55fe428f68ee5a3f93875a135f281bc6eb59523ad59e7173628851bbcb25da0a`。
+此前的菜单测试结束后，SSH 确认恢复 extlinux 第 18 世代。
+
+从 B 槽经 ABL 临时加载探针，U-Boot 从 RAM 映射 FAT32 加载 ARM64 fallback。
+systemd-boot 从同一 FAT 读取内核、initrd 和 DTB，自动启动第一代 ARM 候选。
+USB 串口确认 EFI、根 PARTLABEL `userdata`、系统路径前缀 `36x6gg4wflr0`、
+内核 `7.3.4-sm8550`、DT 型号 Xiaomi Pad 6S Pro 12.4 和 UCM active。
+此轮未改真实 GPT 或刷写启动分区；内置 UFS ESP 上的持久加载仍待实测。
+通过串口发起正常重启后，再次通过串口确认恢复到
+`linux` 后端的 extlinux 第 18 世代。
