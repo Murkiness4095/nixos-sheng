@@ -354,3 +354,15 @@ B 槽 ABL 接受 `fastboot boot`。设备没有 `sheng-esp`，探针返回后，
 SSH 确认恢复原 extlinux 第 18 世代及 `linux` 根后端。
 本轮只验证了缺失 ESP 时的恢复路径。实际 FAT 文件加载和 EFI 启动
 需要已准备的内置 ESP；未调整实际 GPT 或刷写启动分区。
+
+### 已安装设备的迁移约束
+
+保留现有 extlinux 作为日常启动和回退入口。已有安装可用 ext4
+临时探针启动 systemd-boot，并使用隔离 FAT 镜像生成测试条目，
+无需移动现有分区。用只读 ext4 bind mount 验证了当前 `bootctl`
+会拒绝将 ext4 当成 ESP，因此直接挂载现有 ext4 并启用标准安装器
+无法完成持久迁移。
+
+持久 EFI 优先用于已经有专用 ESP 的布局，或在全新安装时预留 ESP。
+已有设备若没有可用 ESP，可继续使用 extlinux 和标准 NixOS 世代更新。
+现有分区的缩容迁移保留为独立方案，须在完整备份可恢复且明确选择迁移后验收。
