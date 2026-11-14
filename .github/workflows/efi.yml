@@ -11,8 +11,8 @@ on:
         description: EFI experiment to run
         type: choice
         required: true
-        default: single-menu
-        options: [single-menu, single-auto, dual, generations]
+        default: single
+        options: [single, dual, generations]
 
 permissions:
   contents: read
@@ -27,19 +27,16 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: experimental-features = nix-command flakes
-      - run: nix build -L  .#${{ inputs.task == 'single-auto' && 'u-boot-efi-auto-single' || inputs.task == 'dual' && 'u-boot-efi-probe' || 'u-boot-efi-probe-single' }} -o result-probe
+      - run: nix build -L  .#${{ inputs.task == 'dual' && 'u-boot-efi-probe' || 'u-boot-efi-probe-single' }} -o result-probe
       - name: Check the probe image
         run: |
           test "$(stat -Lc %s result-probe/boot.img)" -lt $((192 * 1024 * 1024))
           strings result-probe/u-boot.bin | grep -F 'Test EFI hello'
           strings result-probe/u-boot.bin | grep -F "part number scsi 0 ${{ inputs.task == 'dual' && 'linux' || 'userdata' }} partnum"
-          if [[ "${{ inputs.task == 'single-auto' }}" == true ]]; then
-            strings result-probe/u-boot.bin | grep -Fx "bootcmd=run efi_probe_systemd; reset"
-          fi
           sha256sum result-probe/boot.img
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.task == 'dual' && 'sheng-efi-probe' || 'sheng-efi-probe-single' }}
+          name: ${{ inputs.task == 'dual' && 'sheng-efi-probe-dual' || 'sheng-efi-probe-single' }}
           path: result-probe/boot.img
           if-no-files-found: error
   efi-generations:

@@ -4,17 +4,17 @@
 # sheng EFI 探针
 
 ## Actions 里选哪个
+自动启动探针供无人值守复测使用，维护者可在 ARM Linux 上构建 `nix build .#u-boot-efi-auto-single`。
 
 在 GitHub Actions 打开 **EFI experiments**，手动运行时按下表选择 `task`。
 
 | 选项 | 用途 | 产物 |
 | --- | --- | --- |
-| `single-menu` | 单系统 NixOS（根分区 `userdata`）。临时启动后，在 U-Boot 菜单选 **Test systemd-boot**。 | `sheng-efi-probe-single` |
-| `single-auto` | 单系统 NixOS（`userdata`）。自动进入 systemd-boot，并按已有 `loader.conf` 选择默认条目。 | `sheng-efi-probe-single` |
-| `dual` | Android/NixOS 双系统（NixOS 根分区 `linux`）。临时启动后，在 U-Boot 菜单选 **Test systemd-boot**。 | `sheng-efi-probe` |
+| `single` | 单系统 NixOS（根分区 `userdata`）。临时启动后，在 U-Boot 菜单选 **Test systemd-boot**。 | `sheng-efi-probe-single` |
+| `dual` | Android/NixOS 双系统（NixOS 根分区 `linux`）。临时启动后，在 U-Boot 菜单选 **Test systemd-boot**。 | `sheng-efi-probe-dual` |
 | `generations` | CI 在 x86 NixOS VM 中用虚拟 ESP 验证 systemd-boot 世代更新、重启和回滚。 | 查看 CI 日志，无平板镜像 |
 
-前三项要求目标分区已有 NixOS 和准备好的 EFI 文件及条目，下载的
+前两项要求目标分区已有 NixOS 和准备好的 EFI 文件及条目，下载的
 `boot.img` 用于 ABL 下的 `fastboot boot` 临时测试。正式安装镜像仍由
 `build`（单系统）或 `build-dual`（双系统）生成。
 
@@ -112,7 +112,7 @@ HiFi、Speaker 和 Mic3 初始化成功，WirePlumber 枚举内置扬声器和�
 
 ## 单系统探针
 
-单系统用户在 Actions 手动运行 `EFI experiments` 并选择 `single-menu`，
+单系统用户在 Actions 手动运行 `EFI experiments` 并选择 `single`，
 下载 `sheng-efi-probe-single`。它读取 `userdata` 上的 NixOS 文件；
 双系统探针由同一工作流的 `dual` 任务生成并读取 `linux`。
 单系统 TTY 已实机验证。请使用已有 NixOS ext4 的单系统设备进行临时启动，
