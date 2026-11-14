@@ -417,3 +417,16 @@ ARM 候选，UCM active。尝试用标准安装器写入第二代时，历史 ex
 系统 profile 和 ESP 默认条目恢复到测试前状态；第二代链接仍保留。
 启动分区和 recovery 未刷写。后续需要验证如何保留旧 extlinux
 世代并让标准安装器处理迁移后的 EFI 世代。
+
+### 真实 UFS ESP 的两代启动与回滚
+
+沿用 ARM CI 43581826960 的临时探针。在 extlinux 下用独立挂载命名空间和
+临时 Nix profile，只纳入 CI 43568095098 的两代 EFI 候选，保留原系统
+的所有世代链接。将真实 `sheng-esp` 挂载到 `/efi` 后，两代均由
+标准 `switch-to-configuration boot` 生成条目；默认第二代通过 B 槽
+`fastboot boot` 实机启动，由串口确认 EFI 和 `6vnwrphxifgkx` 系统。
+随后从隔离 profile 回滚至第一代，标准安装器将 ESP 默认项恢复为第一代，
+再次临时启动后串口确认 EFI 和 `36x6gg4wflr0` 系统。
+
+此流程验证了真实 ESP 上的安装、第二代启动及回滚启动。现有系统的混合
+profile 兼容问题仍待解决；本次隔离 profile 是验证环境。未刷写 U-Boot。
