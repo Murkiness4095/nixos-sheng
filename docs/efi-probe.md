@@ -301,3 +301,14 @@ systemd-boot 的世代识别。已有 ext4 探针继续用于真机验证。
 EFI 文件合计约 346 KiB。按三代加一套写入余量估算约 252 MiB，
 实验采用 512 MiB，给 FAT 开销和后续文件增长留出空间。
 当前两代共享内核、initrd 和 DTB，不能用这次的实际占用推算跨内核更新的上限。
+
+### 4 KiB 扇区 ESP 布局演练
+
+在平板上用临时 1 GiB 文件模拟 4096 字节逻辑扇区的 GPT 磁盘。
+离线缩小测试 ext4 后，从尾部划出约 511 MiB 的 FAT32 ESP。
+原 ext4 分区起点和 PARTUUID 保持一致，`e2fsck -fn` 通过，
+重新挂载后测试文件 SHA256 与缩容前一致。
+`bootctl --no-variables install` 成功安装 ARM64 fallback，
+其 SHA256 仍为 `76a5bba20322d4929f35c608199f21f80317ae006805315ca215382cdef4c75b`。
+临时镜像已清理。此轮覆盖分区几何、文件系统及安装器，真实 UFS 分区没有调整，
+仍需验证 U-Boot 能从内置 FAT ESP 加载 fallback 并交接 DTB。
