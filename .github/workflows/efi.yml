@@ -33,6 +33,9 @@ jobs:
           test "$(stat -Lc %s result-probe/boot.img)" -lt $((192 * 1024 * 1024))
           strings result-probe/u-boot.bin | grep -F 'Test EFI hello'
           strings result-probe/u-boot.bin | grep -F "part number scsi 0 ${{ inputs.task == 'dual' && 'linux' || 'userdata' }} partnum"
+          if [[ "${{ inputs.task }}" == fat-test ]]; then
+            strings result-probe/u-boot.bin | grep -F "blkmap create <label> - create device"
+          fi
           sha256sum result-probe/boot.img
       - uses: actions/upload-artifact@v4
         with:

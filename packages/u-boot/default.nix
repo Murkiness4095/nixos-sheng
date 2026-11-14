@@ -36,6 +36,7 @@ assert !efiAutoBoot || (efiProbe && rootPartition == "userdata");
   defconfig = "sm8550_defconfig";
   extraConfig = lib.optionalString efiProbe ''
     CONFIG_EFI_LOADER=y
+    CONFIG_BLKMAP=y
     CONFIG_CMD_BLKMAP=y
     CONFIG_CMD_BOOTEFI=y
     CONFIG_CMD_BOOTEFI_HELLO=y
