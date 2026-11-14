@@ -211,12 +211,23 @@
             boot.loader.systemd-boot.installDeviceTree = true;
             boot.loader.efi.canTouchEfiVariables = false;
             boot.loader.efi.efiSysMountPoint = "/efi";
+            fileSystems."/efi" = {
+              device = "/dev/disk/by-partlabel/sheng-esp";
+              fsType = "vfat";
+              options = [ "umask=0077" "nofail" ];
+            };
             assertions = [ {
               assertion = pkgs.shengKernel.config.isYes "EFI_STUB";
               message = "The sheng EFI test kernel must enable CONFIG_EFI_STUB.";
             } ];
           })
         ];
+      };
+      nixosConfigurations.sheng-dual-efi-generations = self.nixosConfigurations.sheng-efi-generations.extendModules {
+        modules = [ {
+          sheng.rootfs.partlabel = "linux";
+          networking.hostName = "sheng-dual";
+        } ];
       };
       nixosConfigurations.sheng-efi-tty = self.lib.shengSystem {
         inherit nixpkgs;
