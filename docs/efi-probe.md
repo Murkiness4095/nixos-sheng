@@ -242,3 +242,14 @@ boot 更新成功，并报告 EFI 二进制已是同一版本。条目使用 `ro
 
 临时镜像已卸载和删除。此轮验证的是 ARM 候选生成和更新启动文件，
 下一步才是通过临时探针实际启动这些条目。
+
+### 标准安装器生成条目的单系统启动
+
+同一 ARM 候选的 fstab 指向 `/dev/disk/by-partlabel/userdata`。将标准安装器
+生成的内核、initrd 和 DTB 复制到测试根分区并逐个比较字节。条目保留
+`root=fstab`，增加探针标记并屏蔽临时启动的槽位成功服务。
+使用 ARM CI 43512681130 的自动探针从 B 槽 ABL 临时启动。
+串口确认 EFI、`sheng.efi_probe=generated`、根 PARTLABEL `userdata`、
+上述候选系统路径及 UCM active。正常重启后经串口确认回到
+`linux` 上的 extlinux 第 18 世代。SSH 恢复后把测试默认条目还原为
+`sheng-single.conf`。此轮证明生成条目可上机启动，持久 ESP 与真机标准世代更新仍待验收。
