@@ -64,10 +64,12 @@ jobs:
           set -euo pipefail
           nix build -L .#nixosConfigurations.sheng-efi-generations.config.system.build.toplevel
           mkdir evidence
+          nix build --impure --expr '((builtins.getFlake (toString ./.)).nixosConfigurations.sheng-efi-generations.extendModules { modules = [ { system.nixos.label = "efi-generation-2"; } ]; }).config.system.build.toplevel' -o result-second
+          readlink -f result-second > evidence/second-system-path.txt
           readlink -f result > evidence/system-path.txt
           git rev-parse HEAD > evidence/revision.txt
           cp flake.lock evidence/
-          nix-store --export $(nix path-info -r ./result) | zstd -T0 -3 > evidence/closure.nar.zst
+          nix-store --export $(nix path-info -r ./result ./result-second | sort -u) | zstd -T0 -3 > evidence/closure.nar.zst
           (cd evidence && sha256sum closure.nar.zst > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
