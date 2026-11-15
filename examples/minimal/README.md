@@ -2,25 +2,7 @@
 
 [English](./README.en.md) · 简体中文
 
-## 先选择单系统或双系统
-
-**本样板默认单系统：`lib.shengSystem` 使用 `userdata`。** 它不会因为设备已有 Android、
-主机名或输出名称改变而自动选择双系统。现有双系统设备请在构建前选择以下一种方式：
-
-1. 保留构造器，在 `configuration.nix` 设置 `sheng.rootfs.partlabel = "linux";`。
-2. 将 `flake.nix` 中的系统定义替换为继承仓库双系统配置：
-
-   ```nix
-   nixosConfigurations.sheng =
-     nixos-sheng.nixosConfigurations.sheng-dual.extendModules {
-       modules = [ ./configuration.nix ];
-     };
-   ```
-
-第二种方式已继承 `linux` 根分区，无需重复设置，也无需再次导入板级模块。
-仓库双系统配置明确设置主机名为 `sheng-dual`；本样板用 `lib.mkForce "sheng"` 覆盖它，
-因此更新命令仍为 `#sheng`。输出名、主机名、根分区和 Android 启动槽是不同概念。
-随附锁文件需包含双系统配置；旧 checkout 使用继承方式前先 `nix flake update nixos-sheng`。
+两个模板目标均使用 EFI。已有 extlinux 的设备先完成下文的 EFI 迁移，再运行日常更新命令。
 
 ## 个人配置与更新
 
@@ -37,7 +19,7 @@ sudo nixos-rebuild boot --flake .#sheng
 sudo reboot
 ```
 
-若在 Git 仓库内，新文件需先 `git add flake.nix configuration.nix`，Nix 才会将其包含到 flake 源中。检查 `/boot/extlinux/extlinux.conf` 和 U-Boot 世代菜单，保留可启动的旧世代，不要在新内核验收前执行删除旧世代的 GC。
+若在 Git 仓库内，新文件需先 `git add flake.nix configuration.nix`，Nix 才会将其包含到 flake 源中。检查 `bootctl list` 和 systemd-boot 世代菜单，保留可启动的旧世代，不要在新内核验收前执行删除旧世代的 GC。
 
 更新硬件配置输入：
 
@@ -53,9 +35,27 @@ CI 和本机 rebuild 都可以构建系统。普通内核、固件、服务更�
 
 ## 可选 tmpfs
 
-默认是传统 ext4 根目录，不启用 initrd 或 tmpfs。需要时参阅
+默认是传统 ext4 根目录，启用 EFI 所需的 initrd，tmpfs 按需开启。需要时参阅
 [initrd/tmpfs 说明](../../docs/initrd-tmpfs.md) 和 [preservation 样板](../tmpfs-root.nix)。
 tmpfs 下仍需正确选择 `linux` 或 `userdata`，用于定位持久化 ext4。
 tmpfs 默认不绑定整个 `/home`；preservation 样板通过调用者提供的 `user` 按目录保留数据。
 如需完整 home，显式设置 `persistHome = true`。用户名、凭据和应用数据策略
 由个人配置决定，样板不保证覆盖所有应用。不要直接复用 x86 的整盘 disko 格式化配置。
+
+## EFI 启动
+
+两个目标都使用 systemd-boot。默认目标 `.#sheng` 用于单系统，
+根分区为 `userdata`。双系统选 `.#sheng-dual-efi`，根分区为 `linux`。
+不要在共享主机模块中另行覆盖根分区标签。主机名仍为 `sheng`，
+因此更新时请显式指定所选目标。
+
+首次切换时，先按 [EFI 安装与迁移指南](../../docs/efi-install.md) 准备
+`sheng-esp` 和对应的 U-Boot，再安装候选世代。例如双系统运行：
+
+```sh
+sudo nix run github:Murkiness4095/nixos-sheng#sheng-efi-migrate -- --flake "$PWD#sheng-dual-efi"
+```
+
+EFI 世代启动并自动挂载 `/efi` 后，日常更新用
+`sudo nixos-rebuild boot --flake .#sheng-dual-efi`。单系统将命令中的
+`sheng-dual-efi` 换成 `sheng`。
