@@ -239,6 +239,12 @@
           networking.hostName = "sheng-dual";
         } ];
       };
+      nixosConfigurations.sheng-efi-tmpfs = self.nixosConfigurations.sheng-efi-generations.extendModules {
+        modules = [ { sheng.rootfs.tmpfsRoot.enable = true; } ];
+      };
+      nixosConfigurations.sheng-dual-efi-tmpfs = self.nixosConfigurations.sheng-dual-efi-generations.extendModules {
+        modules = [ { sheng.rootfs.tmpfsRoot.enable = true; } ];
+      };
       nixosConfigurations.sheng-efi-install = self.nixosConfigurations.sheng-efi-generations.extendModules {
         modules = [
           (ttyAccount ttyUser)
