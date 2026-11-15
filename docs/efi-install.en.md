@@ -71,28 +71,34 @@ fastboot reboot
 After normal boot, check `bootctl status` and `findmnt /efi`. To revert,
 restore the original image to the same `boot_b` from ABL fastboot.
 
-## Fresh installation
+## Fresh installation: boot directly into EFI
 
-The current root images are extlinux base images. Flashing one alongside the
-EFI U-Boot image does not create the GPT partition or populate the ESP.
+Run **EFI experiments** with `task=install-bundle` and select `layout=single`
+or `layout=dual`. Download `boot.img`, `sheng-rootfs.sparse.img.zst`, and
+`sheng-esp.sparse.img` from the same artifact. Run `sha256sum -c SHA256SUMS`,
+then check the layout and root partition label in `manifest.txt`. ARM CI
+built both bundles. Direct first boot from the complete bundle has not been
+tested on hardware. For the tested path, install extlinux and migrate as above.
 
-1. Reserve the ESP before first-boot root filesystem growth. Use `userdata`
-   for single-system installs. The end-of-disk ESP layout was checked offline.
-   Calculate boundaries from the target device's GPT. For dual boot, reserve
-   ESP space alongside `linux` and follow the [dual-boot guide](dual-boot.en.md).
-2. Build the root image using **build** (single) or **build-dual** (dual).
-   Follow the matching [single-system flashing steps](README.md#flashing)
-   or [dual-boot guide](dual-boot.en.md). Boot extlinux once and check the root
-   partition and filesystem growth.
-3. Start at step 3 of migration to install the EFI generation. Keep the
-   initial extlinux generation for recovery.
+1. Reserve a separate EFI System Partition of at least 512 MiB with GPT
+   partition label `sheng-esp`. For single system, leave room outside
+   `userdata` before first boot grows the root filesystem. For dual boot,
+   follow the [dual-boot guide](dual-boot.en.md), preserve Android slot A and
+   Recovery, and leave space outside `linux`. Use the target device's GPT
+   when calculating partition boundaries.
+2. Decompress the Zstandard wrapper and write the Android sparse root image
+   to the root partition named in the manifest. Write the separate ESP image
+   only to `sheng-esp`; it replaces any existing ESP contents. If ABL does
+   not expose the ESP, use Recovery, convert the sparse image to raw with
+   `simg2img`, and verify the partition by GPT label before writing. Do not
+   pass the sparse image directly to `dd`.
+3. In ABL, temporarily boot the bundled `boot.img`. Verify the root partition
+   and `/efi` mount. Check `journalctl -b -u sheng-finish-efi-install` and
+   `bootctl list`: a regular NixOS generation should replace the seed entry.
+   Install an update with `nixos-rebuild boot --flake /etc/nixos` and verify
+   it boots before deploying U-Boot to the Linux boot slot identified above.
 
-The migration tool automates the first mount and EFI entry installation
-once the ESP exists. Direct EFI installation would also need to prepare the
-ESP and write its boot files. The existing flash scripts do not perform those
-steps.
-
-For a broken EFI generation, select an earlier one in systemd-boot. When the
-EFI fallback file is missing, the candidate tries extlinux. To undo the tested
-persistent dual-boot deployment, enter ABL, verify slot B and restore the
-original `boot_b`.
+Use a known-good generation or temporary ABL boot for recovery. If the
+internal EFI fallback file is missing, U-Boot tries the root image's
+extlinux rescue entry. Restoring the boot image alone does not require
+erasing the root filesystem.

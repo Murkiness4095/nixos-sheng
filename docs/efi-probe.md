@@ -13,9 +13,10 @@
 | `single` | 单系统 NixOS（根分区 `userdata`）。临时启动后，在 U-Boot 菜单选 **Test systemd-boot**。 | `sheng-efi-probe-single` |
 | `dual` | Android/NixOS 双系统（NixOS 根分区 `linux`）。临时启动后，在 U-Boot 菜单选 **Test systemd-boot**。 | `sheng-efi-probe-dual` |
 | `generations` | CI 在 x86 NixOS VM 中用虚拟 ESP 验证 systemd-boot 世代更新、重启和回滚。 | 查看 CI 日志，无平板镜像 |
+| `install-bundle` | 全新 EFI 安装，按 `layout` 选择单、双系统。 | `sheng-efi-install-single` 或 `sheng-efi-install-dual` |
 
 前两项要求目标分区已有 NixOS 和准备好的 EFI 文件及条目，下载的
-`boot.img` 用于 ABL 下的 `fastboot boot` 临时测试。正式安装镜像仍由
+`boot.img` 用于 ABL 下的 `fastboot boot` 临时测试。默认 extlinux 安装镜像由
 `build`（单系统）或 `build-dual`（双系统）生成。
 
 2026-11-13，B 槽设备通过 `fastboot boot` 临时加载第二版探针。
@@ -600,3 +601,13 @@ EFI 世代出问题时，先尝试从 systemd-boot 选择上一个 EFI 世代。
 开机后，串口确认仍是第 2 世代，根分区为 `userdata`，ESP 自动挂载。
 测试结束后恢复原 `boot_b` 和 ESP 默认条目，SSH 确认回到双系统 EFI
 第 20 世代（`cr84czq4n6ca2`）。
+
+## 全新 EFI 安装包离线校验
+
+[ARM CI 43728411165](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43728411165)
+从 PR 合并树 `be15ae56a7dbef88dd0a3b7b2e0ff33cd41be188` 构建两套产物。
+下载后校验两份 `SHA256SUMS`，将 sparse ESP 转成 raw 并通过 `fsck.fat -n`。
+两套 ESP 都含 ARM64 fallback、内核、initrd 和 DTB；首启条目指向各自
+rootfs 内存在的 init。两份 rootfs 均含 Nix store 注册文件和指向同一系统的
+extlinux 救援条目。完整系统路径、锁文件和镜像哈希随 CI 产物提供。
+此轮为离线检查，未刷写设备；首启后接管和实际刷写仍未用整套产物实测。
