@@ -25,6 +25,12 @@ EFI 的可选构建目标为 `sheng-efi-tmpfs`（单系统）和
 重启后核对 `/`、`/nix`、`/persist` 和 `/efi` 的挂载及保留的数据。
 需要恢复时，从 systemd-boot 选择原 ext4 世代。
 
+更新前先用 `findmnt --mountpoint /efi` 检查 ESP。旧世代即使能从
+systemd-boot 启动，也可能没有 `/efi` 挂载配置。这种情况下，在个人主机配置
+中补齐 [EFI 迁移指南](efi-install.md#已安装-extlinux-的设备)第 3 步的设置，
+保留自己的 tmpfs 和持久化配置，再用 `sheng-efi-migrate` 安装候选世代。
+新世代启动并确认 ESP 自动挂载后，后续更新直接使用 `nixos-rebuild boot`。
+
 
 `/home` 默认位于 tmpfs 根目录中，只有个人配置明确列出的用户数据会持久化。
 如需沿用初版的完整 home 行为，显式设置 `sheng.rootfs.tmpfsRoot.persistHome = true;`。
