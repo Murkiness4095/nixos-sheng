@@ -173,6 +173,11 @@
             hostPkgs.coreutils
           ];
 
+          sheng-efi-migrate = mk "sheng-efi-migrate" [
+            hostPkgs.coreutils
+            hostPkgs.util-linux
+          ];
+
           flash-uboot = mk "flash-uboot" [
             hostPkgs.openssh
             hostPkgs.coreutils

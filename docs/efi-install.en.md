@@ -34,16 +34,12 @@ the EFI U-Boot image.
    the mixed-generation patch and automatic ESP mounting. From extlinux, run:
 
    ```sh
-   esp=/dev/disk/by-partlabel/sheng-esp
-   test -b "$esp" &&
-     sudo mkdir -p /efi &&
-     { mountpoint -q /efi || sudo mount -t vfat "$esp" /efi; } &&
-     sudo nixos-rebuild boot
+   sudo nix run .#sheng-efi-migrate
    ```
 
-   Append your usual `--flake <path>#<host>` if applicable. This command mounts
+   Append your usual flake and host as `-- --flake <path>#<host>` if applicable. This command mounts
    the ESP for the first install. A missing partition or failed mount stops
-   the command. The EFI installer rejects an already-mounted wrong partition
+   the command. The migration tool rejects an already-mounted wrong partition
    before writing.
 4. Enter ABL fastboot and verify the device and slot. Temporarily load the
    matching image with `fastboot boot boot.img`. Check `bootctl status`,
@@ -71,7 +67,7 @@ EFI U-Boot image does not create the GPT partition or populate the ESP.
 3. Start at step 3 of migration to install the EFI generation. Keep the
    initial extlinux generation for recovery.
 
-A future installer could automate the first mount and EFI entry installation
+The migration tool automates the first mount and EFI entry installation
 once the ESP exists. Direct EFI installation would also need to prepare the
 ESP and write its boot files. The existing flash scripts do not perform those
 steps.

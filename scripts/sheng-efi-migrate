@@ -1,0 +1,30 @@
+if [[ ${1:-} == --help ]]; then
+  printf '%s\n' 'Usage: sheng-efi-migrate [nixos-rebuild options]' \
+    'Run as root on sheng after enabling systemd-boot in the host configuration.'
+  exit 0
+fi
+
+if (( EUID != 0 )); then
+  printf '%s\n' 'Run sheng-efi-migrate as root.' >&2
+  exit 1
+fi
+
+esp=/dev/disk/by-partlabel/sheng-esp
+if [[ ! -b $esp ]]; then
+  printf 'ESP partition not found: %s\n' "$esp" >&2
+  exit 1
+fi
+
+mkdir -p /efi
+if ! mountpoint -q /efi; then
+  mount -t vfat "$esp" /efi
+fi
+
+expected_device=$(lsblk --raw --nodeps --noheadings --output MAJ:MIN "$esp")
+mounted_device=$(findmnt --raw --mountpoint /efi --noheadings --output MAJ:MIN,FSTYPE)
+if [[ $mounted_device != "$expected_device vfat" ]]; then
+  printf '%s\n' '/efi must be the FAT filesystem on sheng-esp.' >&2
+  exit 1
+fi
+
+exec nixos-rebuild boot "$@"
