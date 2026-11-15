@@ -56,8 +56,8 @@ installed in the boot slot. Use the same image that passed temporary boot.
 - Dual boot was tested with the dual-system image written only to `boot_b`.
 - For a single system, use the single-system image. The slot B steps below
   apply after verifying temporary boot from B with `userdata` as the root
-  partition. Single-system temporary boot and rollback have been tested.
-  Cold boot after persistent flashing has yet to be tested on that layout.
+  partition. Persistent slot B boot, generation updates, rollback and cold
+  boot were tested on the existing `userdata`. A single system can use either slot.
 
 Verify the original `boot_b` backup is recoverable. In ABL fastboot, check
 that you have the right device and that `fastboot getvar current-slot` reports
