@@ -17,12 +17,41 @@ on:
         type: choice
         required: true
         default: single
-        options: [single, dual, generations, sheng-generations]
+        options: [single, dual, generations, sheng-generations, internal-esp]
 
 permissions:
   contents: read
 
 jobs:
+  internal-esp:
+    if: ${{ inputs.task == 'internal-esp' }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+      - run: |
+          nix build -L .#u-boot-efi-internal-dual
+          strings result/u-boot.bin | grep -F 'sheng_boot_internal_efi=yes'
+          strings result/u-boot.bin | grep -F 'bootefi_internal=' | grep -F 'part number scsi 0 linux partnum'
+          sha256sum result/boot.img
+      - run: |
+          nix build -L .#u-boot-efi-internal-missing-esp -o result-missing
+          strings result-missing/u-boot.bin | grep -F 'part number scsi 0 sheng-esp-absent espnum'
+          sha256sum result-missing/boot.img
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sheng-efi-internal-missing-esp
+          path: result-missing/boot.img
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sheng-efi-internal-dual
+          path: result/boot.img
+          if-no-files-found: error
+
   efi-probe:
     if: ${{ github.event_name == 'workflow_dispatch' && (inputs.task == 'single' || inputs.task == 'dual') }}
     runs-on: ubuntu-24.04-arm

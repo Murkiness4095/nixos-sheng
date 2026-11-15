@@ -9,6 +9,8 @@
   version ? "sheng",
   rootPartition ? "userdata",
   efiProbe ? false,
+  efiInternal ? false,
+  efiEspLabel ? "sheng-esp",
   efiAutoBoot ? false,
 }:
 
@@ -41,6 +43,8 @@ assert !efiAutoBoot || (efiProbe && rootPartition == "userdata");
     CONFIG_EFI_VARIABLE_NO_STORE=y
     # CONFIG_EFI_CAPSULE_ON_DISK is not set
     # CONFIG_EFI_RUNTIME_UPDATE_CAPSULE is not set
+  '' + lib.optionalString efiInternal ''
+    CONFIG_PARTITION_TYPE_GUID=y
   '';
 
   # The built-in DT captures an 8 GiB tablet's RAM/firmware holes. ABL
@@ -93,7 +97,11 @@ assert !efiAutoBoot || (efiProbe && rootPartition == "userdata");
   } // lib.optionalAttrs (rootPartition != "userdata") {
     # Keep the existing single-system environment byte-for-byte unchanged.
     # Both normal/menu loading and the rescue path must select the same root.
-    postPatch = (old.postPatch or "") + ''
+    postPatch = (old.postPatch or "") + lib.optionalString efiInternal ''
+      printf '\nsheng_boot_internal_efi=yes\n' >> board/qualcomm/sheng.env
+      substituteInPlace board/qualcomm/sheng.env \
+        --replace-fail "part number scsi 0 sheng-esp espnum" "part number scsi 0 ${efiEspLabel} espnum"
+    '' + ''
       substituteInPlace board/qualcomm/sheng.env \
         --replace-fail "part number scsi 0 userdata partnum" "part number scsi 0 ${rootPartition} partnum" \
         --replace-fail "root=PARTLABEL=userdata" "root=PARTLABEL=${rootPartition}"

@@ -2,6 +2,10 @@
   description = "NixOS and U-Boot for the Xiaomi Pad 6S Pro 12.4 (sheng, SM8550)";
 
   inputs = {
+    u-boot-efi-internal-src = {
+      url = "github:Murkiness4095/u-boot/adabd4b4365cdf2c3b3dde63c4aca390d610b56c";
+      flake = false;
+    };
     u-boot-efi-src = {
       url = "github:Murkiness4095/u-boot/5d7445dfb0551aec8a3e2ad23367cabe5695351a";
       flake = false;
@@ -22,6 +26,7 @@
       nixpkgs,
       u-boot-src,
       u-boot-efi-src,
+      u-boot-efi-internal-src,
     }:
     let
       # Building for this on anything else needs a remote builder.
@@ -298,6 +303,14 @@
             };
 
             kernel = pkgs.shengKernel;
+            u-boot-efi-internal-dual = self.packages.${target}.u-boot-efi-probe.override {
+              src = u-boot-efi-internal-src;
+              version = u-boot-efi-internal-src.shortRev;
+              efiInternal = true;
+            };
+            u-boot-efi-internal-missing-esp = self.packages.${target}.u-boot-efi-internal-dual.override {
+              efiEspLabel = "sheng-esp-absent";
+            };
             mdss-test-module = pkgs.callPackage ./packages/kernel/mdss-test-module { };
           }
           // pkgs.shengPackages

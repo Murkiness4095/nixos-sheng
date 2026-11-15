@@ -497,3 +497,62 @@ profile 兼容问题仍待解决；本次隔离 profile 是验证环境。未刷
 `userdata` profile 切回第 3 世代并正常重启。SSH 确认原 extlinux
 第 19 世代恢复，`/run/booted-system` 路径前缀为
 `4rlgh92kzda3vhpc1m5wh64y5wbghan7`，USB ACM 重新枚举。
+
+### 独立 U-Boot 内置 ESP 候选
+
+[ARM CI 43691925855](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43691925855)
+构建了 U-Boot `adabd4b4365cdf2c3b3dde63c4aca390d610b56c` 的双系统镜像。
+`boot.img` SHA256 为 `50a7bacffdae8938688ba59a1fe4be3c55be1e58dc111886df913cb7c7f51466`。
+从 B 槽 ABL 临时启动后，串口确认 EFI 第 20 世代、`linux` 根和 `/efi` 自动挂载。
+临时移开 `BOOTAA64.EFI` 后再次加载同一镜像，串口确认回退到非 EFI 第 19
+世代。随后通过 SSH 恢复 EFI 文件。此次验证了缺失 EFI 文件的回退。
+另用 [ARM CI 43692902809](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43692902809)
+的对照镜像查询不存在的 `sheng-esp-absent` 标签，镜像 SHA256 为
+`06c5a570ed9aa4a06e63c71f34e69bbeea34b29c01b261fd724d64d06cae7965`。
+通过 B 槽临时加载后，串口确认回到非 EFI 第 19 世代。
+此对照保留真实 GPT，验证 ESP 查找失败时的回退。随后再次临时加载对照镜像
+并进行菜单救援测试。主机观察到 USB 断开后重新枚举为 fastboot，
+`is-userspace: no`、`current-slot: b`。正常重启后，串口确认恢复到
+extlinux 第 19 世代。
+
+### B 槽持久部署
+
+[ARM CI 43694465768](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43694465768)
+由 `8c3474e` 的锁文件构建，镜像 SHA256 为
+`d96f5a73b8bf9f2074041a9224e0b9913d7daa4202566c0cae2707b0ea20b0ad`。
+临时启动同一镜像通过后，核对原 `boot_b` 完整备份，再仅刷写 `boot_b`。
+正常重启进入 EFI 第 20 世代，自动挂载 ESP。更新启动条目后重启至第 21
+世代，回滚重启至第 20 世代。随后临时移开 EFI fallback 文件并正常重启，
+SSH 确认回退至 extlinux 第 19 世代，随后恢复 EFI 文件。
+拔掉 USB 正常关机，按电源键冷启动后再接 USB。串口确认从持久镜像
+启动到 EFI 第 20 世代（`cr84czq4n6ca25k7kv8xgxf4bmjjxmc4`），
+根 PARTLABEL 为 `linux`，`/efi` 已自动挂载。
+
+A 槽 OrangeFox R12.0 启动通过，ADB 报告 recovery 和槽位 `_a`。
+用户确认当时的 `userdata` 无需备份后，在 OrangeFox 格式化该分区，
+日志确认 F2FS 创建成功。Android A 正常进入系统，ADB 读到
+`sys.boot_completed=1`、`ro.boot.slot_suffix=_a` 和版本
+`OS3.0.304.0.WNXCNXM`。通过 ABL 切回 B 槽并正常重启，
+串口再次确认 EFI 第 20 世代、`linux` 根和 `/efi` 自动挂载。
+
+### 迁移和恢复顺序
+
+现有双系统从正常工作的 extlinux 世代开始。先确认当前在 B 槽、根后端为
+`linux`，并备份原 `boot_b` 和现有 ESP。确认 `sheng-esp` 是独立的
+GPT EFI System 分区，使用 FAT32。实验容量为 512 MiB。没有空闲区间时，
+先按上文的离线缩容预检核对空间和恢复条件。
+
+保留原 extlinux 世代和 `/boot` 下的 DTB，构建包含原有桌面和账户配置的
+EFI 世代。第一次从 extlinux 安装 EFI 条目时，先把正确的 ESP 挂到
+`/efi`。在 ABL 的 B 槽用 `fastboot boot` 验证候选，确认根分区、
+运行系统和 ESP 自动挂载，再验证世代更新及回滚。持久部署只写
+`boot_b`。双系统通用刷写脚本的目标不适用于这一迁移。
+
+EFI 世代出问题时，先尝试从 systemd-boot 选择上一个 EFI 世代。
+引导文件缺失时，已验证的 U-Boot 会回退到 extlinux 并提供 ABL fastboot
+入口。若需撤销持久部署，从 ABL 核对设备和 B 槽后恢复原 `boot_b`，
+再正常启动已知可用的 extlinux 世代。引导镜像回退不需要擦除根分区。
+
+全新单系统 EFI 安装应在首次扩容前为 ESP 留出独立的 GPT 区间，
+根分区使用 `userdata`。现有真机结果来自双系统 GPT 上的 `userdata`，
+完整单系统布局的首启扩容和可用容量仍待验收。
