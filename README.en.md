@@ -12,6 +12,7 @@ The project has verified boot, standard NixOS rebuilds, generation rollback, swi
 | --- | --- |
 | Build or install the single-system image | [Project guide](docs/README.md) |
 | Install or maintain Android alongside NixOS | [Dual boot](docs/dual-boot.en.md) |
+| Migrate extlinux or install with EFI | [EFI installation and migration](docs/efi-install.en.md) |
 | Configure initrd or a tmpfs root | [Initrd and persistence](docs/initrd-tmpfs.en.md) |
 | Maintain the project or troubleshoot boot | [Handover](docs/HANDOVER.en.md), [development guide](docs/DEVELOPMENT.md) |
 | Check hardware coverage or choose the next task | [Hardware validation](docs/peripheral-validation.en.md), [roadmap](TODO.en.md) |

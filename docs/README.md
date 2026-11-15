@@ -205,7 +205,7 @@ nix build .#u-boot --override-input u-boot-src ../u-boot
 
 ## Flashing
 
-See [EFI installation and migration](efi-install.md) for the optional internal ESP setup.
+See [EFI installation and migration](efi-install.en.md) for the optional internal ESP setup.
 
 > **Warning**
 > These are **single-system instructions** and erase Android data. For Android/NixOS
