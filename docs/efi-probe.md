@@ -482,3 +482,18 @@ profile 兼容问题仍待解决；本次隔离 profile 是验证环境。未刷
 用 `nix-env --rollback` 回到第 20 世代，标准安装器更新条目后再次启动验证。
 最后把 profile 切回第 19 世代并正常重启，串口确认进入原 extlinux 系统
 （`4rlgh92kzda3vhpc1m5wh64y5wbghan7`）。未写入启动分区或 GPT。
+
+### 单系统配置的 ESP 自动挂载复测
+
+使用源码 `7e991190fec43574d130390b9be87ba81391ae58` 的
+[ARM 闭包 43686289440](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43686289440)
+和临时 U-Boot 43581826960。闭包 SHA256 为
+`3a93df08ba0525fcdc4c38252dafa45d9a053610e6587575cc9d5455f21de68b`。
+在双系统 GPT 的 `userdata` 独立 store 和 profile 上保留第 3 世代，
+经 B 槽临时启动 EFI 第 5 世代（`36l14kk7lj602gnlfkf5py8qggkg4yfa`），
+确认 `userdata` 根和 `/efi` 自动挂载。直接运行标准安装器写入并启动第
+6 世代（`8cl60xfnknm95269if9n55h18xg5y0wl`）。随后回滚、更新条目并再次
+启动，确认运行第 5 世代且 `/efi` 自动挂载。测试结束时已把
+`userdata` profile 切回第 3 世代并正常重启。SSH 确认原 extlinux
+第 19 世代恢复，`/run/booted-system` 路径前缀为
+`4rlgh92kzda3vhpc1m5wh64y5wbghan7`，USB ACM 重新枚举。
