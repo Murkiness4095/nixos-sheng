@@ -513,4 +513,17 @@ profile 兼容问题仍待解决；本次隔离 profile 是验证环境。未刷
 此对照保留真实 GPT，验证 ESP 查找失败时的回退。随后再次临时加载对照镜像
 并进行菜单救援测试。主机观察到 USB 断开后重新枚举为 fastboot，
 `is-userspace: no`、`current-slot: b`。正常重启后，串口确认恢复到
-extlinux 第 19 世代。持久刷写仍待验收。
+extlinux 第 19 世代。
+
+### B 槽持久部署
+
+[ARM CI 43694465768](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43694465768)
+由 `8c3474e` 的锁文件构建，镜像 SHA256 为
+`d96f5a73b8bf9f2074041a9224e0b9913d7daa4202566c0cae2707b0ea20b0ad`。
+临时启动同一镜像通过后，核对原 `boot_b` 完整备份，再仅刷写 `boot_b`。
+正常重启进入 EFI 第 20 世代，自动挂载 ESP。更新启动条目后重启至第 21
+世代，回滚重启至第 20 世代。随后临时移开 EFI fallback 文件并正常重启，
+SSH 确认回退至 extlinux 第 19 世代，随后恢复 EFI 文件。
+拔掉 USB 正常关机，按电源键冷启动后再接 USB。串口确认从持久镜像
+启动到 EFI 第 20 世代（`cr84czq4n6ca25k7kv8xgxf4bmjjxmc4`），
+根 PARTLABEL 为 `linux`，`/efi` 已自动挂载。Android A 和 Recovery 待验。
