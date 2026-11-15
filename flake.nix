@@ -239,6 +239,20 @@
           networking.hostName = "sheng-dual";
         } ];
       };
+      nixosConfigurations.sheng-efi-install = self.nixosConfigurations.sheng-efi-generations.extendModules {
+        modules = [
+          (ttyAccount ttyUser)
+          ./modules/efi-install-image.nix
+          ({ lib, ... }: { networking.hostName = lib.mkForce "sheng-efi-install"; })
+        ];
+      };
+      nixosConfigurations.sheng-dual-efi-install = self.nixosConfigurations.sheng-dual-efi-generations.extendModules {
+        modules = [
+          (ttyAccount ttyUser)
+          ./modules/efi-install-image.nix
+          ({ lib, ... }: { networking.hostName = lib.mkForce "sheng-dual-efi-install"; })
+        ];
+      };
       nixosConfigurations.sheng-efi-tty = self.lib.shengSystem {
         inherit nixpkgs;
         modules = [ (ttyAccount "nixos") ];
