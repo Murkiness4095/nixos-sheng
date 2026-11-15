@@ -18,6 +18,13 @@ extlinux 的 `INITRD` 行。旧的直启世代仍可选择。启用后，根挂�
 stage 1 管理，不再沿用内核直接挂载 `root=PARTLABEL=...` 的参数。
 
 ## 可选 tmpfs 根目录
+EFI 的可选构建目标为 `sheng-efi-tmpfs`（单系统）和
+`sheng-dual-efi-tmpfs`（双系统）。两者复用现有 tmpfs 模块和 systemd-boot
+配置，`/efi` 仍从 `sheng-esp` 挂载。已有 EFI 安装的用户，在自己的主机配置
+启用下方选项并沿用现有持久化清单，再用 `nixos-rebuild boot` 安装候选世代。
+重启后核对 `/`、`/nix`、`/persist` 和 `/efi` 的挂载及保留的数据。
+需要恢复时，从 systemd-boot 选择原 ext4 世代。
+
 
 `/home` 默认位于 tmpfs 根目录中，只有个人配置明确列出的用户数据会持久化。
 如需沿用初版的完整 home 行为，显式设置 `sheng.rootfs.tmpfsRoot.persistHome = true;`。

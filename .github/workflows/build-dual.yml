@@ -181,6 +181,16 @@ jobs:
             }).config.system.build.toplevel
           ' -o result-tmpfs-whole-home
           test -s result-tmpfs-whole-home/initrd
+          for layout in sheng sheng-dual; do
+            root=userdata
+            if [[ "$layout" == sheng-dual ]]; then root=linux; fi
+            cfg=".#nixosConfigurations.$layout-efi-tmpfs.config"
+            test "$(nix eval --raw "$cfg.fileSystems.\"/\".fsType")" = tmpfs
+            test "$(nix eval --raw "$cfg.fileSystems.\"/sysroot-storage\".device")" = "/dev/disk/by-partlabel/$root"
+            test "$(nix eval --raw "$cfg.fileSystems.\"/efi\".device")" = /dev/disk/by-partlabel/sheng-esp
+            nix build -L "$cfg.system.build.toplevel" -o "result-$layout-efi-tmpfs"
+            test -s "result-$layout-efi-tmpfs/initrd"
+          done
           mkdir -p initrd-artifacts
           nix path-info -r ./result-initrd > initrd-artifacts/store-paths.txt
           nix-store --export $(cat initrd-artifacts/store-paths.txt) | zstd -T0 -3 -o initrd-artifacts/sheng-initrd-closure.nar.zst
