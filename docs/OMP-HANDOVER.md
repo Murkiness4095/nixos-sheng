@@ -12,8 +12,7 @@
   [PR #16](https://github.com/Murkiness4095/nixos-sheng/pull/16) 已合入内置 ESP 的双系统 U-Boot 候选，合并提交为 `332db31`。
 - 已通过 B 槽持久 EFI 冷启动、世代更新及回滚、extlinux 回退，以及 A 槽 Android 和 OrangeFox 启动。
   最后确认设备切回 B 槽 EFI 第 20 世代，根分区为 `linux`，`/efi` 自动挂载。实测和恢复顺序见 [EFI 记录](efi-probe.md)。
-- 双系统 GPT 上的 `userdata` 已证明单系统配置可启动和回滚，该分区随后恢复给 Android。
-  剩余验收针对全新单系统布局：ESP 预留、首次扩容、可用容量及救援。优先用独立测试设备验证。
+- [PR #18](https://github.com/Murkiness4095/nixos-sheng/pull/18) 合入单系统内置 ESP 候选。之后在现有 `userdata` 上验证首启扩容（约 448 GiB 可用）、EFI 更新、回滚及 extlinux 救援，最终回到双系统 EFI 第 20 世代。全新单系统 GPT 的 ESP 预留及最终容量仍待验证。
 
 ## 2026-11-14 EFI 历史快照
 
