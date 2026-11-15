@@ -298,6 +298,9 @@
             };
 
             kernel = pkgs.shengKernel;
+            u-boot-efi-internal-dual = self.packages.${target}.u-boot-efi-probe.override {
+              efiInternal = true;
+            };
             mdss-test-module = pkgs.callPackage ./packages/kernel/mdss-test-module { };
           }
           // pkgs.shengPackages
