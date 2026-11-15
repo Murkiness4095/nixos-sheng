@@ -556,3 +556,25 @@ EFI 世代出问题时，先尝试从 systemd-boot 选择上一个 EFI 世代。
 全新单系统 EFI 安装应在首次扩容前为 ESP 留出独立的 GPT 区间，
 根分区使用 `userdata`。现有真机结果来自双系统 GPT 上的 `userdata`，
 完整单系统布局的首启扩容和可用容量仍待验收。
+
+### 单系统内置 ESP 候选与首启扩容
+
+在保留双系统 GPT 的测试机上，将 [ARM TTY 镜像](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43699495753)
+写入现有 `userdata`（512023855104 字节），临时启动 extlinux。
+`systemd-growfs-root` 首启扩容成功，`df -B1 /` 显示总容量
+504074330112 字节，可用 480760717312 字节。
+
+同一源码 `7607b24c7f6527df48dbfb8ca37d09c4de7ded61` 的
+[EFI 闭包](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43699498968)
+导入该分区，保留 extlinux 第 1 世代 `w1fyfyk9dgjg`。B 槽 ABL
+临时加载 [单系统候选](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43698442131)
+（SHA256 `3859545433f4fc6fc8b8519dff549d89d50eb1ce34bc03da4ed7d9090f694752`）。
+串口确认 EFI 第 2 世代 `36l14kk7lj60` 从 `userdata` 启动并自动挂载
+`/efi`。直接运行标准安装器更新至第 3 世代 `8cl60xfnknm9`，
+重新临时加载确认启动，然后回滚重启至第 2 世代。
+暂时移开 ESP 上的 `BOOTAA64.EFI` 后，同一候选回退至 `userdata`
+上的 extlinux 第 1 世代。随后恢复 EFI 文件及原双系统默认条目。
+本次写入的是现有 `userdata` 和 ESP，未修改 GPT 或刷写启动槽。
+
+正常重启后，SSH 确认已返回双系统 EFI 第 20 世代
+（`cr84czq4n6ca2`），根分区为 `linux`，`/efi` 挂载自 `sheng-esp`。
