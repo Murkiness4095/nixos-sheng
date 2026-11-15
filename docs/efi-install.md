@@ -42,7 +42,7 @@ ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配�
    临时加载对应的 U-Boot。进系统后用 `bootctl status`、`findmnt /`、
    `findmnt /efi` 和 `readlink -f /run/booted-system` 核对结果。
    EFI 世代启动后会自动挂载 `/efi`。日常更新直接运行 `nixos-rebuild boot`。
-   重启验证更新并回滚一次。
+   重启验证更新，再运行 `sudo nixos-rebuild boot --rollback` 并重启，确认上一代可用。
    临时测试的每次启动都需要重新加载候选镜像。
 5. 双系统的持久部署已在 B 槽实测。确认临时启动通过、原 `boot_b`
    备份可用，再从 ABL 只写 `boot_b`。单系统候选的验证使用临时启动。
@@ -54,7 +54,8 @@ ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配�
    确定。双系统保留 Android 分区，按[双系统指南](dual-boot.md)准备
    `linux` 和 Linux B 槽。在计算 `linux` 边界时同时留出 ESP。
 2. 用对应工作流生成根镜像，单系统用 `build`，双系统用 `build-dual`。
-   按对应布局完成 extlinux 基础安装并启动一次，确认根分区和扩容。
+   按[单系统刷写说明](README.md#flashing)或[双系统指南](dual-boot.md)完成
+   extlinux 基础安装并启动一次，确认根分区和扩容。
    双系统刷写目标为 `linux`，刷写方案须遵循双系统指南。
 3. 从上节第 3 步安装 EFI 世代，保留这次 extlinux 首启作为救援世代。
 
