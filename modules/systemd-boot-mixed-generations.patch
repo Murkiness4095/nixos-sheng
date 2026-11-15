@@ -1,0 +1,82 @@
+--- a/systemd-boot-builder.py
++++ b/systemd-boot-builder.py
+@@ -44,7 +44,7 @@
+ @dataclass(frozen=True)
+ class BootSpec:
+     init: Path
+-    initrd: Path
++    initrd: Path | None
+     extraInitrdPaths: list[Path]
+     kernel: Path
+     kernelParams: list[str]  # noqa: N815
+@@ -363,6 +363,7 @@
+     for attr in ("kernel", "initrd", "toplevel"):
+         if attr in main_json:
+             main_json[attr] = Path(main_json[attr])
++    main_json.setdefault("initrd", None)
+     return BootSpec(
+         **main_json,
+         specialisations=specialisations,
+@@ -392,6 +393,7 @@
+     if specialisation:
+         bootspec = bootspec.specialisations[specialisation]
+     kernel = BootFile.from_source(bootspec.kernel)
++    assert bootspec.initrd is not None
+     initrd = BootFile.from_initrd(
+         generation,
+         bootspec.initrd,
+@@ -561,7 +563,7 @@
+ 
+     for gen in gens:
+         bootspec = get_bootspec(gen.profile, gen.generation)
+-        if bootspec is None:
++        if bootspec is None or bootspec.initrd is None:
+             continue
+         is_default = Path(bootspec.init).parent == default_config
+         new_boot_files, new_bootctl_id = boot_file(*gen, machine_id, bootspec)
+@@ -570,6 +572,8 @@
+             default_entry_id = new_bootctl_id
+             critical_paths.update(bf.path for bf in new_boot_files)
+         for specialisation_name, specialisation in bootspec.specialisations.items():
++            if specialisation.initrd is None:
++                continue
+             is_default = Path(specialisation.init).parent == default_config
+             new_boot_files, new_bootctl_id = boot_file(
+                 gen.profile,
+@@ -583,6 +587,9 @@
+                 default_entry_id = new_bootctl_id
+                 critical_paths.update(bf.path for bf in new_boot_files)
+ 
++    if default_entry_id is None:
++        sys.exit("The requested system has no bootable EFI generation")
++
+     # Garbage-collect stale kernels/initrds/entries before re-populating extra
+     # files, so that user-supplied extraEntries (which may also live under
+     # loader/entries and start with `nixos-`) are not removed again.
+@@ -660,8 +667,26 @@
+     )
+     args = parser.parse_args()
+ 
+     run([CHECK_MOUNTPOINTS])
++
++    # The generic NixOS check only proves that /efi is a mount point. On
++    # sheng, also reject a different filesystem mounted there before writing
++    # any boot files. Comparing device numbers follows the stable PARTLABEL
++    # symlink without depending on the volatile /dev/sdX name.
++    if EFI_SYS_MOUNT_POINT == Path("/efi"):
++        expected_esp = Path("/dev/disk/by-partlabel/sheng-esp")
++        try:
++            expected_device = expected_esp.stat().st_rdev
++        except FileNotFoundError:
++            sys.exit(f"The expected EFI system partition {expected_esp} does not exist")
++        mounted_device = EFI_SYS_MOUNT_POINT.stat().st_dev
++        if mounted_device != expected_device:
++            sys.exit(
++                f"{EFI_SYS_MOUNT_POINT} is not mounted from {expected_esp} "
++                f"(expected device {os.major(expected_device)}:{os.minor(expected_device)}, "
++                f"found {os.major(mounted_device)}:{os.minor(mounted_device)})"
++            )
+ 
+     try:
+         install_bootloader(args)
+     finally:
