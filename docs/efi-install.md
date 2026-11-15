@@ -24,12 +24,25 @@ ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配�
 3. 在原主机配置上采用对应 EFI 配置的设置，保留账户、桌面及存储配置。
    参考仓库的 `sheng-efi-generations`，它启用 initrd、EFI stub 和
    systemd-boot 的 DTB 安装，并加入混合世代补丁及 `/efi` 自动挂载。
-   先手动将正确的 ESP 挂到 `/efi`，再执行原主机的 `nixos-rebuild boot`
-   安装首个 EFI 世代。
+   推荐从当前 extlinux 系统用下面的命令安装首个 EFI 世代。
+
+   ```sh
+   esp=/dev/disk/by-partlabel/sheng-esp
+   test -b "$esp" &&
+     sudo mkdir -p /efi &&
+     { mountpoint -q /efi || sudo mount -t vfat "$esp" /efi; } &&
+     sudo nixos-rebuild boot
+   ```
+
+   如果平时用 `--flake <路径>#<主机名>` 更新，给最后一行加上相同的参数。
+   `nixos-rebuild boot` 会立即写入 ESP，而新配置的自动挂载要等新世代启动后
+   才会生效。这组命令仅在 `/efi` 尚未挂载时挂载 ESP。分区缺失或挂载失败时
+   会跳过构建命令，已挂载但设备不对时安装器会在写入前报错。
 4. 进入 ABL fastboot，核对设备和槽位，以 `fastboot boot boot.img`
    临时加载对应的 U-Boot。进系统后用 `bootctl status`、`findmnt /`、
    `findmnt /efi` 和 `readlink -f /run/booted-system` 核对结果。
-   再执行一次 `nixos-rebuild boot`，重启验证更新并回滚一次。
+   EFI 世代启动后会自动挂载 `/efi`。日常更新直接运行 `nixos-rebuild boot`。
+   重启验证更新并回滚一次。
    临时测试的每次启动都需要重新加载候选镜像。
 5. 双系统的持久部署已在 B 槽实测。确认临时启动通过、原 `boot_b`
    备份可用，再从 ABL 只写 `boot_b`。单系统候选的验证使用临时启动。
