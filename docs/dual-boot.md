@@ -21,6 +21,8 @@
 产物为 `sheng-dual-flashable`，包含 `sheng-boot-dual.img` 和
 `sheng-rootfs-dual.sparse.img.zst`。现有单系统工作流和产物名称保持不变。
 
+可选的内置 ESP 安装与原地迁移见 [EFI 安装与迁移](efi-install.md)。
+
 ## 设备上的更新
 
 双系统镜像仍在 `/etc/nixos` 中携带仓库源码，使用对应配置更新：
