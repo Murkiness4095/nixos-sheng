@@ -526,4 +526,11 @@ extlinux 第 19 世代。
 SSH 确认回退至 extlinux 第 19 世代，随后恢复 EFI 文件。
 拔掉 USB 正常关机，按电源键冷启动后再接 USB。串口确认从持久镜像
 启动到 EFI 第 20 世代（`cr84czq4n6ca25k7kv8xgxf4bmjjxmc4`），
-根 PARTLABEL 为 `linux`，`/efi` 已自动挂载。Android A 和 Recovery 待验。
+根 PARTLABEL 为 `linux`，`/efi` 已自动挂载。
+
+A 槽 OrangeFox R12.0 启动通过，ADB 报告 recovery 和槽位 `_a`。
+用户确认当时的 `userdata` 无需备份后，在 OrangeFox 格式化该分区，
+日志确认 F2FS 创建成功。Android A 正常进入系统，ADB 读到
+`sys.boot_completed=1`、`ro.boot.slot_suffix=_a` 和版本
+`OS3.0.304.0.WNXCNXM`。通过 ABL 切回 B 槽并正常重启，
+串口再次确认 EFI 第 20 世代、`linux` 根和 `/efi` 自动挂载。
