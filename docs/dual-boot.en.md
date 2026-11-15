@@ -14,6 +14,8 @@ The tested layout boots Android from slot A and NixOS from slot B. NixOS uses a 
 
 Both modes share the kernel, DTB, firmware and services. The dual-system U-Boot reads its menu, normal boot files and rescue files from `linux`. The `sheng-dual-flashable` artifact contains `sheng-boot-dual.img` and `sheng-rootfs-dual.sparse.img.zst`.
 
+See [EFI installation and migration](efi-install.en.md) for the optional internal ESP setup.
+
 ## Update an existing installation
 
 For the stock dual-system configuration in `/etc/nixos`, add a generation and reboot.

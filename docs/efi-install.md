@@ -1,5 +1,13 @@
 # EFI 安装与迁移
 
+
+[English](efi-install.en.md) · 简体中文
+
+## 哪些步骤可以自动化
+
+已有系统只刷 U-Boot 无法完成迁移。ESP 还需要 systemd-boot 和基于当前主机配置生成的启动条目。现有流程可用下方一组命令完成首次挂载和条目安装，再用 ABL fastboot 临时启动验证。分区已准备好时，这组命令可以封装进迁移工具。
+
+全新安装的现有 rootfs 是 extlinux 基础镜像。直接刷 EFI U-Boot 和 rootfs 不会创建 ESP 或写入 EFI 启动文件。若要做成一键安装，安装器还需要按实际 GPT 准备 ESP，并在首次启动前写好 EFI 启动文件和首个世代条目。当前推荐使用下文的 extlinux 首启加 EFI 迁移流程。
 EFI 使用 U-Boot 从内置 ESP 加载 systemd-boot。两种布局使用同一个
 ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配对。
 
