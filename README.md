@@ -25,7 +25,7 @@ Xiaomi Pad 6S Pro（sheng）的标准 NixOS + U-Boot 移植，提供独立的单
 | 核对 Debian 方案与版本选择 | [Debian 参考策略](docs/debian-reference.md) |
 
 Actions 中 `build` 构建单系统，`build-dual` 构建双系统；修改代码推送到 `main` 会分别触发两条工作流，
-EFI 为可选安装方式。现有镜像走 extlinux，迁移需先准备 ESP 和 EFI 世代。详见 [EFI 安装与迁移](docs/efi-install.md)。
+EFI 为可选安装方式。默认镜像使用 extlinux。全新安装可选用配套 EFI 安装包；已有系统可准备 ESP 后原地迁移。详见 [EFI 安装与迁移](docs/efi-install.md)。
 EFI 临时启动与虚拟机验证的选项见 [EFI 实验说明](docs/efi-probe.md#actions-里选哪个)。
 手动运行时先选择单系统或双系统工作流，再用 `image` 选择 `tty`、`kde` 或 `gnome`。
 构建 `tty` 时可填写 `tty_username`。默认 `root`，填写其他用户名会创建普通用户并自动登录。

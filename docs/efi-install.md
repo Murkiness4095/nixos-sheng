@@ -7,7 +7,8 @@
 
 已有系统只刷 U-Boot 无法完成迁移。ESP 还需要 systemd-boot 和基于当前主机配置生成的启动条目。ESP 准备好后，迁移工具会挂载并安装条目，再用 ABL fastboot 临时启动验证。
 
-全新安装的现有 rootfs 是 extlinux 基础镜像。直接刷 EFI U-Boot 和 rootfs 不会创建 ESP 或写入 EFI 启动文件。若要做成一键安装，安装器还需要按实际 GPT 准备 ESP，并在首次启动前写好 EFI 启动文件和首个世代条目。当前推荐使用下文的 extlinux 首启加 EFI 迁移流程。
+全新安装可用下文的 EFI 安装包直接首启。它已包含启动文件，但仍需按设备 GPT 准备独立 ESP。原有 extlinux 镜像继续提供。
+
 EFI 使用 U-Boot 从内置 ESP 加载 systemd-boot。两种布局使用同一个
 ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配对。
 
@@ -70,18 +71,26 @@ fastboot reboot
 正常启动后用 `bootctl status` 和 `findmnt /efi` 确认 EFI 启动及 ESP 挂载。
 如需恢复，从 ABL 将原镜像写回同一个 `boot_b`。
 
-## 全新安装
+## 全新安装：直接从 EFI 首启
 
-1. 先选布局并准备 ESP。单系统使用 `userdata`，在镜像首启扩容前预留
-   独立 ESP。盘尾方案已用备份 GPT 离线校验，实际扇区边界按设备分区表
-   确定。双系统保留 Android 分区，按[双系统指南](dual-boot.md)准备
-   `linux` 和 Linux B 槽。在计算 `linux` 边界时同时留出 ESP。
-2. 用对应工作流生成根镜像，单系统用 `build`，双系统用 `build-dual`。
-   按[单系统刷写说明](README.md#flashing)或[双系统指南](dual-boot.md)完成
-   extlinux 基础安装并启动一次，确认根分区和扩容。
-   双系统刷写目标为 `linux`，刷写方案须遵循双系统指南。
-3. 从上节第 3 步安装 EFI 世代，保留这次 extlinux 首启作为救援世代。
+**EFI experiments** 工作流选择 `task=install-bundle`，并选择 `layout=single`
+或 `layout=dual`。下载同一产物中的 `boot.img`、`sheng-rootfs.sparse.img.zst`
+和 `sheng-esp.sparse.img`。先运行 `sha256sum -c SHA256SUMS`，然后核对
+`manifest.txt` 的布局和根分区标签。两套 ARM 产物均已通过 CI 构建；整套镜像
+的直接首启还没有真机验证。需要已验证路径时，先装 extlinux，再按上节迁移。
 
-EFI 世代启动失败时，先从 systemd-boot 选上一代。EFI fallback 文件缺失时，
-内置 ESP 候选会尝试 extlinux。若要撤销已验证的双系统持久部署，进入 ABL，
-核对 B 槽并恢复备份的 `boot_b`。详见[迁移和恢复实测](efi-probe.md#迁移和恢复顺序)。
+1. 按目标设备 GPT 预留至少 512 MiB 的独立 EFI System Partition，GPT 分区名为
+   `sheng-esp`。单系统给 `userdata` 留出 ESP 空间，须在 rootfs 首启扩容前完成；
+   双系统按[双系统指南](dual-boot.md)保留 Android A 槽和 Recovery，并在
+   `linux` 之外留出 ESP。不要照抄其他设备的扇区号。
+2. 解压 rootfs 的 Zstandard 外层，把 Android sparse rootfs 写到清单指定的根分区。
+   ESP 镜像是另一份 Android sparse 镜像，目标只能是 `sheng-esp`；它会覆盖
+   现有 ESP 内容。如果 ABL 不暴露该分区，从 Recovery 使用 `simg2img` 转成
+   raw，再按 GPT 分区名核对目标后写入；不能直接用 `dd` 写 sparse 文件。
+3. 用包里的 `boot.img` 在 ABL 临时启动。确认根分区正确、`/efi` 已挂载，
+   并检查 `journalctl -b -u sheng-finish-efi-install` 和 `bootctl list`：
+   首启条目应已换成正常的 NixOS 世代条目。之后用 `nixos-rebuild boot --flake /etc/nixos`
+   更新，重启验证新世代，再部署到上文确认的 Linux 启动槽。
+
+遇到无法启动的问题，优先用现有可用世代或 ABL 临时启动救援。内置 EFI 文件缺失时，
+U-Boot 会尝试 rootfs 里的 extlinux 救援条目。只恢复启动镜像不需要擦除 rootfs。
