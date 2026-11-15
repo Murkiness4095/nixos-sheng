@@ -151,14 +151,15 @@ jobs:
           set -euo pipefail
           nix build -L .#nixosConfigurations.sheng.config.system.build.toplevel -o result-system
           if [[ "${{ inputs.image == 'tty' && inputs.tty_username != 'root' }}" == true ]]; then exit 0; fi
+          nix build -L .#nixosConfigurations.sheng-efi-generations.config.system.build.toplevel -o result-efi-template-base
           for template in minimal flake-parts; do
             nix build -L "./examples/$template#nixosConfigurations.sheng.config.system.build.toplevel" \
               --no-write-lock-file --override-input nixos-sheng "git+file://$(pwd)" -o "result-$template"
-            test "$(readlink -f "result-$template")" = "$(readlink -f result-system)"
-            for target in sheng-efi sheng-dual-efi; do
+            test "$(readlink -f "result-$template")" = "$(readlink -f result-efi-template-base)"
+            for target in sheng sheng-dual-efi; do
               cfg="./examples/$template#nixosConfigurations.$target.config"
               case "$target" in
-                sheng-efi) root=userdata ;;
+                sheng) root=userdata ;;
                 sheng-dual-efi) root=linux ;;
               esac
               nix eval --json "$cfg" --apply "

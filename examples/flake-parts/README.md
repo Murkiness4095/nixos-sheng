@@ -2,23 +2,7 @@
 
 [English](./README.en.md) · 简体中文
 
-## 先选择单系统或双系统
-
-**当前构造器默认单系统，根分区为 `userdata`。** 双系统个人配置可选一种方式：
-
-- 保留 `lib.shengSystem`，在 `node-sheng` 设置 `sheng.rootfs.partlabel = "linux";`。
-- 用以下定义替换原来的构造器，继承仓库双系统配置，不再重复声明分区：
-
-  ```nix
-  flake.nixosConfigurations.sheng =
-    inputs.nixos-sheng.nixosConfigurations.sheng-dual.extendModules {
-      modules = [ self.nixosModules.node-sheng ];
-    };
-  ```
-
-两种定义不能同时保留。继承方式会带入上游 `networking.hostName = "sheng-dual"`，
-样板已通过 `lib.mkForce "sheng"` 覆盖；不需要重新导入硬件模块。
-输出名和主机名不会自动选择分区。旧锁文件使用继承接口前先更新 `nixos-sheng` 输入。
+两个模板目标均使用 EFI。已有 extlinux 的设备先完成下文的 EFI 迁移，再运行日常更新命令。
 
 ## 模块组织
 
@@ -45,7 +29,7 @@ sudo nixos-rebuild boot --flake .#sheng
 sudo reboot
 ```
 
-这里的最小样板与当前基础 CI 一样是命令行系统；桌面来自你自己导入的桌面模块。共享 x86/ARM flake 时，可以继续让 x86 使用个人 nixpkgs，sheng 先使用硬件输入自己的锁定版本；统一 nixpkgs 版本是另一项需要验证的升级。
+这里的最小样板是命令行系统；桌面来自你自己导入的桌面模块。共享 x86/ARM flake 时，可以继续让 x86 使用个人 nixpkgs，sheng 先使用硬件输入自己的锁定版本；统一 nixpkgs 版本是另一项需要验证的升级。
 
 ## 可选 tmpfs 与持久化边界
 
@@ -58,9 +42,9 @@ tmpfs 默认让 home 易失，样板按调用者提供的 `user` 保留选定目
 如需兼容初版的完整 home 模式，设置 `sheng.rootfs.tmpfsRoot.persistHome = true;`。
 用户身份和应用数据策略属于用户端配置；样板不是无遗漏的通用清单。
 
-## 可选 EFI 启动
+## EFI 启动
 
-默认目标 `.#sheng` 使用 extlinux。使用 EFI 时，单系统选 `.#sheng-efi`，
+两个目标都使用 systemd-boot。默认目标 `.#sheng` 用于单系统，
 根分区为 `userdata`。双系统选 `.#sheng-dual-efi`，根分区为 `linux`。
 不要在共享主机模块中另行覆盖根分区标签。主机名仍为 `sheng`，
 因此更新时请显式指定所选目标。
@@ -74,4 +58,4 @@ sudo nix run github:Murkiness4095/nixos-sheng#sheng-efi-migrate -- --flake "$PWD
 
 EFI 世代启动并自动挂载 `/efi` 后，日常更新用
 `sudo nixos-rebuild boot --flake .#sheng-dual-efi`。单系统将命令中的
-`sheng-dual-efi` 换成 `sheng-efi`。
+`sheng-dual-efi` 换成 `sheng`。

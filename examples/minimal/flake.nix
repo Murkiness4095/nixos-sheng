@@ -4,25 +4,14 @@
   inputs.nixos-sheng.url = "github:Murkiness4095/nixos-sheng";
 
   outputs = { nixos-sheng, ... }: {
-    # Default: standalone NixOS, root PARTLABEL=userdata.
-    # For dual boot, set partlabel = "linux" in configuration.nix, OR
-    # replace this definition with the commented alternative below.
-    nixosConfigurations.sheng = nixos-sheng.lib.shengSystem {
+    # Single system: userdata root and the sheng-esp partition mounted at /efi.
+    nixosConfigurations.sheng = nixos-sheng.nixosConfigurations.sheng-efi-generations.extendModules {
       modules = [ ./configuration.nix ];
     };
 
-    nixosConfigurations.sheng-efi = nixos-sheng.nixosConfigurations.sheng-efi-generations.extendModules {
-      modules = [ ./configuration.nix ];
-    };
+    # Android/NixOS dual boot: use #sheng-dual-efi and keep userdata for Android.
     nixosConfigurations.sheng-dual-efi = nixos-sheng.nixosConfigurations.sheng-dual-efi-generations.extendModules {
       modules = [ ./configuration.nix ];
     };
-
-    # Dual-system alternative; do not define the same output twice.
-    # Inherits PARTLABEL=linux; configuration.nix overrides the hostname.
-    # nixosConfigurations.sheng =
-    #   nixos-sheng.nixosConfigurations.sheng-dual.extendModules {
-    #     modules = [ ./configuration.nix ];
-    #   };
   };
 }
