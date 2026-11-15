@@ -8,6 +8,11 @@ on:
       - "tests/systemd-boot-generations.nix"
   workflow_dispatch:
     inputs:
+      esp_size_mib:
+        description: ESP image size for install-bundle (MiB)
+        type: choice
+        default: "1024"
+        options: ["512", "1024"]
       layout:
         description: Root layout for the hardware generation closure
         type: choice
@@ -40,6 +45,7 @@ jobs:
       - name: Build matching rootfs, ESP and U-Boot images
         env:
           LAYOUT: ${{ matrix.layout }}
+          ESP_SIZE_MIB: ${{ inputs.esp_size_mib || (matrix.layout == 'single' && '512' || '1024') }}
         run: |
           set -euo pipefail
           case "$LAYOUT" in
@@ -47,10 +53,15 @@ jobs:
             dual) config=sheng-dual-efi-install; root=linux ;;
             *) exit 1 ;;
           esac
+          case "$ESP_SIZE_MIB" in
+            512) esp_image=shengEspImage ;;
+            1024) esp_image=shengEspImage1GiB ;;
+            *) exit 1 ;;
+          esac
           system=".#nixosConfigurations.$config.config"
           test "$(nix eval --raw "$system.sheng.rootfs.partlabel")" = "$root"
           nix build -L "$system.system.build.shengImage" -o result-root
-          nix build -L "$system.system.build.shengEspImage" -o result-esp
+          nix build -L "$system.system.build.$esp_image" -o result-esp
           nix build -L ".#u-boot-efi-internal-$LAYOUT" -o result-uboot
           mkdir bundle
           zstd -T0 -3 result-root/sheng-rootfs.sparse.img -o bundle/sheng-rootfs.sparse.img.zst
@@ -58,6 +69,7 @@ jobs:
           {
             printf 'layout=%s\nroot_partlabel=%s\nesp_partlabel=sheng-esp\nconfiguration=%s\n' "$LAYOUT" "$root" "$config"
             printf 'revision=%s\n' "$(git rev-parse HEAD)"
+            printf 'esp_size_mib=%s\nesp_logical_sector_bytes=4096\n' "$ESP_SIZE_MIB"
             printf 'system=%s\n' "$(nix eval --raw "$system.system.build.toplevel.outPath")"
           } > bundle/manifest.txt
           (cd bundle && sha256sum boot.img sheng-esp.sparse.img sheng-rootfs.sparse.img.zst flake.lock manifest.txt > SHA256SUMS)

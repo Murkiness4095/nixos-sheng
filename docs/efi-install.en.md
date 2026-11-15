@@ -74,13 +74,13 @@ restore the original image to the same `boot_b` from ABL fastboot.
 ## Fresh installation: boot directly into EFI
 
 Run **EFI experiments** with `task=install-bundle` and select `layout=single`
-or `layout=dual`. Download `boot.img`, `sheng-rootfs.sparse.img.zst`, and
+or `layout=dual`. Set `esp_size_mib` to 512 or 1024, with 1024 as the default. Download `boot.img`, `sheng-rootfs.sparse.img.zst`, and
 `sheng-esp.sparse.img` from the same artifact. Run `sha256sum -c SHA256SUMS`,
 then check the layout and root partition label in `manifest.txt`. ARM CI
-built both bundles. Direct first boot from the complete bundle has not been
+built both bundles. Direct first boot on a full single-system layout has not been
 tested on hardware. For the tested path, install extlinux and migrate as above.
 
-1. Reserve a separate EFI System Partition of at least 512 MiB with GPT
+1. Reserve a separate EFI System Partition at least as large as the ESP image with GPT
    partition label `sheng-esp`. For single system, leave room outside
    `userdata` before first boot grows the root filesystem. For dual boot,
    follow the [dual-boot guide](dual-boot.en.md), preserve Android slot A and
@@ -102,3 +102,19 @@ Use a known-good generation or temporary ABL boot for recovery. If the
 internal EFI fallback file is missing, U-Boot tries the root image's
 extlinux rescue entry. Restoring the boot image alone does not require
 erasing the root filesystem.
+
+Single-system hardware testing used a 476.9 GiB `userdata` and a 512 MiB
+ESP on a dual-boot GPT. The original bundle exposed a FAT sector-size
+mismatch and a generation path issue. After applying the fixes manually,
+the seed EFI entry booted, the root filesystem grew to about 448 GiB
+available, and the regular generation 1 entry booted on the next restart.
+The full single-system GPT was checked offline. Community testers can
+report results for that layout in GitHub Issues. Include the device
+capacity, CI artifact, post-boot free space, generation handoff, update,
+rollback, and rescue results.
+
+A 1 GiB ESP is recommended even on a 128 GB device. The system profile
+and closures live on the root partition. The ESP holds boot entries and
+copies of the kernel, initrd, and DTB. If you change kernels frequently,
+set `boot.loader.systemd-boot.configurationLimit` to limit the number of
+generations shown in the menu, and check free space with `df -h /efi`.
