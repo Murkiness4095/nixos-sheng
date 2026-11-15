@@ -36,14 +36,16 @@
     "nixos-sheng": {
       "inputs": {
         "nixpkgs": "nixpkgs",
+        "u-boot-efi-internal-src": "u-boot-efi-internal-src",
+        "u-boot-efi-src": "u-boot-efi-src",
         "u-boot-src": "u-boot-src"
       },
       "locked": {
-        "lastModified": 1794312554,
-        "narHash": "sha256-9HWNxMhDQ/Py7GL7Dfa8HwyFmI7CQseGup2CTfMJbNo=",
+        "lastModified": 1794769514,
+        "narHash": "sha256-c6akKigan1GtUpLZzhF5AalgKIJtTJs5CehysnfIOiQ=",
         "owner": "Murkiness4095",
         "repo": "nixos-sheng",
-        "rev": "86d86a02d47370ac153aec91bf7cf3670140d142",
+        "rev": "fc869fc1dde3d3f2b1a2ca0414f42dee39b17910",
         "type": "github"
       },
       "original": {
@@ -90,18 +92,52 @@
         "nixos-sheng": "nixos-sheng"
       }
     },
+    "u-boot-efi-internal-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794729095,
+        "narHash": "sha256-Mvca8TX/fG2DsCzcUJTVr9ihXke8T/dPukvJayXhmQw=",
+        "owner": "Murkiness4095",
+        "repo": "u-boot",
+        "rev": "adabd4b4365cdf2c3b3dde63c4aca390d610b56c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Murkiness4095",
+        "repo": "u-boot",
+        "rev": "adabd4b4365cdf2c3b3dde63c4aca390d610b56c",
+        "type": "github"
+      }
+    },
+    "u-boot-efi-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794582309,
+        "narHash": "sha256-cEo0v9jV5k7AvpRNHCLOMAvAWfOlYrUaJEVoknJl3qY=",
+        "owner": "Murkiness4095",
+        "repo": "u-boot",
+        "rev": "5d7445dfb0551aec8a3e2ad23367cabe5695351a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Murkiness4095",
+        "repo": "u-boot",
+        "rev": "5d7445dfb0551aec8a3e2ad23367cabe5695351a",
+        "type": "github"
+      }
+    },
     "u-boot-src": {
       "flake": false,
       "locked": {
         "lastModified": 1787502608,
         "narHash": "sha256-Y1TQnXczQivmn05qCRvHygjinBy/I553u//aJCHb7Gc=",
-        "owner": "SushyDev",
+        "owner": "Murkiness4095",
         "repo": "u-boot",
         "rev": "7025b792e2884c5fb4747d891e30002ea029048a",
         "type": "github"
       },
       "original": {
-        "owner": "SushyDev",
+        "owner": "Murkiness4095",
         "ref": "xiaomi-sheng",
         "repo": "u-boot",
         "type": "github"

@@ -11,6 +11,13 @@
       modules = [ ./configuration.nix ];
     };
 
+    nixosConfigurations.sheng-efi = nixos-sheng.nixosConfigurations.sheng-efi-generations.extendModules {
+      modules = [ ./configuration.nix ];
+    };
+    nixosConfigurations.sheng-dual-efi = nixos-sheng.nixosConfigurations.sheng-dual-efi-generations.extendModules {
+      modules = [ ./configuration.nix ];
+    };
+
     # Dual-system alternative; do not define the same output twice.
     # Inherits PARTLABEL=linux; configuration.nix overrides the hostname.
     # nixosConfigurations.sheng =

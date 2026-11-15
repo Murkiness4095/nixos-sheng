@@ -4,6 +4,13 @@
     modules = [ self.nixosModules.node-sheng ];
   };
 
+  flake.nixosConfigurations.sheng-efi = inputs.nixos-sheng.nixosConfigurations.sheng-efi-generations.extendModules {
+    modules = [ self.nixosModules.node-sheng ];
+  };
+  flake.nixosConfigurations.sheng-dual-efi = inputs.nixos-sheng.nixosConfigurations.sheng-dual-efi-generations.extendModules {
+    modules = [ self.nixosModules.node-sheng ];
+  };
+
   # Dual-system alternative: REPLACE the constructor above with this,
   # rather than defining the same output twice. See README.md.
   # flake.nixosConfigurations.sheng =

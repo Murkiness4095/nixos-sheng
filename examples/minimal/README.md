@@ -59,3 +59,21 @@ tmpfs 下仍需正确选择 `linux` 或 `userdata`，用于定位持久化 ext4�
 tmpfs 默认不绑定整个 `/home`；preservation 样板通过调用者提供的 `user` 按目录保留数据。
 如需完整 home，显式设置 `persistHome = true`。用户名、凭据和应用数据策略
 由个人配置决定，样板不保证覆盖所有应用。不要直接复用 x86 的整盘 disko 格式化配置。
+
+## 可选 EFI 启动
+
+默认目标 `.#sheng` 使用 extlinux。使用 EFI 时，单系统选 `.#sheng-efi`，
+根分区为 `userdata`。双系统选 `.#sheng-dual-efi`，根分区为 `linux`。
+不要在共享主机模块中另行覆盖根分区标签。主机名仍为 `sheng`，
+因此更新时请显式指定所选目标。
+
+首次切换时，先按 [EFI 安装与迁移指南](../../docs/efi-install.md) 准备
+`sheng-esp` 和对应的 U-Boot，再安装候选世代。例如双系统运行：
+
+```sh
+sudo nix run github:Murkiness4095/nixos-sheng#sheng-efi-migrate -- --flake "$PWD#sheng-dual-efi"
+```
+
+EFI 世代启动并自动挂载 `/efi` 后，日常更新用
+`sudo nixos-rebuild boot --flake .#sheng-dual-efi`。单系统将命令中的
+`sheng-dual-efi` 换成 `sheng-efi`。
