@@ -6,7 +6,16 @@
 先读 [AGENTS.md](../AGENTS.md)、[维护交接](HANDOVER.md)、[TODO](../TODO.md)、
 [外设实测矩阵](peripheral-validation.md)。历史记录不能覆盖当前源码和实机结果。
 
-## 2026-11-14 EFI 接续点
+## 2026-11-15 EFI 接续点
+
+- [PR #15](https://github.com/Murkiness4095/nixos-sheng/pull/15) 已合入混合世代迁移支持。
+  [PR #16](https://github.com/Murkiness4095/nixos-sheng/pull/16) 已合入内置 ESP 的双系统 U-Boot 候选，合并提交为 `332db31`。
+- 已通过 B 槽持久 EFI 冷启动、世代更新及回滚、extlinux 回退，以及 A 槽 Android 和 OrangeFox 启动。
+  最后确认设备切回 B 槽 EFI 第 20 世代，根分区为 `linux`，`/efi` 自动挂载。实测和恢复顺序见 [EFI 记录](efi-probe.md)。
+- 双系统 GPT 上的 `userdata` 已证明单系统配置可启动和回滚，该分区随后恢复给 Android。
+  剩余验收针对全新单系统布局：ESP 预留、首次扩容、可用容量及救援。优先用独立测试设备验证。
+
+## 2026-11-14 EFI 历史快照
 
 - 单、双系统临时 EFI 已通过，单系统两代已分别在真机启动。标准安装器在 VM 及平板临时 FAT ESP 上通过两代更新与回滚。RAM FAT32 已实机加载完整 Linux。详见 [EFI 实测记录](efi-probe.md)。
 - 最后一次串口确认平板回到 extlinux 第 18 世代，根后端为 `linux`。测试经 B 槽 ABL 临时启动，未调整实际 GPT 或刷写 boot 分区。重新接手时复核槽位、PARTLABEL、系统路径和可用控制通道。
