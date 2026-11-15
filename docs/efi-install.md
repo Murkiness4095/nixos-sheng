@@ -48,8 +48,27 @@ ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配�
    EFI 世代启动后会自动挂载 `/efi`。日常更新直接运行 `nixos-rebuild boot`。
    重启验证更新，再运行 `sudo nixos-rebuild boot --rollback` 并重启，确认上一代可用。
    临时测试的每次启动都需要重新加载候选镜像。
-5. 双系统的持久部署已在 B 槽实测。确认临时启动通过、原 `boot_b`
-   备份可用，再从 ABL 只写 `boot_b`。单系统候选的验证使用临时启动。
+
+## 持久部署 U-Boot
+
+迁移工具安装的 EFI 文件会保存在 ESP。正常重启使用槽内的 U-Boot，
+所以要让正常重启进入 EFI，还需把通过临时启动验证的同一镜像写入 Linux 槽。
+
+- 双系统的 B 槽持久部署已实测。使用双系统产物，仅写 `boot_b`。
+- 单系统使用单系统产物。以下 B 槽步骤适用于已用 B 槽临时启动并确认
+  根分区为 `userdata` 的设备。单系统候选已实测临时启动和回滚，
+  持久写入后的冷启动尚无实测记录。
+
+确认原 `boot_b` 的备份可以恢复，在 ABL fastboot 中核对设备和槽位。
+只有 `fastboot getvar current-slot` 显示 `b` 时才继续。
+
+```sh
+fastboot flash boot_b boot.img
+fastboot reboot
+```
+
+正常启动后用 `bootctl status` 和 `findmnt /efi` 确认 EFI 启动及 ESP 挂载。
+如需恢复，从 ABL 将原镜像写回同一个 `boot_b`。
 
 ## 全新安装
 

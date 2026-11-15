@@ -47,9 +47,29 @@ the EFI U-Boot image.
    system mounts `/efi` automatically. Verify an update with
    `nixos-rebuild boot` and a rollback with `sudo nixos-rebuild boot --rollback`,
    rebooting after each. Reload the candidate at each temporary boot.
-5. Persistent dual-boot deployment was tested by writing only `boot_b` after
-   temporary boot passed and the original `boot_b` backup was verified. The
-   single-system candidate was tested using temporary boot.
+
+## Persist U-Boot in the boot slot
+
+The EFI files are stored on the ESP. A normal reboot uses the U-Boot image
+installed in the boot slot. Use the same image that passed temporary boot.
+
+- Dual boot was tested with the dual-system image written only to `boot_b`.
+- For a single system, use the single-system image. The slot B steps below
+  apply after verifying temporary boot from B with `userdata` as the root
+  partition. Single-system temporary boot and rollback have been tested.
+  Cold boot after persistent flashing has yet to be tested on that layout.
+
+Verify the original `boot_b` backup is recoverable. In ABL fastboot, check
+that you have the right device and that `fastboot getvar current-slot` reports
+`b` before writing.
+
+```sh
+fastboot flash boot_b boot.img
+fastboot reboot
+```
+
+After normal boot, check `bootctl status` and `findmnt /efi`. To revert,
+restore the original image to the same `boot_b` from ABL fastboot.
 
 ## Fresh installation
 
