@@ -534,3 +534,25 @@ A 槽 OrangeFox R12.0 启动通过，ADB 报告 recovery 和槽位 `_a`。
 `sys.boot_completed=1`、`ro.boot.slot_suffix=_a` 和版本
 `OS3.0.304.0.WNXCNXM`。通过 ABL 切回 B 槽并正常重启，
 串口再次确认 EFI 第 20 世代、`linux` 根和 `/efi` 自动挂载。
+
+### 迁移和恢复顺序
+
+现有双系统从正常工作的 extlinux 世代开始。先确认当前在 B 槽、根后端为
+`linux`，并备份原 `boot_b` 和现有 ESP。确认 `sheng-esp` 是独立的
+GPT EFI System 分区，使用 FAT32。实验容量为 512 MiB。没有空闲区间时，
+先按上文的离线缩容预检核对空间和恢复条件。
+
+保留原 extlinux 世代和 `/boot` 下的 DTB，构建包含原有桌面和账户配置的
+EFI 世代。第一次从 extlinux 安装 EFI 条目时，先把正确的 ESP 挂到
+`/efi`。在 ABL 的 B 槽用 `fastboot boot` 验证候选，确认根分区、
+运行系统和 ESP 自动挂载，再验证世代更新及回滚。持久部署只写
+`boot_b`。双系统通用刷写脚本的目标不适用于这一迁移。
+
+EFI 世代出问题时，先尝试从 systemd-boot 选择上一个 EFI 世代。
+引导文件缺失时，已验证的 U-Boot 会回退到 extlinux 并提供 ABL fastboot
+入口。若需撤销持久部署，从 ABL 核对设备和 B 槽后恢复原 `boot_b`，
+再正常启动已知可用的 extlinux 世代。引导镜像回退不需要擦除根分区。
+
+全新单系统 EFI 安装应在首次扩容前为 ESP 留出独立的 GPT 区间，
+根分区使用 `userdata`。现有真机结果来自双系统 GPT 上的 `userdata`，
+完整单系统布局的首启扩容和可用容量仍待验收。
