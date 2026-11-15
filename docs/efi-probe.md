@@ -497,3 +497,13 @@ profile 兼容问题仍待解决；本次隔离 profile 是验证环境。未刷
 `userdata` profile 切回第 3 世代并正常重启。SSH 确认原 extlinux
 第 19 世代恢复，`/run/booted-system` 路径前缀为
 `4rlgh92kzda3vhpc1m5wh64y5wbghan7`，USB ACM 重新枚举。
+
+### 独立 U-Boot 内置 ESP 候选
+
+[ARM CI 43691925855](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43691925855)
+构建了 U-Boot `adabd4b4365cdf2c3b3dde63c4aca390d610b56c` 的双系统镜像。
+`boot.img` SHA256 为 `50a7bacffdae8938688ba59a1fe4be3c55be1e58dc111886df913cb7c7f51466`。
+从 B 槽 ABL 临时启动后，串口确认 EFI 第 20 世代、`linux` 根和 `/efi` 自动挂载。
+临时移开 `BOOTAA64.EFI` 后再次加载同一镜像，串口确认回退到非 EFI 第 19
+世代。随后通过 SSH 恢复 EFI 文件。此次验证了缺失 EFI 文件的回退。
+整个 ESP 缺失、U-Boot 菜单的 ABL 救援入口和持久刷写仍待用最终候选验收。

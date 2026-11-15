@@ -301,6 +301,9 @@
             u-boot-efi-internal-dual = self.packages.${target}.u-boot-efi-probe.override {
               efiInternal = true;
             };
+            u-boot-efi-internal-missing-esp = self.packages.${target}.u-boot-efi-internal-dual.override {
+              efiEspLabel = "sheng-esp-absent";
+            };
             mdss-test-module = pkgs.callPackage ./packages/kernel/mdss-test-module { };
           }
           // pkgs.shengPackages
