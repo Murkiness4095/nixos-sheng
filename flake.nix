@@ -308,6 +308,9 @@
               version = u-boot-efi-internal-src.shortRev;
               efiInternal = true;
             };
+            u-boot-efi-internal-single = self.packages.${target}.u-boot-efi-internal-dual.override {
+              rootPartition = "userdata";
+            };
             u-boot-efi-internal-missing-esp = self.packages.${target}.u-boot-efi-internal-dual.override {
               efiEspLabel = "sheng-esp-absent";
             };

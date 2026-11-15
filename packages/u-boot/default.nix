@@ -93,15 +93,11 @@ assert !efiAutoBoot || (efiProbe && rootPartition == "userdata");
     postPatch = (old.postPatch or "") + lib.optionalString efiAutoBoot ''
       substituteInPlace board/qualcomm/sheng.env \
         --replace-fail "bootcmd=bootmenu 10" "bootcmd=run efi_probe_systemd; reset"
-    '';
-  } // lib.optionalAttrs (rootPartition != "userdata") {
-    # Keep the existing single-system environment byte-for-byte unchanged.
-    # Both normal/menu loading and the rescue path must select the same root.
-    postPatch = (old.postPatch or "") + lib.optionalString efiInternal ''
+    '' + lib.optionalString efiInternal ''
       printf '\nsheng_boot_internal_efi=yes\n' >> board/qualcomm/sheng.env
       substituteInPlace board/qualcomm/sheng.env \
         --replace-fail "part number scsi 0 sheng-esp espnum" "part number scsi 0 ${efiEspLabel} espnum"
-    '' + ''
+    '' + lib.optionalString (rootPartition != "userdata") ''
       substituteInPlace board/qualcomm/sheng.env \
         --replace-fail "part number scsi 0 userdata partnum" "part number scsi 0 ${rootPartition} partnum" \
         --replace-fail "root=PARTLABEL=userdata" "root=PARTLABEL=${rootPartition}"
