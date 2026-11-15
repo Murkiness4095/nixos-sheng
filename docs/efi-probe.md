@@ -506,4 +506,11 @@ profile 兼容问题仍待解决；本次隔离 profile 是验证环境。未刷
 从 B 槽 ABL 临时启动后，串口确认 EFI 第 20 世代、`linux` 根和 `/efi` 自动挂载。
 临时移开 `BOOTAA64.EFI` 后再次加载同一镜像，串口确认回退到非 EFI 第 19
 世代。随后通过 SSH 恢复 EFI 文件。此次验证了缺失 EFI 文件的回退。
-整个 ESP 缺失、U-Boot 菜单的 ABL 救援入口和持久刷写仍待用最终候选验收。
+另用 [ARM CI 43692902809](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43692902809)
+的对照镜像查询不存在的 `sheng-esp-absent` 标签，镜像 SHA256 为
+`06c5a570ed9aa4a06e63c71f34e69bbeea34b29c01b261fd724d64d06cae7965`。
+通过 B 槽临时加载后，串口确认回到非 EFI 第 19 世代。
+此对照保留真实 GPT，验证 ESP 查找失败时的回退。随后再次临时加载对照镜像
+并进行菜单救援测试。主机观察到 USB 断开后重新枚举为 fastboot，
+`is-userspace: no`、`current-slot: b`。正常重启后，串口确认恢复到
+extlinux 第 19 世代。持久刷写仍待验收。

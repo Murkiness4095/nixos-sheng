@@ -33,12 +33,12 @@ jobs:
         with:
           extra_nix_config: experimental-features = nix-command flakes
       - run: |
-          nix build -L .#u-boot-efi-internal-dual --override-input u-boot-efi-src github:Murkiness4095/u-boot/adabd4b4365cdf2c3b3dde63c4aca390d610b56c
+          nix build -L .#u-boot-efi-internal-dual
           strings result/u-boot.bin | grep -F 'sheng_boot_internal_efi=yes'
           strings result/u-boot.bin | grep -F 'bootefi_internal=' | grep -F 'part number scsi 0 linux partnum'
           sha256sum result/boot.img
       - run: |
-          nix build -L .#u-boot-efi-internal-missing-esp --override-input u-boot-efi-src github:Murkiness4095/u-boot/adabd4b4365cdf2c3b3dde63c4aca390d610b56c -o result-missing
+          nix build -L .#u-boot-efi-internal-missing-esp -o result-missing
           strings result-missing/u-boot.bin | grep -F 'part number scsi 0 sheng-esp-absent espnum'
           sha256sum result-missing/boot.img
       - uses: actions/upload-artifact@v4
