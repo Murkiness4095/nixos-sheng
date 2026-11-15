@@ -53,3 +53,30 @@
      # Garbage-collect stale kernels/initrds/entries before re-populating extra
      # files, so that user-supplied extraEntries (which may also live under
      # loader/entries and start with `nixos-`) are not removed again.
+@@ -660,8 +667,26 @@
+     )
+     args = parser.parse_args()
+ 
+     run([CHECK_MOUNTPOINTS])
++
++    # The generic NixOS check only proves that /efi is a mount point. On
++    # sheng, also reject a different filesystem mounted there before writing
++    # any boot files. Comparing device numbers follows the stable PARTLABEL
++    # symlink without depending on the volatile /dev/sdX name.
++    if EFI_SYS_MOUNT_POINT == Path("/efi"):
++        expected_esp = Path("/dev/disk/by-partlabel/sheng-esp")
++        try:
++            expected_device = expected_esp.stat().st_rdev
++        except FileNotFoundError:
++            sys.exit(f"The expected EFI system partition {expected_esp} does not exist")
++        mounted_device = EFI_SYS_MOUNT_POINT.stat().st_dev
++        if mounted_device != expected_device:
++            sys.exit(
++                f"{EFI_SYS_MOUNT_POINT} is not mounted from {expected_esp} "
++                f"(expected device {os.major(expected_device)}:{os.minor(expected_device)}, "
++                f"found {os.major(mounted_device)}:{os.minor(mounted_device)})"
++            )
+ 
+     try:
+         install_bootloader(args)
+     finally:
