@@ -38,6 +38,16 @@ jobs:
           strings result/u-boot.bin | grep -F 'bootefi_internal=' | grep -F 'part number scsi 0 linux partnum'
           sha256sum result/boot.img
       - run: |
+          nix build -L .#u-boot-efi-internal-single -o result-single
+          strings result-single/u-boot.bin | grep -F "sheng_boot_internal_efi=yes"
+          strings result-single/u-boot.bin | grep -F "bootefi_internal=" | grep -F "part number scsi 0 userdata partnum"
+          sha256sum result-single/boot.img
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sheng-efi-internal-single
+          path: result-single/boot.img
+          if-no-files-found: error
+      - run: |
           nix build -L .#u-boot-efi-internal-missing-esp -o result-missing
           strings result-missing/u-boot.bin | grep -F 'part number scsi 0 sheng-esp-absent espnum'
           sha256sum result-missing/boot.img
