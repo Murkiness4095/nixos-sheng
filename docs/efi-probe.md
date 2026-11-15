@@ -611,3 +611,20 @@ EFI 世代出问题时，先尝试从 systemd-boot 选择上一个 EFI 世代。
 rootfs 内存在的 init。两份 rootfs 均含 Nix store 注册文件和指向同一系统的
 extlinux 救援条目。完整系统路径、锁文件和镜像哈希随 CI 产物提供。
 此轮为离线检查，未刷写设备；首启后接管和实际刷写仍未用整套产物实测。
+
+## 全新 EFI 安装包真机验证
+
+首版安装包的 FAT32 扇区为 512 字节，平板 UFS 的逻辑扇区为 4096 字节，
+因此 EFI 启动失败后走了 extlinux 救援。将同一套启动文件放入 4096 字节
+扇区的 FAT32 镜像后，平板从 EFI 首启条目进入系统。安装器需要真实的
+Nix store 路径。手动传入该路径后生成正式第 1 世代，并验证该条目重启成功。
+
+测试使用双系统 GPT 上的 476.9 GiB `userdata` 和原有 512 MiB ESP，
+扩容后约 448 GiB 可用。测试后恢复共用 ESP，选回原 Niri 第 19 世代，
+并确认 Niri 会话运行。`boot_b` 的哈希与测试前一致。
+
+[PR #26](https://github.com/Murkiness4095/nixos-sheng/pull/26) 合入两处修正。
+[ARM CI 43739400196](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43739400196)
+构建了修正版单系统 512 MiB 和双系统 1 GiB 安装包，世代更新与回滚 VM
+测试也通过。全新安装请从当前主分支构建，旧的离线校验产物仅供查阅。
+修正版整包的自动接管、完整单系统 GPT 和双系统整包首启等待社区反馈。
