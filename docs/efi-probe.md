@@ -463,3 +463,22 @@ profile 兼容问题仍待解决；本次隔离 profile 是验证环境。未刷
 回滚 profile 后第一次运行安装器因 `/efi` 未挂载而退出；手动挂载
 `sheng-esp` 后安装成功，临时启动验证回到第一个 EFI 候选 `d21qw61lmxi6`。
 此次未刷写启动分区。自动挂载和双系统混合 profile 仍待验收。
+
+### 双系统混合 profile 与 ESP 自动挂载
+
+2026-11-15，使用提交 `7e991190fec43574d130390b9be87ba81391ae58` 的
+[ARM 闭包 43683536016](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43683536016)
+及上述双系统临时 U-Boot。闭包 SHA256 为
+`1e3ae3e36e6156bd4d76951a1dbb2557a699af388dfc22467e294b7b297825db`。
+[VM 回归 43683532411](https://github.com/Murkiness4095/nixos-sheng/actions/runs/43683532411) 通过。
+
+安装器在 `/efi` 未挂载时退出。挂载命名空间内将 tmpfs 挂到 `/efi` 时，
+安装器指出设备不匹配并退出，tmpfs 保持为空。随后备份真实 ESP，从
+`linux` 上第 19 世代的实际 profile 安装 EFI 第 20 世代
+（系统路径前缀 `cr84czq4n6ca25k7kv8xgxf4bmjjxmc4`）。
+经 B 槽临时启动后，串口确认 EFI 启动且 `/efi` 自动挂载。直接运行标准安装器
+`switch-to-configuration boot` 安装第 21 世代
+（`7xi9ca5fpmrhj959fn7v9rsrp7r7jf27`），再次临时启动并核对运行路径。
+用 `nix-env --rollback` 回到第 20 世代，标准安装器更新条目后再次启动验证。
+最后把 profile 切回第 19 世代并正常重启，串口确认进入原 extlinux 系统
+（`4rlgh92kzda3vhpc1m5wh64y5wbghan7`）。未写入启动分区或 GPT。
