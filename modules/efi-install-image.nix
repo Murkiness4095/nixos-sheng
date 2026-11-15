@@ -8,9 +8,7 @@ let
   initrd = "${system}/initrd";
   dtb = "${config.hardware.deviceTree.package}/qcom/sm8550-xiaomi-sheng.dtb";
   loader = "${lib.getLib config.systemd.package}/lib/systemd/boot/efi/systemd-bootaa64.efi";
-in
-{
-  system.build.shengEspImage = pkgs.runCommand "sheng-efi-install-esp" {
+  mkEspImage = sizeMiB: pkgs.runCommand "sheng-efi-install-esp-${toString sizeMiB}m" {
     nativeBuildInputs = [ pkgs.dosfstools pkgs.mtools pkgs.android-tools ];
   } ''
     mkdir -p "$out" esp/EFI/BOOT esp/loader/entries esp/sheng-install
@@ -23,14 +21,22 @@ in
       'initrd /sheng-install/initrd' 'devicetree /sheng-install/sheng.dtb' \
       "options init=${system}/init $(cat ${system}/kernel-params)" \
       > esp/loader/entries/sheng-install.conf
-    truncate -s 512M esp.img
-    mkfs.fat -F 32 -n SHENGEFI esp.img
+    truncate -s ${toString sizeMiB}M esp.img
+    # sheng's UFS exposes 4096-byte logical sectors. A FAT BPB with
+    # 512-byte sectors passes file-based fsck but cannot mount on-device.
+    mkfs.fat -F 32 -S 4096 -s 1 -n SHENGEFI esp.img
+    read -r sectorLow sectorHigh < <(od -An -j 11 -N 2 -tu1 esp.img)
+    test "$((sectorLow + 256 * sectorHigh))" -eq 4096
     mcopy -i esp.img -s esp/* ::/
     fsck.fat -vn esp.img
     mcopy -i esp.img ::/loader/entries/sheng-install.conf verify.conf
     cmp esp/loader/entries/sheng-install.conf verify.conf
     img2simg esp.img "$out/sheng-esp.sparse.img"
   '';
+in
+{
+  system.build.shengEspImage = mkEspImage 512;
+  system.build.shengEspImage1GiB = mkEspImage 1024;
 
   # Retry on later boots if generation installation fails. Do not remove
   # the seed files until the standard installer has successfully run.
@@ -45,7 +51,7 @@ in
       if [ -e /nix-path-registration ]; then
         exit 1
       fi
-      ${config.system.build.installBootLoader} /run/current-system
+      ${config.system.build.installBootLoader} "$(readlink -f /run/current-system)"
       rm -f /efi/loader/entries/sheng-install.conf
       rm -rf /efi/sheng-install
     '';

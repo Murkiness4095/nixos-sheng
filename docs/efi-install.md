@@ -74,12 +74,12 @@ fastboot reboot
 ## 全新安装：直接从 EFI 首启
 
 **EFI experiments** 工作流选择 `task=install-bundle`，并选择 `layout=single`
-或 `layout=dual`。下载同一产物中的 `boot.img`、`sheng-rootfs.sparse.img.zst`
+或 `layout=dual`。用 `esp_size_mib` 选 512 或 1024 MiB，默认 1024。下载同一产物中的 `boot.img`、`sheng-rootfs.sparse.img.zst`
 和 `sheng-esp.sparse.img`。先运行 `sha256sum -c SHA256SUMS`，然后核对
-`manifest.txt` 的布局和根分区标签。两套 ARM 产物均已通过 CI 构建；整套镜像
+`manifest.txt` 的布局和根分区标签。完整单系统布局上的整套镜像
 的直接首启还没有真机验证。需要已验证路径时，先装 extlinux，再按上节迁移。
 
-1. 按目标设备 GPT 预留至少 512 MiB 的独立 EFI System Partition，GPT 分区名为
+1. 按目标设备 GPT 预留与镜像同样大或更大的独立 EFI System Partition，GPT 分区名为
    `sheng-esp`。单系统给 `userdata` 留出 ESP 空间，须在 rootfs 首启扩容前完成；
    双系统按[双系统指南](dual-boot.md)保留 Android A 槽和 Recovery，并在
    `linux` 之外留出 ESP。不要照抄其他设备的扇区号。
@@ -94,3 +94,15 @@ fastboot reboot
 
 遇到无法启动的问题，优先用现有可用世代或 ABL 临时启动救援。内置 EFI 文件缺失时，
 U-Boot 会尝试 rootfs 里的 extlinux 救援条目。只恢复启动镜像不需要擦除 rootfs。
+
+单系统真机测试使用双系统 GPT 上的 476.9 GiB `userdata` 和现有 512 MiB
+ESP。首版产物暴露了 FAT 扇区大小和世代路径两个问题。手动应用对应修正后，
+从 EFI 首启条目启动成功，根文件系统扩容后约 448 GiB 可用，随后从正式第 1
+世代条目再次启动成功。完整单系统 GPT 已离线检查。欢迎在 GitHub Issues
+反馈完整单系统布局的实测结果，附上设备容量、CI 产物、首启容量和世代接管、
+更新、回滚及救援的结果。
+
+ESP 容量由保留的引导文件决定。128 GB 存储也建议预留 1 GiB。世代的
+profile 和系统闭包在根分区，ESP 保存启动条目以及内核、initrd 和 DTB 副本。
+经常更换内核时，可设置 `boot.loader.systemd-boot.configurationLimit`
+限制保留在菜单中的世代数，并用 `df -h /efi` 查看剩余容量。
