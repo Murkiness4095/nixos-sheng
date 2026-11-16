@@ -29,7 +29,7 @@ the EFI U-Boot image.
    formatted as FAT32. The test used 512 MiB. Size it for the generations you
    plan to keep and leave room for updates. If an existing ext4 filesystem
    must shrink, back it up and verify recovery, then shrink it offline before
-   shortening its GPT partition.
+   shortening its GPT partition. Follow [the ext4 preservation procedure](#make-room-while-preserving-ext4-data).
    If there is enough free space, use the free-space path under [Create the ESP](#create-sheng-esp-on-the-tablet). The fresh-install shrink procedure assumes that rootfs will be overwritten. Format only a verified, unmounted, newly created empty ESP. Keep the contents of an existing FAT32 ESP.
 
    ```sh
@@ -77,6 +77,92 @@ fastboot reboot
 
 After normal boot, check `bootctl status` and `findmnt --mountpoint /efi`. To revert,
 restore the original image to the same `boot_b` from ABL fastboot.
+
+### Make room while preserving ext4 data
+
+Use this procedure only for an offline, shrinkable ext4 filesystem in the
+last partition of its GPT. For single system, it must be NixOS `userdata`.
+For dual boot, it must be `linux`. Stop if the filesystem is Android F2FS,
+an encrypted volume, another filesystem type, or outside the last partition.
+Back up the data separately and verify that it can be restored. Run each
+block separately and stop on errors.
+
+Run as root in an offline Linux rescue environment on the tablet. Use a
+version of `e2fsck`, `tune2fs`, and `resize2fs` that supports the filesystem's
+features, plus the GPT tools listed below. The project tested e2fsprogs 1.47.4.
+Older recovery tools may lack support for those features.
+
+```sh
+# Set these from the verified device and layout.
+disk=/dev/REPLACE_ME
+root_num=REPLACE_ME
+root_label=REPLACE_ME  # userdata (single) or linux (dual)
+esp_mib=REPLACE_ME     # 512 or 1024
+case "$root_label" in userdata|linux) ;; *) exit 1 ;; esac
+case "$esp_mib" in 512|1024) ;; *) exit 1 ;; esac
+
+root=$(readlink -f "/dev/disk/by-partlabel/$root_label")
+test -b "$disk" && test -b "$root" || exit 1
+test "$(lsblk -dnro PKNAME "$root")" = "${disk##*/}" || exit 1
+test "$(lsblk -dnro PARTN "$root")" = "$root_num" || exit 1
+test "$(lsblk -dnro FSTYPE "$root")" = ext4 || exit 1
+test -z "$(lsblk -dnro MOUNTPOINTS "$root")" || exit 1
+
+LC_ALL=C sgdisk --print "$disk"
+LC_ALL=C sgdisk --info="$root_num" "$disk"
+```
+
+```sh
+# Run only after confirming root_num is the last partition by sector.
+# Keep the GPT backup on a separate device before continuing.
+sgdisk --backup=/tmp/sheng-gpt-before.bin "$disk"
+```
+
+```sh
+# Use the first and last sectors reported by sgdisk --info.
+root_start=REPLACE_ME
+root_end=REPLACE_ME
+sector_bytes=$(blockdev --getss "$disk")
+align=$((1048576 / sector_bytes))
+esp_sectors=$((esp_mib * 1048576 / sector_bytes))
+esp_start=$(( (root_end + 1 - esp_sectors) / align * align ))
+new_root_end=$((esp_start - 1))
+new_bytes=$(( (new_root_end - root_start + 1) * sector_bytes ))
+test "$new_bytes" -gt 1048576 || exit 1
+
+e2fsck -fn "$root" || exit 1
+fs_info=$(LC_ALL=C tune2fs -l "$root") || exit 1
+fs_block_size=$(printf '%s\n' "$fs_info" | awk '/^Block size:/ {print $3}')
+fs_blocks=$(printf '%s\n' "$fs_info" | awk '/^Block count:/ {print $3}')
+test "${fs_block_size:-0}" -gt 0 && test "${fs_blocks:-0}" -gt 0 || exit 1
+target_blocks=$(( (new_bytes - 1048576) / fs_block_size ))
+test "$target_blocks" -gt 0 || exit 1
+
+if [ "$fs_blocks" -gt "$target_blocks" ]; then
+  resize2fs "$root" "$target_blocks" || exit 1
+fi
+e2fsck -fn "$root" || exit 1
+fs_info=$(LC_ALL=C tune2fs -l "$root") || exit 1
+fs_blocks=$(printf '%s\n' "$fs_info" | awk '/^Block count:/ {print $3}')
+test "${fs_blocks:-0}" -gt 0 || exit 1
+test "$((fs_blocks * fs_block_size))" -lt "$new_bytes" || exit 1
+printf 'New root end: %s, filesystem bytes: %s, partition bytes: %s\n' \
+  "$new_root_end" "$((fs_blocks * fs_block_size))" "$new_bytes"
+```
+
+```sh
+parted "$disk" unit s resizepart "$root_num" "${new_root_end}s"
+sgdisk --verify "$disk"
+sgdisk --info="$root_num" "$disk"
+partprobe "$disk"
+```
+
+Run the final GPT change only after the filesystem checks have passed.
+Confirm Parted shows the intended partition. Verify the start and PARTUUID
+are unchanged and the end is `new_root_end`. Then use the free-space commands
+under [Create the ESP](#create-sheng-esp-on-the-tablet). Return to migration
+step 2, format only the new empty ESP, and install the EFI generation.
+Migration does not require flashing rootfs.
 
 ## Fresh installation: boot directly into EFI
 

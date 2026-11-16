@@ -31,7 +31,7 @@ ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配�
 2. 准备独立的 GPT EFI System 分区，标签为 `sheng-esp`，格式为 FAT32。
    512 MiB 是实测参考值，容量还要覆盖计划保留的内核、initrd 和更新余量。
    如果没有空闲区间，先备份并确认可恢复。已有 ext4 需要缩小时，
-   必须先离线缩小文件系统，再缩短其 GPT 分区。
+   按[保留 ext4 数据的缩容流程](#无空闲空间时保留-ext4-数据)先离线缩小文件系统，再缩短其 GPT 分区。
    有空闲空间时，按下文[创建 ESP](#在设备上创建-sheng-esp)的空闲空间分支执行。保留数据的迁移不能用全新安装的「允许覆盖根分区」步骤。仅对刚创建、标签已核对且未挂载的空分区格式化，已有 FAT32 ESP 请保留原内容。
 
    ```sh
@@ -77,6 +77,87 @@ fastboot reboot
 
 正常启动后用 `bootctl status` 和 `findmnt --mountpoint /efi` 确认 EFI 启动及 ESP 挂载。
 如需恢复，从 ABL 将原镜像写回同一个 `boot_b`。
+
+### 无空闲空间时保留 ext4 数据
+
+这个方案只适用于可以离线缩小的 ext4，而且根分区是所在 GPT 的最后一个分区。
+单系统只处理 NixOS 的 `userdata`，双系统只处理 `linux`。如果是 Android
+F2FS、加密卷、其他文件系统或根分区不是最后一个，请停下。先做独立的数据备份并
+验证可恢复。每个代码块分开执行，任何报错都应先排查。
+
+在平板的离线 Linux 救援环境以 root 执行。需要支持当前 ext4 特性的
+`e2fsck`、`tune2fs` 和 `resize2fs`，以及下文列出的 GPT 工具。
+本项目使用 e2fsprogs 1.47.4。旧 Recovery 的工具可能不支持该文件系统。
+
+```sh
+# Set these from the verified device and layout.
+disk=/dev/REPLACE_ME
+root_num=REPLACE_ME
+root_label=REPLACE_ME  # userdata (single) or linux (dual)
+esp_mib=REPLACE_ME     # 512 or 1024
+case "$root_label" in userdata|linux) ;; *) exit 1 ;; esac
+case "$esp_mib" in 512|1024) ;; *) exit 1 ;; esac
+
+root=$(readlink -f "/dev/disk/by-partlabel/$root_label")
+test -b "$disk" && test -b "$root" || exit 1
+test "$(lsblk -dnro PKNAME "$root")" = "${disk##*/}" || exit 1
+test "$(lsblk -dnro PARTN "$root")" = "$root_num" || exit 1
+test "$(lsblk -dnro FSTYPE "$root")" = ext4 || exit 1
+test -z "$(lsblk -dnro MOUNTPOINTS "$root")" || exit 1
+
+LC_ALL=C sgdisk --print "$disk"
+LC_ALL=C sgdisk --info="$root_num" "$disk"
+```
+
+```sh
+# Run only after confirming root_num is the last partition by sector.
+# Keep the GPT backup on a separate device before continuing.
+sgdisk --backup=/tmp/sheng-gpt-before.bin "$disk"
+```
+
+```sh
+# Use the first and last sectors reported by sgdisk --info.
+root_start=REPLACE_ME
+root_end=REPLACE_ME
+sector_bytes=$(blockdev --getss "$disk")
+align=$((1048576 / sector_bytes))
+esp_sectors=$((esp_mib * 1048576 / sector_bytes))
+esp_start=$(( (root_end + 1 - esp_sectors) / align * align ))
+new_root_end=$((esp_start - 1))
+new_bytes=$(( (new_root_end - root_start + 1) * sector_bytes ))
+test "$new_bytes" -gt 1048576 || exit 1
+
+e2fsck -fn "$root" || exit 1
+fs_info=$(LC_ALL=C tune2fs -l "$root") || exit 1
+fs_block_size=$(printf '%s\n' "$fs_info" | awk '/^Block size:/ {print $3}')
+fs_blocks=$(printf '%s\n' "$fs_info" | awk '/^Block count:/ {print $3}')
+test "${fs_block_size:-0}" -gt 0 && test "${fs_blocks:-0}" -gt 0 || exit 1
+target_blocks=$(( (new_bytes - 1048576) / fs_block_size ))
+test "$target_blocks" -gt 0 || exit 1
+
+if [ "$fs_blocks" -gt "$target_blocks" ]; then
+  resize2fs "$root" "$target_blocks" || exit 1
+fi
+e2fsck -fn "$root" || exit 1
+fs_info=$(LC_ALL=C tune2fs -l "$root") || exit 1
+fs_blocks=$(printf '%s\n' "$fs_info" | awk '/^Block count:/ {print $3}')
+test "${fs_blocks:-0}" -gt 0 || exit 1
+test "$((fs_blocks * fs_block_size))" -lt "$new_bytes" || exit 1
+printf 'New root end: %s, filesystem bytes: %s, partition bytes: %s\n' \
+  "$new_root_end" "$((fs_blocks * fs_block_size))" "$new_bytes"
+```
+
+```sh
+parted "$disk" unit s resizepart "$root_num" "${new_root_end}s"
+sgdisk --verify "$disk"
+sgdisk --info="$root_num" "$disk"
+partprobe "$disk"
+```
+
+缩容检查成功后，才运行最后一段修改 GPT，并确认 Parted 显示的是预期的分区。
+核对分区起点和 PARTUUID 与备份前一致，末扇区为 `new_root_end`，再使用下文
+[创建 ESP](#在设备上创建-sheng-esp)的空闲空间命令。完成后回到迁移第 2 步，
+只格式化新建的空 ESP，再安装 EFI 世代。整个迁移过程无需刷 rootfs。
 
 ## 全新安装：直接从 EFI 首启
 
