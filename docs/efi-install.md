@@ -73,6 +73,23 @@ fastboot reboot
 
 ## 全新安装：直接从 EFI 首启
 
+**原厂 GPT 没有 `sheng-esp`。先创建分区，再刷镜像。** 安装包提供 ESP
+的文件系统内容。刷写镜像不会在 GPT 中创建分区。现有 GPT 没有足够的未分配
+空间时，先备份并按实际布局腾出空间。确认 `sheng-esp` 存在且容量足够后，
+再开始刷写。
+
+```text
+检查 GPT → 创建并核对 sheng-esp → 解压 rootfs
+  → 刷 rootfs → 刷 ESP → 临时启动 boot.img
+  → 确认 systemd-boot 和正式世代 → 持久刷入启动槽
+```
+
+| 安装包文件 | 写入目标 |
+| --- | --- |
+| `sheng-rootfs.sparse.img.zst` | 在电脑上运行 `zstd -d sheng-rootfs.sparse.img.zst`。把解压出的 `sheng-rootfs.sparse.img` 写到单系统的 `userdata` 或双系统的 `linux`。 |
+| `sheng-esp.sparse.img` | 只写入已创建的 `sheng-esp`。ABL 未暴露该分区时，按下文使用 Recovery。 |
+| `boot.img` | 先在 ABL 用 `fastboot boot boot.img`。通过验证后写入确认过的 Linux 启动槽。已验证的双系统布局只写 `boot_b`。 |
+
 **EFI experiments** 工作流选择 `task=install-bundle`，并选择 `layout=single`
 或 `layout=dual`。用 `esp_size_mib` 选 512 或 1024 MiB，默认 1024。下载同一产物中的 `boot.img`、`sheng-rootfs.sparse.img.zst`
 和 `sheng-esp.sparse.img`。先运行 `sha256sum -c SHA256SUMS`，然后核对

@@ -73,6 +73,24 @@ restore the original image to the same `boot_b` from ABL fastboot.
 
 ## Fresh installation: boot directly into EFI
 
+**The stock GPT has no `sheng-esp` partition. Create it before flashing.**
+The bundle supplies the contents of the ESP. Flashing an image does not create
+a GPT partition. If the existing GPT has too little unallocated space, back up
+your data and make room according to the device's layout. Verify that
+`sheng-esp` exists and is large enough before flashing.
+
+```text
+Inspect GPT → create and verify sheng-esp → decompress rootfs
+  → flash rootfs → flash ESP → temporarily boot boot.img
+  → verify systemd-boot and the regular generation → flash the boot slot
+```
+
+| Bundle file | Destination |
+| --- | --- |
+| `sheng-rootfs.sparse.img.zst` | Run `zstd -d sheng-rootfs.sparse.img.zst` on the host. Flash the resulting `sheng-rootfs.sparse.img` to `userdata` for single system or `linux` for dual boot. |
+| `sheng-esp.sparse.img` | Write only to the ESP you created as `sheng-esp`. If ABL does not expose it, use Recovery as described below. |
+| `boot.img` | Run `fastboot boot boot.img` in ABL first. After validation, flash the verified Linux boot slot. The tested dual-boot layout uses only `boot_b`. |
+
 Run **EFI experiments** with `task=install-bundle` and select `layout=single`
 or `layout=dual`. Set `esp_size_mib` to 512 or 1024, with 1024 as the default. Download `boot.img`, `sheng-rootfs.sparse.img.zst`, and
 `sheng-esp.sparse.img` from the same artifact. Run `sha256sum -c SHA256SUMS`,
