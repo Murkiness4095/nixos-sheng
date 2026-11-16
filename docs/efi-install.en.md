@@ -98,7 +98,7 @@ then check the layout and root partition label in `manifest.txt`. ARM CI
 built both bundles. Direct first boot on a full single-system layout has not been
 tested on hardware. For the tested path, install extlinux and migrate as above.
 
-1. Reserve a separate EFI System Partition at least as large as the ESP image with GPT
+1. Use the commands under “Create `sheng-esp` on the tablet” below. Reserve a separate EFI System Partition at least as large as the ESP image with GPT
    partition label `sheng-esp`. For single system, leave room outside
    `userdata` before first boot grows the root filesystem. For dual boot,
    follow the [dual-boot guide](dual-boot.en.md), preserve Android slot A and
@@ -115,6 +115,88 @@ tested on hardware. For the tested path, install extlinux and migrate as above.
    `bootctl list`: a regular NixOS generation should replace the seed entry.
    Install an update with `nixos-rebuild boot --flake /etc/nixos` and verify
    it boots before deploying U-Boot to the Linux boot slot identified above.
+
+### Create `sheng-esp` on the tablet
+
+Run these commands as root in an offline Linux rescue environment on the
+tablet with `lsblk`, `blockdev`, `sgdisk` (GPT fdisk), `parted`, and `partprobe`.
+Use Recovery only if it provides those tools. Unmount the target UFS
+partitions first. Do not run these commands against a disk on your PC.
+
+```sh
+lsblk -o PATH,TYPE,SIZE,PKNAME,PARTLABEL,PARTUUID,MOUNTPOINTS
+```
+
+Identify the parent disk of `userdata` for single system or of the existing
+`linux` partition for dual boot. If `linux` has yet to be created, prepare
+the dual-boot layout first and reserve room for the ESP. Replace
+`/dev/REPLACE_ME` with the verified **parent disk**, then copy the GPT
+backup to your PC or external storage. It contains only the partition table.
+
+```sh
+disk=/dev/REPLACE_ME
+test -b "$disk" || exit 1
+sgdisk --backup=/tmp/sheng-gpt-before.bin "$disk"
+sgdisk --print "$disk"
+parted -s "$disk" unit s print free
+```
+
+**If there is enough contiguous free space**, skip to the creation command
+below. **If there is no room**, the following procedure applies only to the
+last partition on that GPT when it will be overwritten by the fresh install:
+`userdata` for single system, or `linux` for dual boot. Confirm it is unmounted
+and its data can be discarded. On dual boot, leave Android's `userdata` alone.
+To preserve an existing ext4 filesystem, shrink it offline and verify that
+it fits the new boundary before shrinking the partition. Follow the migration
+path instead of using this fresh-install procedure.
+
+```sh
+# Replace both placeholders with integers from sgdisk --print on your device.
+root_num=REPLACE_ME
+root_end=REPLACE_ME
+esp_mib=1024  # Use 512 for the 512 MiB bundle.
+sector_bytes=$(blockdev --getss "$disk")
+align=$((1048576 / sector_bytes))
+esp_sectors=$((esp_mib * 1048576 / sector_bytes))
+esp_start=$(( (root_end + 1 - esp_sectors) / align * align ))
+new_root_end=$((esp_start - 1))
+printf 'New root end: %s, ESP start: %s\n' "$new_root_end" "$esp_start"
+```
+
+Check that the new end is after the start and that the resulting partition
+can hold the **expanded raw rootfs**. Run
+`parted "$disk" unit s resizepart "$root_num" "${new_root_end}s"` and confirm the
+shrink only if it shows the intended partition and boundary. This changes
+the GPT boundary. Flashing rootfs later replaces the original filesystem.
+If Parted reports an error, stop and inspect the table.
+
+```sh
+# Also start here if the disk already has free space. Match the bundle size.
+esp_mib=1024
+sector_bytes=$(blockdev --getss "$disk")
+align=$((1048576 / sector_bytes))
+if lsblk -nr -o PARTLABEL "$disk" | grep -Fxq sheng-esp; then exit 1; fi
+start=$(sgdisk --set-alignment="$align" --first-aligned-in-largest "$disk")
+free_end=$(sgdisk --end-of-largest "$disk")
+end=$((start + esp_mib * 1048576 / sector_bytes - 1))
+test "$start" -gt 0 && test "$end" -le "$free_end" || exit 1
+
+# Preview and check the name and boundaries of the one new partition.
+sgdisk --pretend --set-alignment="$align" --new="0:$start:$end" \
+  --typecode=0:EF00 --change-name=0:sheng-esp --print "$disk"
+# After checking, run without --pretend to save the new table.
+sgdisk --set-alignment="$align" --new="0:$start:$end" \
+  --typecode=0:EF00 --change-name=0:sheng-esp "$disk"
+sgdisk --verify "$disk"
+partprobe "$disk"
+lsblk -b -o PATH,SIZE,PARTLABEL,PARTTYPE "$disk"
+```
+
+If the kernel cannot reread the table, reboot into the rescue environment
+and check again. Verify there is exactly one `sheng-esp`, at least as large
+as the ESP image, with type `c12a7328-f81f-11d2-ba4b-00a0c93ec93b`. The
+`sheng-esp.sparse.img` already contains FAT32 and can be flashed as described
+above.
 
 Use a known-good generation or temporary ABL boot for recovery. If the
 internal EFI fallback file is missing, U-Boot tries the root image's

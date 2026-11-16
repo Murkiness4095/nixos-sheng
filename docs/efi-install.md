@@ -96,7 +96,7 @@ fastboot reboot
 `manifest.txt` 的布局和根分区标签。完整单系统布局上的整套镜像
 的直接首启还没有真机验证。需要已验证路径时，先装 extlinux，再按上节迁移。
 
-1. 按目标设备 GPT 预留与镜像同样大或更大的独立 EFI System Partition，GPT 分区名为
+1. 先按下方「在设备上创建 `sheng-esp`」的命令检查或创建分区。按目标设备 GPT 预留与镜像同样大或更大的独立 EFI System Partition，GPT 分区名为
    `sheng-esp`。单系统给 `userdata` 留出 ESP 空间，须在 rootfs 首启扩容前完成；
    双系统按[双系统指南](dual-boot.md)保留 Android A 槽和 Recovery，并在
    `linux` 之外留出 ESP。不要照抄其他设备的扇区号。
@@ -108,6 +108,81 @@ fastboot reboot
    并检查 `journalctl -b -u sheng-finish-efi-install` 和 `bootctl list`：
    首启条目应已换成正常的 NixOS 世代条目。之后用 `nixos-rebuild boot --flake /etc/nixos`
    更新，重启验证新世代，再部署到上文确认的 Linux 启动槽。
+
+### 在设备上创建 `sheng-esp`
+
+在平板的离线 Linux 救援环境运行以下命令，需要 `lsblk`、`blockdev`、
+`sgdisk`（GPT fdisk）、`parted` 和 `partprobe`。Recovery 只有在包含这些
+工具时才可直接使用。先卸载目标 UFS 上的分区。不要在 x86 电脑上对本机磁盘执行。
+
+```sh
+lsblk -o PATH,TYPE,SIZE,PKNAME,PARTLABEL,PARTUUID,MOUNTPOINTS
+```
+
+单系统从 `userdata` 找父盘，双系统从已准备好的 `linux` 找父盘。双系统
+若还没有 `linux`，先准备双系统布局，并在分配空间时预留 ESP。把下面的
+`/dev/REPLACE_ME` 换成刚核对的 **UFS 父盘**，不是分区设备；把 GPT 备份
+复制到电脑或外置盘。GPT 备份不包含分区数据。
+
+```sh
+disk=/dev/REPLACE_ME
+test -b "$disk" || exit 1
+sgdisk --backup=/tmp/sheng-gpt-before.bin "$disk"
+sgdisk --print "$disk"
+parted -s "$disk" unit s print free
+```
+
+**已有足够的连续空闲空间**，直接执行下面的创建命令。
+**没有空闲空间**时，仅对即将被全新安装覆盖、且是该 GPT 最后一个分区的
+`userdata`（单系统）或 `linux`（双系统）使用以下办法。确认该分区未挂载，
+数据已备份且允许丢弃，再缩短它的尾部。双系统不要对 Android 的 `userdata`
+执行这一步。若要保留现有文件系统，必须先离线缩小 ext4 并验证它能放进新边界，
+请走原地迁移，不要套用这段全新安装命令。
+
+```sh
+# 从 sgdisk --print 读取目标分区号和末扇区，不要照抄别人的数值。
+# 将下面两行的占位符换成实际整数。
+root_num=REPLACE_ME
+root_end=REPLACE_ME
+esp_mib=1024  # 使用 512 MiB 产物时改成 512
+sector_bytes=$(blockdev --getss "$disk")
+align=$((1048576 / sector_bytes))
+esp_sectors=$((esp_mib * 1048576 / sector_bytes))
+esp_start=$(( (root_end + 1 - esp_sectors) / align * align ))
+new_root_end=$((esp_start - 1))
+printf 'New root end: %s, ESP start: %s\n' "$new_root_end" "$esp_start"
+```
+
+先核对新末扇区仍大于根分区的起始扇区，且缩短后的根分区能容纳
+**展开后的 raw rootfs**。然后运行 `parted "$disk" unit s resizepart "$root_num" "${new_root_end}s"`，
+确认提示中的分区和边界正确后才接受缩小。这个操作改变 GPT 边界，后续刷 rootfs
+会覆盖原文件系统。若 `parted` 报错，停止并检查分区表。
+
+```sh
+# 已有空闲空间的设备也从这里开始。按产物选择 512 或 1024。
+esp_mib=1024
+sector_bytes=$(blockdev --getss "$disk")
+align=$((1048576 / sector_bytes))
+if lsblk -nr -o PARTLABEL "$disk" | grep -Fxq sheng-esp; then exit 1; fi
+start=$(sgdisk --set-alignment="$align" --first-aligned-in-largest "$disk")
+free_end=$(sgdisk --end-of-largest "$disk")
+end=$((start + esp_mib * 1048576 / sector_bytes - 1))
+test "$start" -gt 0 && test "$end" -le "$free_end" || exit 1
+
+# 先预览新增项，核对只有一个新分区、名称及边界正确。
+sgdisk --pretend --set-alignment="$align" --new="0:$start:$end" \
+  --typecode=0:EF00 --change-name=0:sheng-esp --print "$disk"
+# 核对后，去掉 --pretend 写入实际 GPT。
+sgdisk --set-alignment="$align" --new="0:$start:$end" \
+  --typecode=0:EF00 --change-name=0:sheng-esp "$disk"
+sgdisk --verify "$disk"
+partprobe "$disk"
+lsblk -b -o PATH,SIZE,PARTLABEL,PARTTYPE "$disk"
+```
+
+如果内核不能重读 GPT，重启回救援环境再检查。确认恰好一个 `sheng-esp`、
+大小不小于 ESP 镜像，类型为 `c12a7328-f81f-11d2-ba4b-00a0c93ec93b`，
+然后再刷安装包。`sheng-esp.sparse.img` 已含 FAT32，无需再格式化。
 
 遇到无法启动的问题，优先用现有可用世代或 ABL 临时启动救援。内置 EFI 文件缺失时，
 U-Boot 会尝试 rootfs 里的 extlinux 救援条目。只恢复启动镜像不需要擦除 rootfs。
