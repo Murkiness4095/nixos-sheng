@@ -16,7 +16,7 @@ This English overview links to the [full Chinese reference](./README.md) for com
 
 For an existing extlinux setup, use the matching extlinux target for routine updates.
 Example: `sudo nixos-rebuild boot --flake .#sheng-dual-extlinux` updates an existing dual-boot extlinux install.
- To move to EFI, prepare the ESP and U-Boot as described below.
+To move to EFI, prepare the ESP and U-Boot as described below.
 
 ## EFI boot
 
