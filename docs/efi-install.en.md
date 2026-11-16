@@ -10,13 +10,6 @@ Partition (ESP) with the GPT partition label `sheng-esp`.
 | Single system | `userdata` | `sheng-efi-generations` | `sheng-efi-internal-single` |
 | Dual boot | `linux` | `sheng-dual-efi-generations` | `sheng-efi-internal-dual` |
 
-**Choose the bundle size to match the actual partition.** The test tablet
-has a **512 MiB** ESP. The workflow defaults to a **1024 MiB (1 GiB)** ESP
-image, which does not fit that partition. Set `esp_size_mib=512` to reuse
-an existing 512 MiB ESP, or reserve at least 1 GiB for the default bundle.
-Check `esp_size_mib` in `manifest.txt`. In-place migration writes boot files
-and can reuse an existing ESP with enough free space without flashing an image.
-
 Run **EFI experiments** in GitHub Actions with `task=internal-esp`. Download
 `boot.img` from the matching artifact and verify its SHA-256 against the build log.
 See the [hardware validation records](efi-probe.md) for tested revisions.
@@ -175,7 +168,7 @@ path instead of using this fresh-install procedure.
 # Replace both placeholders with integers from sgdisk --print on your device.
 root_num=REPLACE_ME
 root_end=REPLACE_ME
-esp_mib=1024  # Use 512 for the 512 MiB bundle.
+esp_mib=REPLACE_ME  # 512 or 1024, matching manifest.txt
 sector_bytes=$(blockdev --getss "$disk")
 align=$((1048576 / sector_bytes))
 esp_sectors=$((esp_mib * 1048576 / sector_bytes))

@@ -158,7 +158,7 @@ parted -s "$disk" unit s print free
 # 将下面两行的占位符换成实际整数。
 root_num=REPLACE_ME
 root_end=REPLACE_ME
-esp_mib=1024  # 使用 512 MiB 产物时改成 512
+esp_mib=REPLACE_ME  # 按 manifest.txt 填 512 或 1024
 sector_bytes=$(blockdev --getss "$disk")
 align=$((1048576 / sector_bytes))
 esp_sectors=$((esp_mib * 1048576 / sector_bytes))
@@ -174,7 +174,7 @@ printf 'New root end: %s, ESP start: %s\n' "$new_root_end" "$esp_start"
 
 ```sh
 # 已有空闲空间的设备也从这里开始。按产物选择 512 或 1024。
-esp_mib=REPLACE_ME  # 512 or 1024, matching manifest.txt
+esp_mib=REPLACE_ME  # 按 manifest.txt 填 512 或 1024
 sector_bytes=$(blockdev --getss "$disk")
 align=$((1048576 / sector_bytes))
 if lsblk -nr -o PARTLABEL "$disk" | grep -Fxq sheng-esp; then exit 1; fi
