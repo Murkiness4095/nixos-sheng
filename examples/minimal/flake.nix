@@ -13,5 +13,13 @@
     nixosConfigurations.sheng-dual-efi = nixos-sheng.nixosConfigurations.sheng-dual-efi-generations.extendModules {
       modules = [ ./configuration.nix ];
     };
+
+    # Use these targets for regular images and existing extlinux installations.
+    nixosConfigurations.sheng-extlinux = nixos-sheng.nixosConfigurations.sheng.extendModules {
+      modules = [ ./configuration.nix ];
+    };
+    nixosConfigurations.sheng-dual-extlinux = nixos-sheng.nixosConfigurations.sheng-dual.extendModules {
+      modules = [ ./configuration.nix ];
+    };
   };
 }

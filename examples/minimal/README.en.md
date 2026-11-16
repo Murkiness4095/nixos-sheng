@@ -7,9 +7,20 @@ This English overview links to the [full Chinese reference](./README.md) for com
 
 [Optional tmpfs root](../../docs/initrd-tmpfs.en.md)
 
+## Select the target for your installation
+
+| Root partition | EFI bundle | Regular extlinux image |
+| --- | --- | --- |
+| Single system, `userdata` | `.#sheng` (default template target) | `.#sheng-extlinux` |
+| Dual boot, `linux` | `.#sheng-dual-efi` | `.#sheng-dual-extlinux` |
+
+For an existing extlinux setup, use the matching extlinux target for routine updates.
+Example: `sudo nixos-rebuild boot --flake .#sheng-dual-extlinux` updates an existing dual-boot extlinux install.
+To move to EFI, prepare the ESP and U-Boot as described below.
+
 ## EFI boot
 
-Both targets use systemd-boot. Select the default `.#sheng`
+The EFI targets use systemd-boot. Select the default `.#sheng`
 for single-system installations on `userdata`, or `.#sheng-dual-efi` for
 dual boot on `linux`. Leave the root partition label to the selected target.
 The hostname remains `sheng`, so pass the target explicitly when rebuilding.
