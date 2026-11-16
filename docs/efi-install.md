@@ -22,6 +22,8 @@ ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配�
 两种镜像的源码和实测记录见 [EFI 实测记录](efi-probe.md)。
 
 ## 已安装 extlinux 的设备
+**先确认设备目前具备哪些条件。** 原厂 GPT 没有 `sheng-esp`。迁移工具只会挂载并核对已有 ESP，再运行 `nixos-rebuild boot`。它不会创建或格式化分区，也不会刷写 U-Boot。若已经用 EFI 版 U-Boot 启动且 ESP 已准备好（例如从 EFI 菜单选了一个仍按 extlinux 配置更新的旧世代），从第 3 步开始。确认新世代默认启动即可，无需重复刷写启动槽。
+
 
 1. 确认运行系统的根分区和当前 A/B 槽位，备份当前启动镜像及已有 ESP。
    双系统按验证过的 Android A、Linux B 布局操作。保留可启动的 extlinux
@@ -30,13 +32,18 @@ ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配�
    512 MiB 是实测参考值，容量还要覆盖计划保留的内核、initrd 和更新余量。
    如果没有空闲区间，先备份并确认可恢复。已有 ext4 需要缩小时，
    必须先离线缩小文件系统，再缩短其 GPT 分区。
+   有空闲空间时，按下文[创建 ESP](#在设备上创建-sheng-esp)的空闲空间分支执行。保留数据的迁移不能用全新安装的「允许覆盖根分区」步骤。仅对刚创建、标签已核对且未挂载的空分区格式化，已有 FAT32 ESP 请保留原内容。
+
+   ```sh
+   sudo mkfs.fat -F 32 -S 4096 -s 1 /dev/disk/by-partlabel/sheng-esp
+   ```
 3. 在原主机配置上采用对应 EFI 配置的设置，保留账户、桌面及存储配置。
    参考仓库的 `sheng-efi-generations`，它启用 initrd、EFI stub 和
    systemd-boot 的 DTB 安装，并加入混合世代补丁及 `/efi` 自动挂载。
    推荐从当前 extlinux 系统用下面的命令安装首个 EFI 世代。
 
    ```sh
-   sudo nix run .#sheng-efi-migrate
+   sudo nix run github:Murkiness4095/nixos-sheng#sheng-efi-migrate
    ```
 
    如果平时用 `--flake <路径>#<主机名>` 更新，在命令末尾用 `-- --flake <路径>#<主机名>` 传入相同的路径和主机名。

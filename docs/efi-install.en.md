@@ -15,6 +15,8 @@ Run **EFI experiments** in GitHub Actions with `task=internal-esp`. Download
 See the [hardware validation records](efi-probe.md) for tested revisions.
 
 ## Migrate an extlinux installation
+The stock GPT has no `sheng-esp`. The migration tool mounts and verifies an existing ESP, then runs `nixos-rebuild boot`. Partition creation, formatting, and U-Boot flashing are separate steps. If you already boot through EFI-capable U-Boot and have a working ESP, start at step 3. This includes older generations launched from the EFI menu that still install updates through extlinux. Once the new generation boots by default, there is no need to flash the boot slot again.
+
 
 Flashing U-Boot alone cannot install systemd-boot or write entries for your
 NixOS generations. Prepare the ESP and install a generation before deploying
@@ -28,13 +30,18 @@ the EFI U-Boot image.
    plan to keep and leave room for updates. If an existing ext4 filesystem
    must shrink, back it up and verify recovery, then shrink it offline before
    shortening its GPT partition.
+   If there is enough free space, use the free-space path under [Create the ESP](#create-sheng-esp-on-the-tablet). The fresh-install shrink procedure assumes that rootfs will be overwritten. Format only a verified, unmounted, newly created empty ESP. Keep the contents of an existing FAT32 ESP.
+
+   ```sh
+   sudo mkfs.fat -F 32 -S 4096 -s 1 /dev/disk/by-partlabel/sheng-esp
+   ```
 3. Apply the settings from the matching EFI configuration to your own host
    configuration. Keep your existing users, desktop and storage settings.
    The reference enables initrd, the EFI stub, systemd-boot DTB installation,
    the mixed-generation patch and automatic ESP mounting. From extlinux, run:
 
    ```sh
-   sudo nix run .#sheng-efi-migrate
+   sudo nix run github:Murkiness4095/nixos-sheng#sheng-efi-migrate
    ```
 
    Append your usual flake and host as `-- --flake <path>#<host>` if applicable. This command mounts
