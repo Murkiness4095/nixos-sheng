@@ -15,7 +15,7 @@ Run **EFI experiments** in GitHub Actions with `task=internal-esp`. Download
 See the [hardware validation records](efi-probe.md) for tested revisions.
 
 ## Migrate an extlinux installation
-The stock GPT has no `sheng-esp`. The migration tool mounts and verifies an existing ESP, then runs `nixos-rebuild boot`. Partition creation, formatting, and U-Boot flashing are separate steps. If you already boot through EFI-capable U-Boot and have a working ESP, start at step 3. This includes older generations launched from the EFI menu that still install updates through extlinux. Once the new generation boots by default, there is no need to flash the boot slot again.
+The stock GPT has no `sheng-esp`. The migration tool mounts and verifies an existing ESP, then runs `nixos-rebuild boot`. Partition creation, formatting, and U-Boot flashing are separate steps. If EFI-capable U-Boot is already installed in the active Linux boot slot and you have a working ESP, start at step 3. This includes older generations launched from the EFI menu that still install updates through extlinux. After step 3, reboot normally and verify the new generation and ESP mount. Skip temporary boot and persistent flashing in this case.
 
 
 Flashing U-Boot alone cannot install systemd-boot or write entries for your
@@ -50,7 +50,7 @@ the EFI U-Boot image.
    before writing.
 4. Enter ABL fastboot and verify the device and slot. Temporarily load the
    matching image with `fastboot boot boot.img`. Check `bootctl status`,
-   `findmnt /`, `findmnt /efi` and `readlink -f /run/booted-system`. The EFI
+   `findmnt /`, `findmnt --mountpoint /efi` and `readlink -f /run/booted-system`. The EFI
    system mounts `/efi` automatically. Verify an update with
    `nixos-rebuild boot` and a rollback with `sudo nixos-rebuild boot --rollback`,
    rebooting after each. Reload the candidate at each temporary boot.
@@ -75,7 +75,7 @@ fastboot flash boot_b boot.img
 fastboot reboot
 ```
 
-After normal boot, check `bootctl status` and `findmnt /efi`. To revert,
+After normal boot, check `bootctl status` and `findmnt --mountpoint /efi`. To revert,
 restore the original image to the same `boot_b` from ABL fastboot.
 
 ## Fresh installation: boot directly into EFI
@@ -127,8 +127,64 @@ tested on hardware. For the tested path, install extlinux and migrate as above.
 3. In ABL, temporarily boot the bundled `boot.img`. Verify the root partition
    and `/efi` mount. Check `journalctl -b -u sheng-finish-efi-install` and
    `bootctl list`: a regular NixOS generation should replace the seed entry.
-   Install an update with `nixos-rebuild boot --flake /etc/nixos` and verify
+   Install an update with `sudo nixos-rebuild boot --flake /etc/nixos#<configuration>`, using the `configuration` value in the bundle manifest, and verify
    it boots before deploying U-Boot to the Linux boot slot identified above.
+
+### Commands for writing the images
+
+On your computer, verify the bundle and decompress the rootfs. Confirm
+`fastboot devices` lists only the tablet. Run **only the rootfs command for
+your layout**, and run the ESP flash command only if the bootloader exposes
+the partition and reports sufficient capacity.
+
+```sh
+sha256sum -c SHA256SUMS
+zstd -d sheng-rootfs.sparse.img.zst
+fastboot devices
+```
+
+Single system only:
+
+```sh
+fastboot flash userdata sheng-rootfs.sparse.img
+```
+
+Dual boot only:
+
+```sh
+fastboot flash linux sheng-rootfs.sparse.img
+```
+
+ESP only when exposed by fastboot:
+
+```sh
+fastboot getvar partition-size:sheng-esp
+fastboot flash sheng-esp sheng-esp.sparse.img
+```
+
+If fastboot cannot access the target partition, use an offline Linux
+rescue environment that can identify it by GPT label. Convert the applicable
+sparse image to raw on the computer first. For example, for the ESP:
+
+```sh
+simg2img sheng-esp.sparse.img sheng-esp.raw.img
+```
+
+Copy the raw image to the rescue environment using external storage or ADB
+where available. Run the block write **on the tablet**, after verifying the
+target is the unmounted ESP and the raw file fits. Never write to the parent disk.
+
+```sh
+lsblk -b -o PATH,TYPE,SIZE,PARTLABEL,PARTTYPE,MOUNTPOINTS
+esp=/dev/disk/by-partlabel/sheng-esp
+image=/path/to/sheng-esp.raw.img
+test -b "$esp" && test -f "$image" || exit 1
+test "$(lsblk -dnro PARTTYPE "$esp")" = c12a7328-f81f-11d2-ba4b-00a0c93ec93b || exit 1
+test "$(lsblk -dnro PARTLABEL "$esp")" = sheng-esp || exit 1
+test -z "$(lsblk -dnro MOUNTPOINTS "$esp")" || exit 1
+test "$(stat -c %s "$image")" -le "$(blockdev --getsize64 "$esp")" || exit 1
+dd if="$image" of="$esp" bs=4M conv=fsync
+```
 
 ### Create `sheng-esp` on the tablet
 

@@ -22,7 +22,7 @@ ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配�
 两种镜像的源码和实测记录见 [EFI 实测记录](efi-probe.md)。
 
 ## 已安装 extlinux 的设备
-**先确认设备目前具备哪些条件。** 原厂 GPT 没有 `sheng-esp`。迁移工具只会挂载并核对已有 ESP，再运行 `nixos-rebuild boot`。它不会创建或格式化分区，也不会刷写 U-Boot。若已经用 EFI 版 U-Boot 启动且 ESP 已准备好（例如从 EFI 菜单选了一个仍按 extlinux 配置更新的旧世代），从第 3 步开始。确认新世代默认启动即可，无需重复刷写启动槽。
+**先确认设备目前具备哪些条件。** 原厂 GPT 没有 `sheng-esp`。迁移工具只会挂载并核对已有 ESP，再运行 `nixos-rebuild boot`。它不会创建或格式化分区，也不会刷写 U-Boot。若当前 Linux 启动槽已持久装有 EFI 版 U-Boot，且 ESP 已准备好（例如从 EFI 菜单选了一个仍按 extlinux 配置更新的旧世代），从第 3 步开始。执行第 3 步后正常重启，核对新世代与 ESP 挂载即可。这种情况可跳过临时启动和持久刷写。
 
 
 1. 确认运行系统的根分区和当前 A/B 槽位，备份当前启动镜像及已有 ESP。
@@ -52,7 +52,7 @@ ESP 分区标签 `sheng-esp`，但根分区和 U-Boot 镜像必须按下表配�
    会跳过构建命令，已挂载但设备不对时迁移工具会在构建前报错。
 4. 进入 ABL fastboot，核对设备和槽位，以 `fastboot boot boot.img`
    临时加载对应的 U-Boot。进系统后用 `bootctl status`、`findmnt /`、
-   `findmnt /efi` 和 `readlink -f /run/booted-system` 核对结果。
+   `findmnt --mountpoint /efi` 和 `readlink -f /run/booted-system` 核对结果。
    EFI 世代启动后会自动挂载 `/efi`。日常更新直接运行 `nixos-rebuild boot`。
    重启验证更新，再运行 `sudo nixos-rebuild boot --rollback` 并重启，确认上一代可用。
    临时测试的每次启动都需要重新加载候选镜像。
@@ -75,7 +75,7 @@ fastboot flash boot_b boot.img
 fastboot reboot
 ```
 
-正常启动后用 `bootctl status` 和 `findmnt /efi` 确认 EFI 启动及 ESP 挂载。
+正常启动后用 `bootctl status` 和 `findmnt --mountpoint /efi` 确认 EFI 启动及 ESP 挂载。
 如需恢复，从 ABL 将原镜像写回同一个 `boot_b`。
 
 ## 全新安装：直接从 EFI 首启
@@ -120,8 +120,61 @@ fastboot reboot
    raw，再按 GPT 分区名核对目标后写入；不能直接用 `dd` 写 sparse 文件。
 3. 用包里的 `boot.img` 在 ABL 临时启动。确认根分区正确、`/efi` 已挂载，
    并检查 `journalctl -b -u sheng-finish-efi-install` 和 `bootctl list`：
-   首启条目应已换成正常的 NixOS 世代条目。之后用 `nixos-rebuild boot --flake /etc/nixos`
+   首启条目应已换成正常的 NixOS 世代条目。之后用 `sudo nixos-rebuild boot --flake /etc/nixos#<configuration>`（目标名用清单中的 `configuration`）
    更新，重启验证新世代，再部署到上文确认的 Linux 启动槽。
+
+### 镜像刷写命令
+
+在电脑上校验安装包并解压 rootfs。确认 `fastboot devices` 只列出目标平板。
+根分区刷写命令按布局**二选一**。只有 fastboot 能识别 ESP 且报告的容量足够时，
+才在 fastboot 下刷写 ESP。
+
+```sh
+sha256sum -c SHA256SUMS
+zstd -d sheng-rootfs.sparse.img.zst
+fastboot devices
+```
+
+仅单系统：
+
+```sh
+fastboot flash userdata sheng-rootfs.sparse.img
+```
+
+仅双系统：
+
+```sh
+fastboot flash linux sheng-rootfs.sparse.img
+```
+
+仅在 fastboot 暴露 ESP 时：
+
+```sh
+fastboot getvar partition-size:sheng-esp
+fastboot flash sheng-esp sheng-esp.sparse.img
+```
+
+如果 fastboot 无法访问目标分区，就进入能按 GPT 标签识别分区的离线 Linux
+救援环境。先在电脑上把要写的 sparse 镜像转换成 raw。以 ESP 为例：
+
+```sh
+simg2img sheng-esp.sparse.img sheng-esp.raw.img
+```
+
+通过外置存储或救援环境支持的 ADB 将 raw 文件传到平板。下面的命令在
+**平板救援环境**运行。先核对目标是未挂载的 ESP 且镜像能够放下，禁止写入 UFS 父盘。
+
+```sh
+lsblk -b -o PATH,TYPE,SIZE,PARTLABEL,PARTTYPE,MOUNTPOINTS
+esp=/dev/disk/by-partlabel/sheng-esp
+image=/path/to/sheng-esp.raw.img
+test -b "$esp" && test -f "$image" || exit 1
+test "$(lsblk -dnro PARTTYPE "$esp")" = c12a7328-f81f-11d2-ba4b-00a0c93ec93b || exit 1
+test "$(lsblk -dnro PARTLABEL "$esp")" = sheng-esp || exit 1
+test -z "$(lsblk -dnro MOUNTPOINTS "$esp")" || exit 1
+test "$(stat -c %s "$image")" -le "$(blockdev --getsize64 "$esp")" || exit 1
+dd if="$image" of="$esp" bs=4M conv=fsync
+```
 
 ### 在设备上创建 `sheng-esp`
 
