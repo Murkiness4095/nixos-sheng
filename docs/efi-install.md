@@ -97,6 +97,13 @@ fastboot reboot
 | `sheng-esp.sparse.img` | 只写入已创建的 `sheng-esp`。ABL 未暴露该分区时，按下文使用 Recovery。 |
 | `boot.img` | 先在 ABL 用 `fastboot boot boot.img`。通过验证后写入确认过的 Linux 启动槽。已验证的双系统布局只写 `boot_b`。 |
 
+**先按实际 ESP 容量选择产物。** 本项目实测平板的 ESP 是 **512 MiB**。
+全新安装工作流默认生成 **1024 MiB（1 GiB）** 的 ESP 镜像，不能写入
+512 MiB 分区。如果复用已有的 512 MiB ESP，构建时选 `esp_size_mib=512`；
+如果新建分区并沿用工作流默认值，就至少预留 1 GiB。下载后核对
+`manifest.txt` 中的 `esp_size_mib`。原地迁移只写启动文件，可以复用容量足够的
+现有 ESP，无需刷 ESP 镜像。
+
 **EFI experiments** 工作流选择 `task=install-bundle`，并选择 `layout=single`
 或 `layout=dual`。用 `esp_size_mib` 选 512 或 1024 MiB，默认 1024。下载同一产物中的 `boot.img`、`sheng-rootfs.sparse.img.zst`
 和 `sheng-esp.sparse.img`。先运行 `sha256sum -c SHA256SUMS`，然后核对
@@ -167,7 +174,7 @@ printf 'New root end: %s, ESP start: %s\n' "$new_root_end" "$esp_start"
 
 ```sh
 # 已有空闲空间的设备也从这里开始。按产物选择 512 或 1024。
-esp_mib=1024
+esp_mib=REPLACE_ME  # 512 or 1024, matching manifest.txt
 sector_bytes=$(blockdev --getss "$disk")
 align=$((1048576 / sector_bytes))
 if lsblk -nr -o PARTLABEL "$disk" | grep -Fxq sheng-esp; then exit 1; fi

@@ -10,6 +10,13 @@ Partition (ESP) with the GPT partition label `sheng-esp`.
 | Single system | `userdata` | `sheng-efi-generations` | `sheng-efi-internal-single` |
 | Dual boot | `linux` | `sheng-dual-efi-generations` | `sheng-efi-internal-dual` |
 
+**Choose the bundle size to match the actual partition.** The test tablet
+has a **512 MiB** ESP. The workflow defaults to a **1024 MiB (1 GiB)** ESP
+image, which does not fit that partition. Set `esp_size_mib=512` to reuse
+an existing 512 MiB ESP, or reserve at least 1 GiB for the default bundle.
+Check `esp_size_mib` in `manifest.txt`. In-place migration writes boot files
+and can reuse an existing ESP with enough free space without flashing an image.
+
 Run **EFI experiments** in GitHub Actions with `task=internal-esp`. Download
 `boot.img` from the matching artifact and verify its SHA-256 against the build log.
 See the [hardware validation records](efi-probe.md) for tested revisions.
@@ -98,6 +105,13 @@ Inspect GPT → create and verify sheng-esp → decompress rootfs
 | `sheng-esp.sparse.img` | Write only to the ESP you created as `sheng-esp`. If ABL does not expose it, use Recovery as described below. |
 | `boot.img` | Run `fastboot boot boot.img` in ABL first. After validation, flash the verified Linux boot slot. The tested dual-boot layout uses only `boot_b`. |
 
+**Choose the bundle size to match the actual partition.** The test tablet
+has a **512 MiB** ESP. The workflow defaults to a **1024 MiB (1 GiB)** ESP
+image, which does not fit that partition. Set `esp_size_mib=512` to reuse
+an existing 512 MiB ESP, or reserve at least 1 GiB for the default bundle.
+Check `esp_size_mib` in `manifest.txt`. In-place migration writes boot files
+and can reuse an existing ESP with enough free space without flashing an image.
+
 Run **EFI experiments** with `task=install-bundle` and select `layout=single`
 or `layout=dual`. Set `esp_size_mib` to 512 or 1024, with 1024 as the default. Download `boot.img`, `sheng-rootfs.sparse.img.zst`, and
 `sheng-esp.sparse.img` from the same artifact. Run `sha256sum -c SHA256SUMS`,
@@ -179,7 +193,7 @@ If Parted reports an error, stop and inspect the table.
 
 ```sh
 # Also start here if the disk already has free space. Match the bundle size.
-esp_mib=1024
+esp_mib=REPLACE_ME  # 512 or 1024, matching manifest.txt
 sector_bytes=$(blockdev --getss "$disk")
 align=$((1048576 / sector_bytes))
 if lsblk -nr -o PARTLABEL "$disk" | grep -Fxq sheng-esp; then exit 1; fi
