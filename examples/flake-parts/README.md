@@ -2,7 +2,14 @@
 
 [English](./README.en.md) · 简体中文
 
-两个模板目标均使用 EFI。已有 extlinux 的设备先完成下文的 EFI 迁移，再运行日常更新命令。
+按当前安装方式选择目标。主机名均为 `sheng`，更新时请显式指定目标。
+
+| 根分区 | EFI 安装包 | 普通 extlinux 镜像 |
+| --- | --- | --- |
+| 单系统 `userdata` | `.#sheng`（默认模板目标） | `.#sheng-extlinux` |
+| 双系统 `linux` | `.#sheng-dual-efi` | `.#sheng-dual-extlinux` |
+
+已有 extlinux 的设备可直接使用对应的 extlinux 目标更新。要迁移到 EFI，请先按下文准备 ESP 和 U-Boot。
 
 ## 模块组织
 
@@ -20,7 +27,7 @@
 
 ## 构建
 
-保留样板附带的锁文件，用同一版本的硬件仓库保持与 CI 相同的功能基线：
+保留随附锁文件，并把命令中的 `#sheng` 换成表中与你的安装方式对应的目标。EFI 用户先完成安装或迁移，再确认 `/efi` 已挂载：
 
 ```sh
 git add flake.nix flake.lock modules
@@ -44,7 +51,7 @@ tmpfs 默认让 home 易失，样板按调用者提供的 `user` 保留选定目
 
 ## EFI 启动
 
-两个目标都使用 systemd-boot。默认目标 `.#sheng` 用于单系统，
+EFI 目标使用 systemd-boot。默认目标 `.#sheng` 用于单系统，
 根分区为 `userdata`。双系统选 `.#sheng-dual-efi`，根分区为 `linux`。
 不要在共享主机模块中另行覆盖根分区标签。主机名仍为 `sheng`，
 因此更新时请显式指定所选目标。

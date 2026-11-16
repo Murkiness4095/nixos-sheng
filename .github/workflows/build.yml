@@ -156,16 +156,20 @@ jobs:
             nix build -L "./examples/$template#nixosConfigurations.sheng.config.system.build.toplevel" \
               --no-write-lock-file --override-input nixos-sheng "git+file://$(pwd)" -o "result-$template"
             test "$(readlink -f "result-$template")" = "$(readlink -f result-efi-template-base)"
-            for target in sheng sheng-dual-efi; do
+            for target in sheng sheng-dual-efi sheng-extlinux sheng-dual-extlinux; do
               cfg="./examples/$template#nixosConfigurations.$target.config"
               case "$target" in
-                sheng) root=userdata ;;
-                sheng-dual-efi) root=linux ;;
+                sheng|sheng-extlinux) root=userdata ;;
+                sheng-dual-*) root=linux ;;
+              esac
+              case "$target" in
+                *-extlinux) efi=false ;;
+                *) efi=true ;;
               esac
               nix eval --json "$cfg" --apply "
                 c: assert c.sheng.rootfs.partlabel == \"$root\";
-                   assert c.boot.loader.systemd-boot.enable;
-                   assert c.fileSystems.\"/efi\".device == \"/dev/disk/by-partlabel/sheng-esp\";
+                   assert c.boot.loader.systemd-boot.enable == $efi;
+                   assert (!$efi || c.fileSystems.\"/efi\".device == \"/dev/disk/by-partlabel/sheng-esp\");
                    true" --no-write-lock-file --override-input nixos-sheng "git+file://$(pwd)"
             done
           done

@@ -19,7 +19,7 @@ The project has verified boot, standard NixOS rebuilds, generation rollback, swi
 
 GitHub Actions runs `build` for single-system configurations and `build-dual` for dual-system configurations. Pushes and pull requests run checks and export update closures. To build an installation image, run the matching workflow manually and select `tty`, `kde`, or `gnome` in the `image` field. The default `none` exports update closures only. Installed systems can use `nixos-rebuild boot` to add a generation.
 Temporary EFI probes and the VM check are under **EFI experiments**. [Workflow options](docs/efi-probe.md#actions-里选哪个)
-The EFI workflow also builds matched fresh-install bundles for single and dual layouts. See the [EFI installation guide](docs/efi-install.en.md).
+Regular images use extlinux and EFI bundles use systemd-boot. Both minimal personal configuration templates provide EFI and extlinux targets for single-system and dual-boot layouts. Select the target that matches your installation. To switch from extlinux to EFI in place, follow the [EFI installation and migration guide](docs/efi-install.en.md).
 For a `tty` image, set `tty_username` to create and automatically log in as a regular user. The default is `root`.
 
 Confirm the installation mode before flashing. The `fastboot-flash` and `flash-uboot` scripts write both boot slots. `flash-rootfs` overwrites `userdata`. Follow the dual-boot guide when preserving Android.
