@@ -75,6 +75,12 @@
 `No agent available` 属于认证代理缺失，不能据此判断笔硬件不支持。
 Android 与 NixOS 的配对数据库各自独立，本轮没有实现两边配对密钥自动同步。
 
+### Guix / NixOS 双系统切换后的配对记录
+
+2026-11-25 实测，从 Guix 切回 NixOS 后，Xiaomi Focus Pen 多次弹出连接提示。NixOS 显示笔已配对和已信任，但 BlueZ 多次读取 HID 属性失败，笔未保持连接。两套系统使用同一蓝牙控制器地址，各自保存的这支笔的配对密钥实测不同。
+
+保留 NixOS 原记录并同步 Guix 中已验证可用的这支笔的配对记录后，NixOS 恢复连接并枚举出笔的 HID 输入设备。当前没有自动同步机制。在任一系统里删除笔并重新配对后，另一边的记录可能再次失效。Android / NixOS 未复现同一现象。
+
 参考：[THP](https://github.com/ianchb/xiaomi-sheng-thp)、
 [笔状态程序](https://github.com/ianchb/xiaomi-pen-status)。
 
